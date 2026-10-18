@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
+import { useShallow } from 'zustand/react/shallow';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
@@ -10,7 +11,7 @@ type SortKey = 'title' | 'status' | 'priority' | 'impact' | 'difficulty';
 
 const PRIORITY_ORDER: Record<string, number> = { next: 0, high: 1, medium: 2, low: 3 };
 const IMPACT_ORDER:   Record<string, number>  = { critical: 0, high: 1, medium: 2, low: 3 };
-const STATUS_ORDER:   Record<string, number>  = { 'in-progress': 0, blocked: 1, planned: 2 };
+const STATUS_ORDER:   Record<string, number>  = { 'in-progress': 0, 'waiting-on-validation': 1, blocked: 2, planned: 3 };
 const DIFF_ORDER:     Record<string, number>  = { hard: 0, medium: 1, easy: 2 };
 
 function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
@@ -43,7 +44,7 @@ const IMPACT_CLASSES: Record<string, string> = {
 };
 
 export function PlanTable() {
-  const filtered   = usePlanStore(selectFilteredPlans);
+  const filtered   = usePlanStore(useShallow(selectFilteredPlans));
   const repos      = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
   const [sortKey, setSortKey] = useState<SortKey>('priority');

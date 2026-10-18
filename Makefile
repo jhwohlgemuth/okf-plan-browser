@@ -1,0 +1,103 @@
+.DEFAULT_GOAL := help
+.PHONY: help install dev lint typecheck build ci visual visual-update visual-report tauri-dev tauri-build \
+        pages-enable pages-deploy pages-url \
+        bump-patch bump-minor bump-major bump release-tag release-list release-view release-download release-delete \
+        runs watch logs ci-status
+
+REPO    := $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+VERSION := $(shell node -p "require('./package.json').version" 2>/dev/null)
+BUMP    ?= patch
+TAG     ?= v$(VERSION)
+RUN     ?=
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+
+## Local development
+
+install: ## Install npm dependencies
+	npm ci
+
+dev: ## Start the Vite dev server
+	npm run dev
+
+lint: ## Run ESLint
+	npm run lint
+
+typecheck: ## Run the TypeScript type check
+	npm run typecheck
+
+build: ## Production web build into dist/
+	npm run build
+
+ci: lint typecheck build ## Run everything CI runs, locally
+
+visual: ## Run visual regression tests (PW_CHANNEL=msedge to use Edge)
+	npm run test:visual
+
+visual-update: ## Regenerate visual baselines and refresh README screenshots
+	npm run test:visual:update
+	npm run screenshots
+
+visual-report: ## Open the last Playwright HTML report
+	npx playwright show-report
+
+tauri-dev: ## Run the desktop app in dev mode
+	npm run tauri:dev
+
+tauri-build: ## Build desktop installers locally (src-tauri/target/release/bundle)
+	npm run tauri:build
+
+## GitHub Pages
+
+pages-enable: ## Enable GitHub Pages with Actions as the source (one-time)
+	gh api -X POST repos/$(REPO)/pages -f build_type=workflow || gh api -X PUT repos/$(REPO)/pages -f build_type=workflow
+
+pages-deploy: ## Trigger the Pages deploy workflow on main and watch it
+	gh workflow run deploy-pages.yml --ref main
+	@sleep 5
+	gh run watch $$(gh run list --workflow=deploy-pages.yml --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+
+pages-url: ## Print the published site URL
+	@gh api repos/$(REPO)/pages -q .html_url
+
+## Versioning and releases
+
+bump: ## Run the Version Bump workflow on GitHub (BUMP=patch|minor|major)
+	gh workflow run version-bump.yml --ref main -f bump=$(BUMP)
+	@sleep 5
+	gh run watch $$(gh run list --workflow=version-bump.yml --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+
+bump-patch: ; $(MAKE) bump BUMP=patch ## Bump patch version via GitHub
+bump-minor: ; $(MAKE) bump BUMP=minor ## Bump minor version via GitHub
+bump-major: ; $(MAKE) bump BUMP=major ## Bump major version via GitHub
+
+release-tag: ## Tag the current package.json version and push it (starts the Release workflow)
+	git tag $(TAG)
+	git push origin $(TAG)
+
+release-list: ## List GitHub releases
+	gh release list
+
+release-view: ## Show a release and its artifacts (TAG=vX.Y.Z)
+	gh release view $(TAG)
+
+release-download: ## Download release artifacts into ./release-artifacts (TAG=vX.Y.Z)
+	gh release download $(TAG) --dir release-artifacts --clobber
+
+release-delete: ## Delete a release and its tag (TAG=vX.Y.Z)
+	gh release delete $(TAG) --cleanup-tag --yes
+
+## Workflow runs
+
+runs: ## List recent workflow runs
+	gh run list --limit 10
+
+watch: ## Watch the latest workflow run
+	gh run watch $$(gh run list --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
+
+logs: ## Show failed logs for a run (RUN=<id>, defaults to latest)
+	gh run view $(if $(RUN),$(RUN),$$(gh run list --limit 1 --json databaseId -q '.[0].databaseId')) --log-failed
+
+ci-status: ## Show status of the CI workflow
+	gh run list --workflow=ci.yml --limit 5

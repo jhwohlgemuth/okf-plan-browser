@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { X, Package, Tag, Clock, GitBranch } from 'lucide-react';
+import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePlanStore } from '@/store/planStore';
 import { StatusBadge } from './StatusBadge';
@@ -61,14 +61,14 @@ export function PlanDetailPanel() {
           {/* Panel */}
           <motion.div
             ref={panelRef}
-            className="fixed right-0 top-0 z-50 h-screen w-[560px] max-w-full bg-card border-l border-border shadow-2xl overflow-y-auto"
+            className="fixed right-0 top-0 z-50 h-dvh w-full sm:w-[70vw] lg:w-[60vw] max-w-[1100px] bg-card border-l border-border shadow-2xl overflow-y-auto"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-card border-b border-border px-5 py-4 flex items-start justify-between gap-3 z-10">
+            <div className="sticky top-0 bg-card border-b border-border px-6 sm:px-8 py-5 flex items-start justify-between gap-3 z-10">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {repo && (
@@ -89,14 +89,19 @@ export function PlanDetailPanel() {
             </div>
 
             {/* Content */}
-            <div className="px-5 py-4 space-y-5">
+            <div className="px-6 sm:px-8 py-6 space-y-7">
               {/* Description */}
               {fm?.description && (
-                <p className="text-sm text-muted-foreground leading-relaxed">{fm.description}</p>
+                <blockquote className="relative rounded-lg border border-primary/20 border-l-4 border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-5 py-4 text-[15px] sm:text-base font-medium leading-relaxed text-foreground">
+                  <Quote className="absolute right-3 top-3 h-5 w-5 text-primary/20" aria-hidden />
+                  <span className="block mb-1 text-[10px] font-semibold uppercase tracking-widest text-primary/80">Summary</span>
+                  {fm.description}
+                </blockquote>
               )}
 
+              <div className="rounded-lg border border-border bg-background/40 p-4 space-y-4">
               {/* Meta pills */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 {fm?.status   && <StatusBadge status={fm.status} />}
                 {fm?.priority && <PriorityBadge priority={fm.priority} />}
                 {fm?.impact   && (
@@ -154,7 +159,7 @@ export function PlanDetailPanel() {
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2">
                     <GitBranch className="h-3.5 w-3.5" /> Dependencies
                   </div>
-                  <ul className="space-y-1">
+                  <ul className="space-y-1.5 pl-5 border-l border-border/60">
                     {[...new Map(plan.dependencies.map(d => [d.href, d])).values()].map(d => {
                       const t = resolveLink(d.href);
                       return (
@@ -170,26 +175,33 @@ export function PlanDetailPanel() {
                   </ul>
                 </div>
               )}
+              </div>
 
               {/* Sections */}
-              {plan.sections.map((section, si) => (
-                <div key={si}>
-                  <h3 className="text-sm font-semibold text-foreground mb-2 border-b border-border pb-1">
-                    {section.heading}
-                  </h3>
-
-                  {section.phases.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {section.phases.map(ph => (
-                        <span key={ph.id} className="inline-flex items-center gap-1.5 bg-secondary rounded px-2 py-1" title={ph.title}>
-                          <span className="font-mono text-xs text-od-blue font-medium">{ph.id}</span>
-                          <StatusBadge status={ph.status} />
-                        </span>
-                      ))}
-                    </div>
+              {plan.sections.filter(s => s.heading || s.body.trim() || s.phases.length).map((section, si) => (
+                <section key={si} className="space-y-3">
+                  {section.heading && (
+                    <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1.5 flex items-center gap-2">
+                      <span className="h-3.5 w-1 rounded-full bg-primary" />
+                      {section.heading}
+                    </h3>
                   )}
 
-                  {section.body.trim() && <Markdown resolveLink={resolveLink}>{section.body.trim()}</Markdown>}                </div>
+                  <div className="pl-3 ml-0.5 border-l border-border/60 space-y-3">
+                    {section.phases.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {section.phases.map(ph => (
+                          <span key={ph.id} className="inline-flex items-center gap-1.5 bg-secondary rounded px-2.5 py-1" title={ph.title}>
+                            <span className="font-mono text-xs text-od-blue font-medium">{ph.id}</span>
+                            <StatusBadge status={ph.status} />
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {section.body.trim() && <Markdown resolveLink={resolveLink}>{section.body.trim()}</Markdown>}
+                  </div>
+                </section>
               ))}
 
               {/* File path */}

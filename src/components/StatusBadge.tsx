@@ -4,6 +4,7 @@ import type { PlanStatus, PhaseStatus } from '@/types/wiki';
 const STATUS_CLASSES: Record<string, string> = {
   planned:     'bg-od-surface3/60 text-od-muted   border border-od-border',
   'in-progress':'bg-od-blue/15   text-od-blue    border border-od-blue/30',
+  'waiting-on-validation': 'bg-od-yellow/15 text-od-yellow border border-od-yellow/30',
   blocked:     'bg-od-red/15    text-od-red     border border-od-red/30',
   ready:       'bg-od-green/15  text-od-green   border border-od-green/30',
 };
@@ -11,6 +12,7 @@ const STATUS_CLASSES: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   planned:      'Planned',
   'in-progress':'In Progress',
+  'waiting-on-validation': 'Waiting on Validation',
   blocked:      'Blocked',
   ready:        'Ready',
 };

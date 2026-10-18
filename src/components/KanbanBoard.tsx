@@ -1,4 +1,5 @@
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
+import { useShallow } from 'zustand/react/shallow';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
 import type { PhaseStatus, Phase, ParsedPlan } from '@/types/wiki';
@@ -9,6 +10,7 @@ const COLUMNS: { status: PhaseStatus; label: string }[] = [
   { status: 'planned',     label: 'Planned' },
   { status: 'ready',       label: 'Ready' },
   { status: 'in-progress', label: 'In Progress' },
+  { status: 'waiting-on-validation', label: 'Waiting on Validation' },
   { status: 'blocked',     label: 'Blocked' },
 ];
 
@@ -16,6 +18,7 @@ const COL_HEADER: Record<PhaseStatus, string> = {
   planned:      'border-od-border  text-od-muted',
   ready:        'border-od-green   text-od-green',
   'in-progress':'border-od-blue    text-od-blue',
+  'waiting-on-validation': 'border-od-yellow text-od-yellow',
   blocked:      'border-od-red     text-od-red',
 };
 
@@ -27,22 +30,27 @@ const IMPACT_DOT: Record<string, string> = {
 };
 
 export function KanbanBoard() {
-  const plans      = usePlanStore(selectFilteredPlans);
+  const plans      = usePlanStore(useShallow(selectFilteredPlans));
   const repos      = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
 
   // Collect all phases across all filtered plans
-  const allPhaseCards: PhaseCard[] = plans.flatMap(plan =>
-    plan.sections.flatMap(section =>
-      section.phases.map(phase => ({ plan, phase })),
-    ),
-  );
+  // Plans that define no phases still appear as a single card carrying the plan's status
+  const allPhaseCards: PhaseCard[] = plans.flatMap(plan => {
+    const phases = plan.sections.flatMap(section => section.phases);
+    if (phases.length) return phases.map(phase => ({ plan, phase }));
+    const whole: Phase = {
+      id: 'Plan', title: 'No phases defined', rawBody: '', refs: [],
+      status: plan.frontmatter.status ?? 'planned',
+    };
+    return [{ plan, phase: whole }];
+  });
 
   const byStatus = (status: PhaseStatus) =>
     allPhaseCards.filter(c => c.phase.status === status);
 
   return (
-    <div className="grid grid-cols-4 gap-4 h-full min-h-0 overflow-hidden">
+    <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] xl:grid-flow-row xl:grid-cols-5 gap-4 h-full min-h-0 overflow-x-auto xl:overflow-hidden">
       {COLUMNS.map(col => {
         const cards = byStatus(col.status);
         return (

@@ -7,6 +7,18 @@
 
 🌐 **Live demo:** `https://jhwohlgemuth.github.io/okf-plan-browser/`
 
+![Portfolio](docs/screenshots/portfolio.png)
+
+| Phase Tracker | Dependency Graph |
+| --- | --- |
+| ![Phase Tracker](docs/screenshots/phases.png) | ![Dependency Graph](docs/screenshots/graph.png) |
+
+| Plan detail | Mobile |
+| --- | --- |
+| ![Plan detail](docs/screenshots/plan-detail.png) | <img src="docs/screenshots/mobile-portfolio.png" width="260" alt="Mobile portfolio" /> |
+
+*Screenshots are the visual regression baselines (demo data). Refresh with `npm run screenshots` after `npm run test:visual:update`.*
+
 ---
 
 ## Features
@@ -21,6 +33,7 @@
 - 🌙 **One Dark theme** with Light / System toggle (persisted across sessions)
 - 📂 **File System Access API** (`showDirectoryPicker`) + drag-and-drop fallback
 - 🗂️ **Multiple repos** — "Add another .wiki" merges data with distinct repo colour labels
+- 🔄 **One-click refresh** — re-read a single wiki or all wikis from the sidebar. Chromium browsers remember the folder (and may ask to re-allow access after a restart); in Firefox/Safari a wiki's refresh button re-opens the folder picker and re-uploads into the same project
 - 🖱️ **Slide-in detail panel** — click any plan for full frontmatter, sections, phases, dependencies
 - 🎭 **Embedded demo data** — 6 synthetic plans load instantly with no files required
 - 🖥️ **Optional Tauri desktop app** — native window, no Electron overhead

@@ -1,4 +1,4 @@
-import { Play, Trash2, AlertTriangle } from 'lucide-react';
+import { Layers, Sparkles, Trash2, AlertTriangle } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { FolderPicker } from '@/components/FolderPicker';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,43 @@ export function HomePage() {
   const { toast } = useToast();
 
   const isEmpty = plans.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="min-h-full flex items-center justify-center px-6 py-10">
+        <div className="w-full max-w-[420px] flex flex-col items-center text-center">
+          <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center mb-4">
+            <Layers className="h-6 w-6 text-od-blue" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground">OKF Plan Browser</h1>
+          <p className="text-xs text-muted-foreground mt-2 mb-6">
+            Load a .wiki folder to explore your planning portfolio
+          </p>
+
+          <div className="w-full">
+            <FolderPicker cards />
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-5 text-od-purple bg-od-purple/10 hover:bg-od-purple/20 border border-od-purple/30"
+            onClick={() => {
+              loadDemoData();
+              toast({ title: 'Demo data loaded', description: '6 synthetic plans across 3 repos' });
+            }}
+          >
+            <Sparkles className="h-3.5 w-3.5 mr-2" />
+            Load Demo Data
+          </Button>
+
+          <p className="text-[10px] text-muted-foreground mt-5">
+            Supports the .wiki markdown format — YAML frontmatter, H1 sections, H2 phases
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
@@ -22,32 +59,7 @@ export function HomePage() {
         </p>
       </div>
 
-      {/* Load section */}
-      {isEmpty ? (
-        <div className="space-y-4">
-          <FolderPicker />
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => {
-              loadDemoData();
-              toast({ title: 'Demo data loaded', description: '6 synthetic plans across 3 repos' });
-            }}
-          >
-            <Play className="h-4 w-4 mr-2" />
-            Load Demo Data
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            Demo data is embedded — no files are read.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -127,7 +139,6 @@ export function HomePage() {
             Clear all data
           </Button>
         </div>
-      )}
 
       {/* Format reference */}
       <div className="border-t border-border pt-6">
@@ -142,7 +153,7 @@ difficulty: medium        # easy | medium | hard
 impact: critical          # low | medium | high | critical
 package: [pkg-a, pkg-b]
 tags: [feature, api]
-status: planned           # planned | in-progress | blocked
+status: planned           # planned | in-progress | waiting-on-validation | blocked
 priority: next            # next | high | medium | low
 execution: phased         # phased | coordination
 phase_budget_hours: 5

@@ -7,6 +7,7 @@ import { PhasesPage }    from '@/pages/PhasesPage';
 import { GraphPage }     from '@/pages/GraphPage';
 import { SearchPage }    from '@/pages/SearchPage';
 import { SettingsPage }  from '@/pages/SettingsPage';
+import { AboutPage }     from '@/pages/AboutPage';
 import { useThemeStore, initTheme } from '@/store/themeStore';
 import { Toaster }       from '@/components/ui/toaster';
 
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="graph"     element={<GraphPage />} />
           <Route path="search"    element={<SearchPage />} />
           <Route path="settings"  element={<SettingsPage />} />
+          <Route path="about"     element={<AboutPage />} />
         </Route>
       </Routes>
       <Toaster />

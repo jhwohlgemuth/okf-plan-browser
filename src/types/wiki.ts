@@ -1,11 +1,11 @@
 // ─── Frontmatter ─────────────────────────────────────────────────────────────
 
-export type PlanStatus    = 'planned' | 'in-progress' | 'blocked';
+export type PlanStatus    = 'planned' | 'in-progress' | 'waiting-on-validation' | 'blocked';
 export type PlanPriority  = 'next' | 'high' | 'medium' | 'low';
 export type PlanDifficulty = 'easy' | 'medium' | 'hard';
 export type PlanImpact    = 'low' | 'medium' | 'high' | 'critical';
 export type PlanExecution = 'phased' | 'coordination';
-export type PhaseStatus   = 'planned' | 'ready' | 'blocked' | 'in-progress';
+export type PhaseStatus   = 'planned' | 'ready' | 'blocked' | 'in-progress' | 'waiting-on-validation';
 
 export interface Frontmatter {
   type?:               string;

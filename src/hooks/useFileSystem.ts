@@ -1,66 +1,49 @@
-import { useState, useCallback } from 'react';
-import { parseWikiFolder, parseWikiFileList, findWikiDir, isWikiFolderName } from '@/lib/wikiParser';
+import { useState, useCallback, useEffect } from 'react';
+import { parseWikiFolder, parseWikiFileList, parseWikiEntry, findWikiEntry, findWikiDir, isWikiFolderName, type Progress } from '@/lib/wikiParser';
 import { usePlanStore } from '@/store/planStore';
-import { repoColor, newUuid } from '@/lib/utils';
 import { randomProjectName } from '@/lib/names';
-import type { WikiRepo, ParseWarning, ParsedPlan } from '@/types/wiki';
+import { commitWiki, type LoadResult, type Parsed } from '@/lib/commitWiki';
+import { saveHandle } from '@/lib/handleStore';
 
-export interface LoadResult {
-  repoId:   string;
-  plans:    number;
-  warnings: number;
-}
-
-type Parsed = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }> };
-
+export type { LoadResult };
 /** A wiki whose project name can't be inferred (the picked folder was `.wiki` itself). */
 export interface PendingWiki {
   folderName: string;
-  parse:      (project: string) => Promise<Parsed>;
+  parse:      (project: string, report?: Progress) => Promise<Parsed>;
 }
 
+export interface LoadProgress { done: number; total?: number }
+
 export function useFileSystem() {
-  const { addPlans, repos } = usePlanStore();
+  const { repos } = usePlanStore();
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [progress, setProgress] = useState<LoadProgress | null>(null);
+  const report = useCallback<Progress>((done, total) => setProgress({ done, total }), []);
   const [error,   setError]   = useState<string | null>(null);
   const [pending, setPending] = useState<PendingWiki[]>([]);
 
-  const commit = useCallback((project: string, { plans, errors }: Parsed): LoadResult | null => {
-    if (plans.length === 0) {
-      setError(`No plans found in "${project}". Pick the project folder, or its .wiki folder.`);
+  useEffect(() => { if (!loading) setProgress(null); }, [loading]);
+  const commit = useCallback((project: string, parsed: Parsed): LoadResult | null => {
+    try {
+      return commitWiki(project, parsed);
+    } catch (e) {
+      setError((e as Error).message);
       return null;
     }
-    if (usePlanStore.getState().isDemoData) usePlanStore.getState().clearAll();
-    const store = usePlanStore.getState();
-    const existing = store.repos.find(r => r.id === project);
-    const repo: WikiRepo = {
-      id:        project,
-      uuid:      existing?.uuid ?? newUuid(),
-      label:     project,
-      color:     (existing?.color ?? repoColor(store.repos.length)) as WikiRepo['color'],
-      planCount: plans.length,
-    };
-    const warns: ParseWarning[] = [
-      ...plans.filter(p => p.parseErrors.length).map(p => ({
-        repoId: project, fileName: p.fileName, errors: p.parseErrors,
-      })),
-      ...errors.map(e => ({ repoId: project, fileName: e.name, errors: [e.error] })),
-    ];
-    addPlans(plans, repo, warns);
-    return { repoId: project, plans: plans.length, warnings: warns.length };
-  }, [addPlans]);
+  }, []);
 
   /** Load now if the folder name identifies the project; otherwise queue a name prompt. */
   const ingest = useCallback(async (
     folderName: string,
-    parse: (project: string) => Promise<Parsed>,
+    parse: (project: string, report?: Progress) => Promise<Parsed>,
   ): Promise<LoadResult | null> => {
     if (isWikiFolderName(folderName)) {
       setPending(q => [...q, { folderName, parse }]);
       return null;
     }
-    return commit(folderName, await parse(folderName));
-  }, [commit]);
+    return commit(folderName, await parse(folderName, report));
+  }, [commit, report]);
 
   const confirmPending = useCallback(async (project: string): Promise<LoadResult | null> => {
     const next = pending[0];
@@ -72,19 +55,22 @@ export function useFileSystem() {
     setPending(q => q.slice(1));
     setLoading(true);
     try {
-      return commit(name, await next.parse(name));
+      return commit(name, await next.parse(name, report));
     } catch (e) {
       setError((e as Error).message);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [pending, commit]);
+  }, [pending, commit, report]);
 
   const cancelPending = useCallback(() => setPending(q => q.slice(1)), []);
 
-  const dirParser = (dir: FileSystemDirectoryHandle) => async (project: string) =>
-    parseWikiFolder(await findWikiDir(dir), project);
+  const dirParser = (dir: FileSystemDirectoryHandle) => async (project: string, r?: Progress) => {
+    const parsed = await parseWikiFolder(await findWikiDir(dir), project, r);
+    if (parsed.plans.length) await saveHandle(project, dir);
+    return parsed;
+  };
 
   const openFolder = useCallback(async (): Promise<LoadResult | null> => {
     setError(null);
@@ -111,10 +97,11 @@ export function useFileSystem() {
     const files = Array.from(list ?? []);
     if (!files.length) return null;
     setError(null);
+    setScanning(false);
     setLoading(true);
     try {
       const rel = (files[0] as File & { webkitRelativePath?: string }).webkitRelativePath;
-      return await ingest(rel?.split('/')[0] || 'wiki', project => parseWikiFileList(files, project));
+      return await ingest(rel?.split('/')[0] || 'wiki', (project, r) => parseWikiFileList(files, project, r));
     } catch (e) {
       setError((e as Error).message);
       return null;
@@ -127,19 +114,31 @@ export function useFileSystem() {
   const dropFolder = useCallback(async (items: DataTransferItemList): Promise<LoadResult[]> => {
     setError(null);
     const pendingHandles: Promise<FileSystemHandle | null>[] = [];
+    const entries: FileSystemDirectoryEntry[] = [];
     for (let i = 0; i < items.length; i++) {
       const item = items[i] as DataTransferItem & {
         getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>;
       };
-      if (item.kind === 'file' && item.getAsFileSystemHandle) pendingHandles.push(item.getAsFileSystemHandle());
+      if (item.kind !== 'file') continue;
+      if (item.getAsFileSystemHandle) {
+        pendingHandles.push(item.getAsFileSystemHandle());
+      } else {
+        const entry = item.webkitGetAsEntry?.();
+        if (entry?.isDirectory) entries.push(entry as FileSystemDirectoryEntry);
+      }
     }
-    if (!pendingHandles.length) {
+    if (!pendingHandles.length && !entries.length) {
       setError('Dropping folders is not supported here. Click to browse instead.');
       return [];
     }
     setLoading(true);
     const results: LoadResult[] = [];
     try {
+      for (const entry of entries) {
+        const r = await ingest(entry.name, async (project, rep) =>
+          parseWikiEntry(await findWikiEntry(entry), project, rep));
+        if (r) results.push(r);
+      }
       const dirs = (await Promise.all(pendingHandles))
         .filter((h): h is FileSystemDirectoryHandle => !!h && h.kind === 'directory');
       if (!dirs.length) setError('Please drop a folder, not a file.');
@@ -159,7 +158,7 @@ export function useFileSystem() {
     openFolder, loadFileList, dropFolder,
     pending: pending[0] ?? null, confirmPending, cancelPending,
     existingProjects: repos.map(r => r.id),
-    loading, error,
+    loading, error, scanning, setScanning, progress,
   };
 }
 

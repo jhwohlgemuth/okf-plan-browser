@@ -7,7 +7,7 @@ export function GraphPage() {
   const refs  = plans.reduce((acc, p) => acc + p.phaseRefs.length, 0);
 
   return (
-    <div className="flex flex-col h-screen min-h-0">
+    <div className="flex flex-col h-full min-h-0">
       {/* Top bar */}
       <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
         <h1 className="text-base font-semibold text-foreground">Dependency Graph</h1>

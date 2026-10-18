@@ -32,7 +32,7 @@ function searchPlans(plans: ParsedPlan[], query: string): Hit[] {
         }
         for (const phase of section.phases) {
           if (phase.title.toLowerCase().includes(q)) {
-            matches.push(`Phase ${phase.id}: ${truncate(phase.title, 80)}`);
+            matches.push(`${/^phase\b/i.test(phase.id) ? '' : 'Phase '}${phase.id}: ${truncate(phase.title, 80)}`);
           }
           if (phase.rawBody.toLowerCase().includes(q)) {
             const idx = phase.rawBody.toLowerCase().indexOf(q);
@@ -79,7 +79,7 @@ export function SearchPage() {
   const hits = useMemo(() => searchPlans(plans, query), [plans, query]);
 
   return (
-    <div className="flex flex-col h-screen min-h-0">
+    <div className="flex flex-col h-full min-h-0">
       {/* Search bar */}
       <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
         <h1 className="text-base font-semibold text-foreground mb-3">Search</h1>

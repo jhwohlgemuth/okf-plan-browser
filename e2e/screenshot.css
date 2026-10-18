@@ -1,0 +1,6 @@
+[data-radix-toast-viewport],
+ol[tabindex="-1"],
+li[data-radix-collection-item],
+[role="region"][aria-label*="otification"] {
+  display: none !important;
+}

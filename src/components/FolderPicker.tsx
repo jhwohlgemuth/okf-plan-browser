@@ -6,22 +6,46 @@ import { cn } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { LoadingOverlay } from './LoadingOverlay';
 
 interface Props {
   label?: string;
   compact?: boolean;
+  cards?: boolean;
 }
 
-export function FolderPicker({ label = 'Open .wiki Folder', compact = false }: Props) {
+export function FolderPicker({ label = 'Open .wiki Folder', compact = false, cards = false }: Props) {
   const {
     openFolder, loadFileList, dropFolder, pending, confirmPending, cancelPending,
-    existingProjects, loading, error,
+    existingProjects, loading, error, scanning, setScanning, progress,
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
   useEffect(() => { if (pending) setProjectName(''); }, [pending]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const { toast } = useToast();
+
+  // The native folder dialog gives no "files are being read" signal: the window regaining focus is the closest cue.
+  const awaitingDialog = useRef(false);
+  const cancelled = useRef(false);
+  useEffect(() => {
+    const onFocus = () => {
+      if (!awaitingDialog.current) return;
+      awaitingDialog.current = false;
+      setTimeout(() => { if (!cancelled.current) setScanning(true); }, 300);
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [setScanning]);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    const onCancel = () => { cancelled.current = true; awaitingDialog.current = false; setScanning(false); };
+    input?.addEventListener('cancel', onCancel);
+    return () => input?.removeEventListener('cancel', onCancel);
+  }, [setScanning]);
+
+  const overlay = <LoadingOverlay open={loading || scanning} scanning={scanning && !loading} progress={progress} />;
 
   const announce = (result: { plans: number; repoId: string; warnings: number } | null) => {
     if (result) {
@@ -34,7 +58,13 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false }: P
 
   const handleOpen = async () => {
     if (!('showDirectoryPicker' in window)) {
+      toast({
+        title: 'Tip: pick the .wiki folder',
+        description: 'This browser reads every file in the chosen folder. For large projects, pick the .wiki folder itself or drag the project folder onto the page instead.',
+      });
       inputRef.current?.click();
+      awaitingDialog.current = true;
+      cancelled.current = false;
       return;
     }
     announce(await openFolder());
@@ -82,16 +112,20 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false }: P
   );
 
   const fallbackInput = (
-    <input
-      ref={inputRef}
-      type="file"
-      className="hidden"
-      onChange={async e => {
-        announce(await loadFileList(e.target.files));
-        e.target.value = '';
-      }}
-      {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
-    />
+    <>
+      {overlay}
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={async e => {
+          const input = e.target;
+          announce(await loadFileList(input.files));
+          input.value = '';
+        }}
+        {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
+      />
+    </>
   );
 
   if (compact) {
@@ -104,6 +138,43 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false }: P
         {fallbackInput}
         {nameDialog}
         {error && <p className="text-xs text-od-red">{error}</p>}
+      </div>
+    );
+  }
+
+  if (cards) {
+    const cardClass = cn(
+      'drop-zone h-[106px] px-4 text-center gap-1.5 bg-card/60 hover:border-primary/50',
+      dragging && 'dragging',
+    );
+    const dropProps = {
+      onDragOver:  (e: React.DragEvent) => { e.preventDefault(); setDragging(true); },
+      onDragLeave: () => setDragging(false),
+      onDrop:      handleDrop,
+    };
+    return (
+      <div className="space-y-3">
+        {fallbackInput}
+        {nameDialog}
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
+          <div className={cardClass} onClick={handleOpen} {...dropProps}>
+            <FolderOpen className="h-5 w-5 text-od-blue" />
+            <p className="text-xs font-semibold text-foreground">{loading ? 'Parsing files…' : 'Open Folder'}</p>
+            <p className="text-[10px] leading-tight text-muted-foreground">
+              Uses File System Access API to read .md files
+            </p>
+          </div>
+          <div className={cardClass} onClick={handleOpen} {...dropProps}>
+            <Upload className="h-5 w-5 text-od-green" />
+            <p className="text-xs font-semibold text-foreground">Drop Files</p>
+            <p className="text-[10px] leading-tight text-muted-foreground">Drag .md files onto this area</p>
+          </div>
+        </div>
+        {error && (
+          <p className="text-xs text-od-red bg-od-red/10 border border-od-red/20 rounded-md px-3 py-2">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

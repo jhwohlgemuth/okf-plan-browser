@@ -16,8 +16,9 @@ interface Link extends d3.SimulationLinkDatum<Node> {
 
 const STATUS_COLORS: Record<string, string> = {
   'in-progress': '#61afef',
+  'waiting-on-validation': '#e5c07b',
   blocked:       '#e06c75',
-  planned:       '#5c6370',
+  planned:        '#5c6370',
 };
 
 export function DependencyGraph() {
@@ -34,9 +35,14 @@ export function DependencyGraph() {
     const height = svg.clientHeight || 600;
 
     // Build nodes
-    const nodes: Node[] = plans.map(p => {
+    const nodes: Node[] = plans.map((p, i) => {
       const color = STATUS_COLORS[p.frontmatter.status ?? ''] ?? '#5c6370';
-      return { id: p.id, title: p.frontmatter.title, color, plan: p, x: width / 2, y: height / 2 };
+      const angle = (2 * Math.PI * i) / plans.length;
+      return {
+        id: p.id, title: p.frontmatter.title, color, plan: p,
+        x: width / 2 + 100 * Math.cos(angle),
+        y: height / 2 + 100 * Math.sin(angle),
+      };
     });
 
     const nodeById = new Map(nodes.map(n => [n.id, n]));
@@ -157,14 +163,19 @@ export function DependencyGraph() {
     node.on('click', (_event, d) => selectPlan(d.plan.id));
     node.append('title').text(d => d.plan.frontmatter.title);
 
-    sim.on('tick', () => {
+    const draw = () => {
       link
         .attr('x1', d => (d.source as Node).x!)
         .attr('y1', d => (d.source as Node).y!)
         .attr('x2', d => (d.target as Node).x!)
         .attr('y2', d => (d.target as Node).y!);
       node.attr('transform', d => `translate(${d.x},${d.y})`);
-    });
+    };
+
+    sim.on('tick', draw);
+    sim.stop();
+    sim.tick(300);
+    draw();
 
     return () => { sim.stop(); };
   }, [plans, repos, selectPlan]);
@@ -190,6 +201,10 @@ export function DependencyGraph() {
             <div className="flex items-center gap-2 text-muted-foreground mt-1">
               <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#61afef22', borderColor: '#61afef' }} />
               in-progress
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#e5c07b22', borderColor: '#e5c07b' }} />
+              waiting-on-validation
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#e06c7522', borderColor: '#e06c75' }} />
