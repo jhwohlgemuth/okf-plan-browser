@@ -1,5 +1,4 @@
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
-import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
 import type { PhaseStatus, Phase, ParsedPlan } from '@/types/wiki';

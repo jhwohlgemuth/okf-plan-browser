@@ -49,7 +49,9 @@ function parsePhases(text: string): Phase[] {
     const idMatch = PHASE_ID_RE.exec(firstLine);
     if (!idMatch) return null;
     const id = idMatch[1];
-    const title = firstLine.slice(id.length).trim().replace(/^[-:.]\s*/, '');
+    // Strip leading punctuation separators from the phase title
+    const titlePrefix = new RegExp('^[' + ['-', ':', '.'].join('') + ']\\s*');
+    const title = firstLine.slice(id.length).trim().replace(titlePrefix, '');
     const rawBody = chunk.split('\n').slice(1).join('\n');
     const statusMatch = STATUS_RE.exec(rawBody);
     const status: PhaseStatus = (statusMatch?.[1]?.toLowerCase() ?? 'planned') as PhaseStatus;

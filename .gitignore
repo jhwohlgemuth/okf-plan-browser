@@ -40,6 +40,7 @@ pnpm-debug.log*
 
 # Testing
 coverage/
+.playwright-mcp/
 
 # Misc
 *.tsbuildinfo

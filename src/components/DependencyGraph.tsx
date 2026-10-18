@@ -35,7 +35,6 @@ export function DependencyGraph() {
 
     // Build nodes
     const nodes: Node[] = plans.map(p => {
-      const repo  = repos.find(r => r.id === p.repoId);
       const color = STATUS_COLORS[p.frontmatter.status ?? ''] ?? '#5c6370';
       return { id: p.id, title: p.frontmatter.title, color, plan: p, x: width / 2, y: height / 2 };
     });
@@ -110,23 +109,23 @@ export function DependencyGraph() {
       .attr('marker-end', d => `url(#arrow-${d.type})`);
 
     // Nodes
+    const drag = d3.drag<SVGGElement, Node>()
+      .on('start', (event, d) => {
+        if (!event.active) sim.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on('end', (event, d) => {
+        if (!event.active) sim.alphaTarget(0);
+        d.fx = null; d.fy = null;
+      });
+
     const node = g.append('g')
-      .selectAll('g')
+      .selectAll<SVGGElement, Node>('g')
       .data(nodes)
       .join('g')
       .attr('cursor', 'pointer')
-      .call(
-        d3.drag<SVGGElement, Node>()
-          .on('start', (event, d) => {
-            if (!event.active) sim.alphaTarget(0.3).restart();
-            d.fx = d.x; d.fy = d.y;
-          })
-          .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
-          .on('end', (event, d) => {
-            if (!event.active) sim.alphaTarget(0);
-            d.fx = null; d.fy = null;
-          }),
-      );
+      .call(drag);
 
     node.append('circle')
       .attr('r', 16)

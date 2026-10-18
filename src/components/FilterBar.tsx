@@ -126,6 +126,29 @@ export function FilterBar() {
         </div>
       )}
 
+      {/* Packages (if any loaded) */}
+      {allPkgs.length > 0 && (
+        <div className="flex items-start gap-2">
+          <span className="text-xs text-muted-foreground font-medium w-16 shrink-0 pt-1">Packages</span>
+          <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto flex-1 min-w-0">
+            {allPkgs.map(pkg => {
+              const active = filters.packages.includes(pkg);
+              return (
+                <button
+                  key={pkg}
+                  onClick={() => setFilter('packages', active ? filters.packages.filter(x => x !== pkg) : [...filters.packages, pkg])}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors font-mono ${
+                    active ? 'bg-accent text-accent-foreground border-border' : 'text-muted-foreground border-border/50 hover:border-border'
+                  }`}
+                >
+                  {pkg}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Clear */}
       {hasFilters ? (
         <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs text-muted-foreground">

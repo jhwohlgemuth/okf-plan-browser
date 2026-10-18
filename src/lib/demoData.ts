@@ -196,12 +196,12 @@ phase_budget_hours: 8
 Every UI component sources colour, spacing, and typography from a single token set defined in \`tokens.json\` (per the W3C Design Tokens Community Group draft format). The token pipeline compiles to CSS custom properties for web and to Kotlin/Swift constants for mobile.
 
 # Current evidence
-- ~340 hardcoded \`#hex\` values found across 62 component files in the last audit.
+- ~340 hardcoded hex colour literals found across 62 component files in the last audit.
 - WCAG AA contrast checked on the proposed primary palette — all pairs pass at the 4.5:1 ratio.
 
 ## PA-20 Audit existing hardcoded values
 **Status:** in-progress
-\`stylelint --fix\` pass complete. Remaining manual fixes: 47 Tailwind \`bg-[#hex]\` usages. Refs: PA-21.
+\`stylelint --fix\` pass complete. Remaining manual fixes: 47 Tailwind arbitrary colour utilities. Refs: PA-21.
 
 ## PA-21 Define token schema
 **Status:** planned

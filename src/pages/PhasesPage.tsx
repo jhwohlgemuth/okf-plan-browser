@@ -4,7 +4,6 @@ import { KanbanBoard } from '@/components/KanbanBoard';
 
 export function PhasesPage() {
   const filtered = usePlanStore(selectFilteredPlans);
-  const total    = usePlanStore(s => s.plans.length);
   const phaseCount = filtered.reduce((acc, p) =>
     acc + p.sections.reduce((a, s) => a + s.phases.length, 0), 0);
 
