@@ -1,0 +1,21 @@
+[package]
+name = "okf-plan-browser"
+version = "1.0.0"
+description = "OKF Plan Browser — desktop app for .wiki markdown portfolios"
+authors = ["you"]
+license = ""
+repository = ""
+default-run = "okf-plan-browser"
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+tauri = { version = "1.6", features = ["dialog-all", "fs-all", "window-all", "shell-open"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

@@ -1,0 +1,38 @@
+- generic [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - complementary [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - generic [ref=f3e6]:
+          - generic [ref=f3e7]: .wiki
+          - generic [ref=f3e8]: Plan Browser
+        - paragraph [ref=f3e9]: 0 plans · 0 repos
+      - navigation [ref=f3e10]:
+        - link "Home" [ref=f3e11] [cursor=pointer]:
+          - /url: /home
+        - link "Portfolio" [ref=f3e15] [cursor=pointer]:
+          - /url: /portfolio
+        - link "Phase Tracker" [ref=f3e21] [cursor=pointer]:
+          - /url: /phases
+        - link "Dependency Graph" [ref=f3e26] [cursor=pointer]:
+          - /url: /graph
+        - link "Search" [ref=f3e33] [cursor=pointer]:
+          - /url: /search
+        - link "Settings" [ref=f3e37] [cursor=pointer]:
+          - /url: /settings
+    - main [ref=f3e41]:
+      - generic [ref=f3e42]:
+        - generic [ref=f3e43]:
+          - heading "OKF Plan Browser" [level=1] [ref=f3e44]
+          - paragraph [ref=f3e45]: Browse, filter, and visualise .wiki/ markdown planning portfolios — dependency graphs, phase kanban, full-text search. Everything stays local; nothing is uploaded.
+        - generic [ref=f3e46]:
+          - generic [ref=f3e48] [cursor=pointer]:
+            - paragraph [ref=f3e52]: Drop a project or .wiki folder here
+            - paragraph [ref=f3e53]: or click to browse
+          - generic [ref=f3e54]: or
+          - button "Load Demo Data" [ref=f3e58] [cursor=pointer]
+          - paragraph [ref=f3e61]: Demo data is embedded — no files are read.
+        - generic [ref=f3e62]:
+          - heading "Expected .wiki format" [level=2] [ref=f3e63]
+          - generic [ref=f3e64]: "--- type: Plan title: \"My Plan\" description: \"What this is about\" difficulty: medium # easy | medium | hard impact: critical # low | medium | high | critical package: [pkg-a, pkg-b] tags: [feature, api] status: planned # planned | in-progress | blocked priority: next # next | high | medium | low execution: phased # phased | coordination phase_budget_hours: 5 --- # Goal Narrative... ## PA-01 Phase title **Status:** planned ..."
+  - region "Notifications (F8)":
+    - list

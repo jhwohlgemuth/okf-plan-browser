@@ -1,0 +1,202 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - complementary [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - generic [ref=f2e6]:
+          - generic [ref=f2e7]: .wiki
+          - generic [ref=f2e8]: Plan Browser
+        - paragraph [ref=f2e9]: 6 plans · 3 repos(demo)
+      - navigation [ref=f2e10]:
+        - link "Home" [ref=f2e11] [cursor=pointer]:
+          - /url: /home
+        - link "Portfolio" [active] [ref=f2e15] [cursor=pointer]:
+          - /url: /portfolio
+        - link "Phase Tracker" [ref=f2e21] [cursor=pointer]:
+          - /url: /phases
+        - link "Dependency Graph" [ref=f2e26] [cursor=pointer]:
+          - /url: /graph
+        - link "Search" [ref=f2e33] [cursor=pointer]:
+          - /url: /search
+        - link "Settings" [ref=f2e37] [cursor=pointer]:
+          - /url: /settings
+      - generic [ref=f2e65]:
+        - paragraph [ref=f2e66]: Repos
+        - generic [ref=f2e67]:
+          - generic [ref=f2e69]: acorn-core
+          - generic [ref=f2e70]: "3"
+        - generic [ref=f2e71]:
+          - generic [ref=f2e73]: acorn-cli
+          - generic [ref=f2e74]: "1"
+        - generic [ref=f2e75]:
+          - generic [ref=f2e77]: acorn-ui
+          - generic [ref=f2e78]: "2"
+    - main [ref=f2e41]:
+      - generic [ref=f2e117]:
+        - generic [ref=f2e118]:
+          - generic [ref=f2e119]:
+            - heading "Portfolio" [level=1] [ref=f2e120]
+            - paragraph [ref=f2e121]: 6 of 6 plans
+          - textbox "Quick search…" [ref=f2e126]
+        - generic [ref=f2e127]:
+          - generic [ref=f2e128]:
+            - generic [ref=f2e129]: Status
+            - button "planned" [ref=f2e130] [cursor=pointer]
+            - button "in-progress" [ref=f2e131] [cursor=pointer]
+            - button "blocked" [ref=f2e132] [cursor=pointer]
+          - generic [ref=f2e133]:
+            - generic [ref=f2e134]: Priority
+            - button "next" [ref=f2e135] [cursor=pointer]
+            - button "high" [ref=f2e136] [cursor=pointer]
+            - button "medium" [ref=f2e137] [cursor=pointer]
+            - button "low" [ref=f2e138] [cursor=pointer]
+          - generic [ref=f2e139]:
+            - generic [ref=f2e140]: Impact
+            - button "critical" [ref=f2e141] [cursor=pointer]
+            - button "high" [ref=f2e142] [cursor=pointer]
+            - button "medium" [ref=f2e143] [cursor=pointer]
+            - button "low" [ref=f2e144] [cursor=pointer]
+          - generic [ref=f2e145]:
+            - generic [ref=f2e146]: Difficulty
+            - button "easy" [ref=f2e147] [cursor=pointer]
+            - button "medium" [ref=f2e148] [cursor=pointer]
+            - button "hard" [ref=f2e149] [cursor=pointer]
+          - generic [ref=f2e150]:
+            - generic [ref=f2e151]: Repo
+            - button "acorn-core" [ref=f2e152] [cursor=pointer]
+            - button "acorn-cli" [ref=f2e153] [cursor=pointer]
+            - button "acorn-ui" [ref=f2e154] [cursor=pointer]
+          - generic [ref=f2e155]:
+            - generic [ref=f2e156]: Tags
+            - generic [ref=f2e157]:
+              - button "#accessibility" [ref=f2e158] [cursor=pointer]
+              - button "#api" [ref=f2e159] [cursor=pointer]
+              - button "#architecture" [ref=f2e160] [cursor=pointer]
+              - button "#audit" [ref=f2e161] [cursor=pointer]
+              - button "#breaking-change" [ref=f2e162] [cursor=pointer]
+              - button "#chromatic" [ref=f2e163] [cursor=pointer]
+              - button "#ci" [ref=f2e164] [cursor=pointer]
+              - button "#cli" [ref=f2e165] [cursor=pointer]
+              - button "#compat" [ref=f2e166] [cursor=pointer]
+              - button "#contract" [ref=f2e167] [cursor=pointer]
+              - button "#css" [ref=f2e168] [cursor=pointer]
+              - button "#design" [ref=f2e169] [cursor=pointer]
+              - button "#freeze" [ref=f2e170] [cursor=pointer]
+              - button "#logging" [ref=f2e171] [cursor=pointer]
+              - button "#metrics" [ref=f2e172] [cursor=pointer]
+              - button "#observability" [ref=f2e173] [cursor=pointer]
+              - button "#schema" [ref=f2e174] [cursor=pointer]
+              - button "#storybook" [ref=f2e175] [cursor=pointer]
+              - button "#telemetry" [ref=f2e176] [cursor=pointer]
+              - button "#testing" [ref=f2e177] [cursor=pointer]
+              - button "#theming" [ref=f2e178] [cursor=pointer]
+              - button "#tokens" [ref=f2e179] [cursor=pointer]
+              - button "#versioning" [ref=f2e180] [cursor=pointer]
+              - button "#visual-regression" [ref=f2e181] [cursor=pointer]
+        - table [ref=f2e184]:
+          - rowgroup [ref=f2e185]:
+            - row [ref=f2e186]:
+              - columnheader "Title" [ref=f2e187] [cursor=pointer]
+              - columnheader "Status" [ref=f2e192] [cursor=pointer]
+              - columnheader "Priority" [ref=f2e197] [cursor=pointer]
+              - columnheader "Impact" [ref=f2e201] [cursor=pointer]
+              - columnheader "Difficulty" [ref=f2e206] [cursor=pointer]
+              - columnheader "Repo" [ref=f2e211]
+              - columnheader "Tags" [ref=f2e212]
+          - rowgroup [ref=f2e213]:
+            - row [ref=f2e214] [cursor=pointer]:
+              - cell "Implement API Versioning Strategy Design and roll out a versioned REST API layer with semver routing, deprecation…" [ref=f2e215]:
+                - generic [ref=f2e216]: Implement API Versioning Strategy
+                - generic [ref=f2e217]: Design and roll out a versioned REST API layer with semver routing, deprecation…
+              - cell "In Progress" [ref=f2e218]
+              - cell "next" [ref=f2e220]
+              - cell "critical" [ref=f2e222]
+              - cell "hard" [ref=f2e223]
+              - cell "acorn-core" [ref=f2e224]
+              - 'cell "#api #versioning #breaking-change +1" [ref=f2e227]':
+                - generic [ref=f2e228]:
+                  - generic [ref=f2e229]: "#api"
+                  - generic [ref=f2e230]: "#versioning"
+                  - generic [ref=f2e231]: "#breaking-change"
+                  - generic [ref=f2e232]: "+1"
+            - row [ref=f2e233] [cursor=pointer]:
+              - cell "Schema Contract Freeze v1 Lock all v1 field names and types before the versioning router ships." [ref=f2e234]:
+                - generic [ref=f2e235]: Schema Contract Freeze v1
+                - generic [ref=f2e236]: Lock all v1 field names and types before the versioning router ships.
+              - cell "Planned" [ref=f2e237]
+              - cell "high" [ref=f2e239]
+              - cell "high" [ref=f2e241]
+              - cell "medium" [ref=f2e242]
+              - cell "acorn-core" [ref=f2e243]
+              - 'cell "#schema #contract #freeze +1" [ref=f2e246]':
+                - generic [ref=f2e247]:
+                  - generic [ref=f2e248]: "#schema"
+                  - generic [ref=f2e249]: "#contract"
+                  - generic [ref=f2e250]: "#freeze"
+                  - generic [ref=f2e251]: "+1"
+            - row [ref=f2e252] [cursor=pointer]:
+              - cell "CLI Consumer Audit Before v2 Enumerate all public CLI commands and flags consumed by external scripts and CI…" [ref=f2e253]:
+                - generic [ref=f2e254]: CLI Consumer Audit Before v2
+                - generic [ref=f2e255]: Enumerate all public CLI commands and flags consumed by external scripts and CI…
+              - cell "Planned" [ref=f2e256]
+              - cell "high" [ref=f2e258]
+              - cell "medium" [ref=f2e260]
+              - cell "easy" [ref=f2e261]
+              - cell "acorn-cli" [ref=f2e262]
+              - 'cell "#cli #audit #compat +1" [ref=f2e265]':
+                - generic [ref=f2e266]:
+                  - generic [ref=f2e267]: "#cli"
+                  - generic [ref=f2e268]: "#audit"
+                  - generic [ref=f2e269]: "#compat"
+                  - generic [ref=f2e270]: "+1"
+            - row [ref=f2e271] [cursor=pointer]:
+              - cell "Build Internal Telemetry Pipeline Ship structured event logging from CLI and daemon, route to a local aggregator,…" [ref=f2e272]:
+                - generic [ref=f2e273]: Build Internal Telemetry Pipeline
+                - generic [ref=f2e274]: Ship structured event logging from CLI and daemon, route to a local aggregator,…
+              - cell "Blocked" [ref=f2e275]
+              - cell "medium" [ref=f2e277]
+              - cell "high" [ref=f2e279]
+              - cell "hard" [ref=f2e280]
+              - cell "acorn-core" [ref=f2e281]
+              - 'cell "#telemetry #observability #metrics +1" [ref=f2e284]':
+                - generic [ref=f2e285]:
+                  - generic [ref=f2e286]: "#telemetry"
+                  - generic [ref=f2e287]: "#observability"
+                  - generic [ref=f2e288]: "#metrics"
+                  - generic [ref=f2e289]: "+1"
+            - row [ref=f2e290] [cursor=pointer]:
+              - cell "Migrate to Semantic Design Tokens Replace hardcoded hex colours and pixel values with a token system compatible w…" [ref=f2e291]:
+                - generic [ref=f2e292]: Migrate to Semantic Design Tokens
+                - generic [ref=f2e293]: Replace hardcoded hex colours and pixel values with a token system compatible w…
+              - cell "In Progress" [ref=f2e294]
+              - cell "medium" [ref=f2e296]
+              - cell "medium" [ref=f2e298]
+              - cell "medium" [ref=f2e299]
+              - cell "acorn-ui" [ref=f2e300]
+              - 'cell "#design #tokens #theming +2" [ref=f2e303]':
+                - generic [ref=f2e304]:
+                  - generic [ref=f2e305]: "#design"
+                  - generic [ref=f2e306]: "#tokens"
+                  - generic [ref=f2e307]: "#theming"
+                  - generic [ref=f2e308]: "+2"
+            - row [ref=f2e309] [cursor=pointer]:
+              - cell "Storybook Visual Regression Testing Add Chromatic-based visual regression snapshots for all UI components, integrat…" [ref=f2e310]:
+                - generic [ref=f2e311]: Storybook Visual Regression Testing
+                - generic [ref=f2e312]: Add Chromatic-based visual regression snapshots for all UI components, integrat…
+              - cell "Planned" [ref=f2e313]
+              - cell "low" [ref=f2e315]
+              - cell "medium" [ref=f2e317]
+              - cell "medium" [ref=f2e318]
+              - cell "acorn-ui" [ref=f2e319]
+              - 'cell "#testing #storybook #visual-regression +2" [ref=f2e322]':
+                - generic [ref=f2e323]:
+                  - generic [ref=f2e324]: "#testing"
+                  - generic [ref=f2e325]: "#storybook"
+                  - generic [ref=f2e326]: "#visual-regression"
+                  - generic [ref=f2e327]: "+2"
+  - region "Notifications (F8)":
+    - list [ref=f2e106]:
+      - listitem [ref=f2e107]:
+        - generic [ref=f2e108]:
+          - generic [ref=f2e109]: Demo data loaded
+          - generic [ref=f2e110]: 6 synthetic plans across 3 repos
+        - button [ref=f2e111] [cursor=pointer]

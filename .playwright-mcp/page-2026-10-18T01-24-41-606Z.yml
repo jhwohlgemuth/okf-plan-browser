@@ -1,0 +1,38 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: .wiki
+          - generic [ref=e8]: Plan Browser
+        - paragraph [ref=e9]: 0 plans · 0 repos
+      - navigation [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: /home
+        - link "Portfolio" [ref=e15] [cursor=pointer]:
+          - /url: /portfolio
+        - link "Phase Tracker" [ref=e21] [cursor=pointer]:
+          - /url: /phases
+        - link "Dependency Graph" [ref=e26] [cursor=pointer]:
+          - /url: /graph
+        - link "Search" [ref=e33] [cursor=pointer]:
+          - /url: /search
+        - link "Settings" [ref=e37] [cursor=pointer]:
+          - /url: /settings
+    - main [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - heading "OKF Plan Browser" [level=1] [ref=e44]
+          - paragraph [ref=e45]: Browse, filter, and visualise .wiki/ markdown planning portfolios — dependency graphs, phase kanban, full-text search. Everything stays local; nothing is uploaded.
+        - generic [ref=e46]:
+          - generic [ref=e48] [cursor=pointer]:
+            - paragraph [ref=e52]: Drop a project or .wiki folder here
+            - paragraph [ref=e53]: or click to browse
+          - generic [ref=e54]: or
+          - button "Load Demo Data" [ref=e58] [cursor=pointer]
+          - paragraph [ref=e61]: Demo data is embedded — no files are read.
+        - generic [ref=e62]:
+          - heading "Expected .wiki format" [level=2] [ref=e63]
+          - generic [ref=e64]: "--- type: Plan title: \"My Plan\" description: \"What this is about\" difficulty: medium # easy | medium | hard impact: critical # low | medium | high | critical package: [pkg-a, pkg-b] tags: [feature, api] status: planned # planned | in-progress | blocked priority: next # next | high | medium | low execution: phased # phased | coordination phase_budget_hours: 5 --- # Goal Narrative... ## PA-01 Phase title **Status:** planned ..."
+  - region "Notifications (F8)":
+    - list

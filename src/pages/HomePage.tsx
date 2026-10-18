@@ -1,0 +1,162 @@
+import { Play, Trash2, AlertTriangle } from 'lucide-react';
+import { usePlanStore } from '@/store/planStore';
+import { FolderPicker } from '@/components/FolderPicker';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+
+export function HomePage() {
+  const { plans, repos, warnings, isDemoData, loadDemoData, removeRepo, clearAll } = usePlanStore();
+  const { toast } = useToast();
+
+  const isEmpty = plans.length === 0;
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
+      {/* Hero */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground mb-1">OKF Plan Browser</h1>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Browse, filter, and visualise{' '}
+          <span className="font-mono text-od-blue">.wiki/</span> markdown planning portfolios —
+          dependency graphs, phase kanban, full-text search. Everything stays local; nothing is uploaded.
+        </p>
+      </div>
+
+      {/* Load section */}
+      {isEmpty ? (
+        <div className="space-y-4">
+          <FolderPicker />
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              loadDemoData();
+              toast({ title: 'Demo data loaded', description: '6 synthetic plans across 3 repos' });
+            }}
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Load Demo Data
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Demo data is embedded — no files are read.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'Plans',    value: plans.length },
+              { label: 'Repos',    value: repos.length },
+              { label: 'Warnings', value: warnings.length },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-card border border-border rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-foreground font-mono">{value}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Repo list */}
+          <div className="bg-card border border-border rounded-xl divide-y divide-border">
+            {repos.map(repo => (
+              <div key={repo.id} className="flex items-center gap-3 px-4 py-3">
+                <span
+                  className="inline-block w-3 h-3 rounded-full shrink-0"
+                  style={{ background: repo.color }}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono text-sm text-foreground truncate">{repo.label}</span>
+                  {repo.uuid && (
+                    <span className="block font-mono text-[10px] text-muted-foreground truncate" title={repo.uuid}>
+                      {repo.uuid}
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">{repo.planCount} plan{repo.planCount !== 1 ? 's' : ''}</span>
+                {!isDemoData && (
+                  <button
+                    onClick={() => removeRepo(repo.id)}
+                    className="text-muted-foreground hover:text-od-red transition-colors p-1"
+                    title="Remove repo"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Add another .wiki */}
+          {!isDemoData && <FolderPicker label="+ Add another .wiki" compact />}
+
+          {/* Warnings */}
+          {warnings.length > 0 && (
+            <div className="bg-od-yellow/10 border border-od-yellow/30 rounded-xl p-4 space-y-1.5">
+              <div className="flex items-center gap-2 text-od-yellow text-xs font-semibold mb-2">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {warnings.length} parse warning{warnings.length !== 1 ? 's' : ''}
+              </div>
+              {warnings.slice(0, 5).map((w, i) => (
+                <div key={i} className="text-xs text-muted-foreground font-mono">
+                  {w.repoId}/{w.fileName}: {w.errors[0]}
+                </div>
+              ))}
+              {warnings.length > 5 && (
+                <p className="text-xs text-muted-foreground">…and {warnings.length - 5} more</p>
+              )}
+            </div>
+          )}
+
+          {/* Clear all */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-od-red"
+            onClick={() => {
+              clearAll();
+              toast({ title: 'Cleared all plans' });
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear all data
+          </Button>
+        </div>
+      )}
+
+      {/* Format reference */}
+      <div className="border-t border-border pt-6">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Expected .wiki format
+        </h2>
+        <pre className="bg-card border border-border rounded-xl p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">{`---
+type: Plan
+title: "My Plan"
+description: "What this is about"
+difficulty: medium        # easy | medium | hard
+impact: critical          # low | medium | high | critical
+package: [pkg-a, pkg-b]
+tags: [feature, api]
+status: planned           # planned | in-progress | blocked
+priority: next            # next | high | medium | low
+execution: phased         # phased | coordination
+phase_budget_hours: 5
+---
+
+# Goal
+Narrative...
+
+## PA-01 Phase title
+**Status:** planned
+...`}</pre>
+      </div>
+    </div>
+  );
+}
+
+
