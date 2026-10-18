@@ -90,7 +90,7 @@ export function SearchPage() {
             placeholder="Search titles, descriptions, sections, phases, tags…"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            autoFocus
+            autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- search is the page's primary action
           />
         </div>
         {query && (
@@ -122,8 +122,14 @@ export function SearchPage() {
           return (
             <div
               key={plan.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open plan: ${plan.frontmatter.title ?? plan.fileName}`}
               onClick={() => selectPlan(plan.id)}
-              className="px-5 py-4 cursor-pointer hover:bg-accent/40 transition-colors"
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); }
+              }}
+              className="px-5 py-4 cursor-pointer hover:bg-accent/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             >
               {/* Title row */}
               <div className="flex items-start justify-between gap-3 mb-2">

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FolderOpen, Upload } from 'lucide-react';
 import { useFileSystem } from '@/hooks/useFileSystem';
 import { Button } from './ui/button';
-import { cn } from '@/lib/utils';
+import { cn, onActivateKey } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
@@ -94,7 +94,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
           }}
         >
           <Input
-            autoFocus
+            autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- dialog's only field
             value={projectName}
             onChange={e => setProjectName(e.target.value)}
             placeholder="e.g. acorn (optional)"
@@ -157,14 +157,14 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
         {fallbackInput}
         {nameDialog}
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
-          <div className={cardClass} onClick={handleOpen} {...dropProps}>
+          <div className={cardClass} role="button" tabIndex={0} onKeyDown={onActivateKey(handleOpen)} onClick={handleOpen} {...dropProps}>
             <FolderOpen className="h-5 w-5 text-od-blue" />
             <p className="text-xs font-semibold text-foreground">{loading ? 'Parsing files…' : 'Open Folder'}</p>
             <p className="text-[10px] leading-tight text-muted-foreground">
               Uses File System Access API to read .md files
             </p>
           </div>
-          <div className={cardClass} onClick={handleOpen} {...dropProps}>
+          <div className={cardClass} role="button" tabIndex={0} onKeyDown={onActivateKey(handleOpen)} onClick={handleOpen} {...dropProps}>
             <Upload className="h-5 w-5 text-od-green" />
             <p className="text-xs font-semibold text-foreground">Drop Files</p>
             <p className="text-[10px] leading-tight text-muted-foreground">Drag .md files onto this area</p>
@@ -189,6 +189,9 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={handleOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={onActivateKey(handleOpen)}
       >
         <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
         <p className="text-sm font-medium text-foreground">

@@ -77,8 +77,14 @@ export function KanbanBoard() {
                 return (
                   <div
                     key={`${plan.id}:${phase.id}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open plan ${plan.id} phase ${phase.id}`}
                     onClick={() => selectPlan(plan.id)}
-                    className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); }
+                    }}
+                    className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {/* Phase ID + status */}
                     <div className="flex items-center justify-between gap-2 mb-1.5">

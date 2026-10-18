@@ -54,7 +54,7 @@ difficulty: medium          # easy | medium | hard
 impact: critical            # low | medium | high | critical
 package: [workspace, acorn-lib]
 tags: [feature, automation]
-status: planned             # planned | in-progress | blocked
+status: planned             # planned | ready | in-progress | blocked | waiting-on-validation
 priority: next              # next | high | medium | low
 execution: phased           # phased | coordination
 phase_budget_hours: 5
@@ -75,7 +75,7 @@ Phase body with cross-references like PA-02, PA-03...
 ```
 
 **Notes:**
-- Status values are `planned | in-progress | blocked` — completed plans are **deleted** from `.wiki/`, not marked done.
+- Status values are `planned | ready | in-progress | blocked | waiting-on-validation` — completed plans are **deleted** from `.wiki/`, not marked done.
 - Phase IDs follow the pattern `PA-01`, `PA-02`, etc. (or `1.`, `2.` numbered variants).
 - Dependency links use standard markdown: `[text](../relative/path.md)`.
 - Each repo has one `.wiki/` root folder containing multiple `.md` plan files.
@@ -142,36 +142,34 @@ git tag v1.0.1 && git push origin v1.0.1
 ```
 okf-plan-browser/
 ├── src/
+│   ├── App.tsx, main.tsx, index.css
 │   ├── types/wiki.ts          ← TypeScript interfaces for the .wiki format
 │   ├── lib/
 │   │   ├── wikiParser.ts      ← YAML frontmatter + markdown body parser
-│   │   ├── demoData.ts        ← 6 embedded synthetic plans
-│   │   └── utils.ts           ← cn(), truncate(), debounce()
+│   │   ├── commitWiki.ts      ← Parse + commit a wiki into the store
+│   │   ├── handleStore.ts     ← Persists directory handles (IndexedDB) for refresh
+│   │   ├── demoData.ts        ← Embedded synthetic plans
+│   │   ├── names.ts           ← Project name helpers
+│   │   └── utils.ts           ← cn(), truncate(), debounce(), onActivateKey()
 │   ├── store/
 │   │   ├── planStore.ts       ← Zustand store for plans, repos, filters
 │   │   └── themeStore.ts      ← Zustand + persist for theme
 │   ├── hooks/
 │   │   ├── useFileSystem.ts   ← showDirectoryPicker + drag-drop
-│   │   └── useTheme.ts        ← syncs theme store to DOM
+│   │   └── useRefresh.ts      ← One-click wiki refresh
+│   ├── test/                  ← Vitest setup and file-handle stubs
 │   ├── components/
 │   │   ├── ui/                ← shadcn/ui primitives (Radix + CVA)
-│   │   ├── Layout.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── PlanTable.tsx
-│   │   ├── PlanDetailPanel.tsx
-│   │   ├── KanbanBoard.tsx
+│   │   ├── Layout.tsx, Sidebar.tsx
+│   │   ├── PlanTable.tsx, KanbanBoard.tsx, FilterBar.tsx
+│   │   ├── PlanDetailPanel.tsx, Markdown.tsx
 │   │   ├── DependencyGraph.tsx ← D3 force-directed
-│   │   ├── FilterBar.tsx
-│   │   ├── FolderPicker.tsx
-│   │   ├── StatusBadge.tsx
-│   │   └── PriorityBadge.tsx
+│   │   ├── FolderPicker.tsx, LoadingOverlay.tsx
+│   │   ├── StatusBadge.tsx, PriorityBadge.tsx
+│   │   └── ErrorFallback.tsx, RouteFallback.tsx, NotFoundPage.tsx
 │   └── pages/
-│       ├── HomePage.tsx
-│       ├── PortfolioPage.tsx
-│       ├── PhasesPage.tsx
-│       ├── GraphPage.tsx
-│       ├── SearchPage.tsx
-│       └── SettingsPage.tsx
+│       ├── HomePage.tsx, PortfolioPage.tsx, PhasesPage.tsx
+│       └── GraphPage.tsx, SearchPage.tsx, SettingsPage.tsx, AboutPage.tsx
 ├── src-tauri/                 ← Tauri desktop packaging
 ├── .github/workflows/
 │   ├── ci.yml                 ← Lint + typecheck + build on PRs
@@ -198,7 +196,7 @@ okf-plan-browser/
 | Graph | D3 7 (force simulation) |
 | YAML | js-yaml 4 |
 | Icons | Lucide React |
-| Animation | Framer Motion |
+| Animation | CSS keyframes |
 | Desktop | Tauri 1.6 (optional) |
 
 ---

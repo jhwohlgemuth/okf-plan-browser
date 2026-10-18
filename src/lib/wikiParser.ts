@@ -23,7 +23,7 @@ export function parseFrontmatter(raw: string): { fm: Frontmatter; body: string; 
   }
   let fm: Frontmatter = { title: 'Untitled' };
   try {
-    const parsed = (yaml.load(match[1]) ?? {}) as Record<string, unknown>;
+    const parsed = (yaml.load(match[1] ?? '') ?? {}) as Record<string, unknown>;
     fm = {
       ...parsed,
       title:    String(parsed.title ?? 'Untitled'),
@@ -33,7 +33,7 @@ export function parseFrontmatter(raw: string): { fm: Frontmatter; body: string; 
   } catch (e) {
     errors.push(`YAML parse error: ${(e as Error).message}`);
   }
-  return { fm, body: match[2], errors };
+  return { fm, body: match[2] ?? '', errors };
 }
 
 // ─── Phases ───────────────────────────────────────────────────────────────────
@@ -42,6 +42,7 @@ const PHASE_ID_RE = /^([A-Z][A-Z0-9]*-\d+|[Pp]hase\s+\d+|\d+)/;
 // Accepts "**Status:** x", "- Status: x", "- **Status**: x", optional backticks, and spaces instead of hyphens.
 const STATUS_RE = /^[ \t>*-]*\**Status\**[ \t]*:[ \t]*\**[ \t]*`?(planned|ready|blocked|in[- ]progress|waiting[- ]on[- ]validation)\b/im;
 const REF_RE = /\b([A-Z][A-Z0-9]*-\d+)\b/g;
+const refsOf = (text: string) => [...text.matchAll(REF_RE)].flatMap(m => (m[1] ? [m[1]] : []));
 
 const LIST_ITEM_RE = /^\s*(\d+)[.)]\s+(.+(?:\n(?!\s*\d+[.)]\s|\s*$)[ \t]+.+)*)/gm;
 const PHASES_HEADING_RE = /\bphases?\b/i;
@@ -49,14 +50,14 @@ const PHASES_HEADING_RE = /\bphases?\b/i;
 /** Numbered items under a "... phases" heading, e.g. "1. Qualify OCI artifact handling, ...". */
 function parseListPhases(text: string, defaultStatus: PhaseStatus): Phase[] {
   return [...text.matchAll(LIST_ITEM_RE)].map((m): Phase => {
-    const rawBody = m[2].trim();
-    const title = rawBody.split(/(?<=[.;:])\s/)[0].replace(/[.;:]$/, '');
+    const rawBody = (m[2] ?? '').trim();
+    const title = (rawBody.split(/(?<=[.;:])\s/)[0] ?? '').replace(/[.;:]$/, '');
     return {
-      id: `Phase ${m[1]}`,
+      id: `Phase ${m[1] ?? ''}`,
       title,
       rawBody,
       status: normalizeStatus(STATUS_RE.exec(rawBody)?.[1]) ?? defaultStatus,
-      refs: [...rawBody.matchAll(REF_RE)].map(r => r[1]),
+      refs: refsOf(rawBody),
     };
   });
 }
@@ -68,7 +69,7 @@ function normalizeStatus(s?: string): PhaseStatus | undefined {
 function parsePhases(text: string, defaultStatus: PhaseStatus): Phase[] {
   const chunks = text.split(/^(?=## )/m).filter(Boolean);
   return chunks.flatMap((chunk): Phase[] => {
-    const firstLine = chunk.split('\n')[0].replace(/^## /, '').trim();
+    const firstLine = (chunk.split('\n')[0] ?? '').replace(/^## /, '').trim();
     const rawBody = chunk.split('\n').slice(1).join('\n');
     const idMatch = PHASE_ID_RE.exec(firstLine);
     if (!idMatch) {
@@ -76,12 +77,12 @@ function parsePhases(text: string, defaultStatus: PhaseStatus): Phase[] {
         ? parseListPhases(rawBody, defaultStatus)
         : [];
     }
-    const id = idMatch[1];
+    const id = idMatch[1] ?? '';
     // Strip leading punctuation separators from the phase title
     const titlePrefix = new RegExp('^[' + ['-', ':', '.', '\u2013', '\u2014'].join('') + ']\\s*');
     const title = firstLine.slice(id.length).trim().replace(titlePrefix, '');
     const status = normalizeStatus(STATUS_RE.exec(rawBody)?.[1]) ?? defaultStatus;
-    const refs = [...rawBody.matchAll(REF_RE)].map(m => m[1]).filter(r => r !== id);
+    const refs = refsOf(rawBody).filter(r => r !== id);
     return [{ id, title, rawBody, status, refs }];
   });
 }
@@ -93,7 +94,7 @@ export function extractSections(body: string, defaultStatus: PhaseStatus = 'plan
   return parts.map((part): Section => {
     if (!part.startsWith('# ')) return { heading: '', body: part, phases: [] };
     const lines = part.split('\n');
-    const heading = lines[0].replace(/^# /, '').trim();
+    const heading = (lines[0] ?? '').replace(/^# /, '').trim();
     const rest = lines.slice(1).join('\n');
     let phases = parsePhases(rest, defaultStatus);
     if (!phases.length && part.startsWith('# ') && PHASES_HEADING_RE.test(heading)) {
@@ -108,21 +109,26 @@ export function extractSections(body: string, defaultStatus: PhaseStatus = 'plan
 const LINK_RE = /\[([^\]]+)\]\(([^)]+\.md[^)]*)\)/g;
 
 export function extractDependencies(body: string): PlanDependency[] {
-  const deps: PlanDependency[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = LINK_RE.exec(body)) !== null) {
-    deps.push({ text: m[1], href: m[2] });
-  }
-  return deps;
+  return [...body.matchAll(LINK_RE)].map(m => ({ text: m[1] ?? '', href: m[2] ?? '' }));
 }
 
 // ─── Phase refs (all PA-XX in the entire file) ───────────────────────────────
 
 export function extractPhaseRefs(body: string): string[] {
-  return [...new Set([...body.matchAll(/\b([A-Z][A-Z0-9]*-\d+)\b/g)].map(m => m[1]))];
+  return [...new Set(refsOf(body))];
 }
 
 // ─── Full file parser ─────────────────────────────────────────────────────────
+
+export function buildSearchText(p: Pick<ParsedPlan, 'frontmatter' | 'sections'>): string {
+  const fm = p.frontmatter;
+  return [
+    fm.title, fm.description,
+    ...(fm.tags ?? []), ...(fm.package ?? []),
+    ...p.sections.map(s => s.heading + ' ' + s.body),
+    ...p.sections.flatMap(s => s.phases.map(ph => ph.title)),
+  ].join(' ').toLowerCase();
+}
 
 export function parseWikiFile(
   repoId: string,
@@ -137,11 +143,11 @@ export function parseWikiFile(
     id:           `${repoId}:${fileName}`,
     repoId,
     fileName,
-    raw,
     frontmatter:  fm,
     sections,
     dependencies,
     phaseRefs,
+    searchText:   buildSearchText({ frontmatter: fm, sections }),
     parseErrors:  errors,
   };
 }

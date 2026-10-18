@@ -25,6 +25,7 @@ function ToggleGroup<T extends string>({
       {options.map(o => (
         <button
           key={o}
+          aria-pressed={selected.includes(o)}
           onClick={() => toggle(o)}
           className={`text-xs px-2.5 py-1 rounded-md border transition-colors font-medium capitalize ${
             selected.includes(o)
@@ -40,7 +41,11 @@ function ToggleGroup<T extends string>({
 }
 
 export function FilterBar() {
-  const { filters, setFilter, clearFilters, plans, repos } = usePlanStore();
+  const filters      = usePlanStore(s => s.filters);
+  const setFilter    = usePlanStore(s => s.setFilter);
+  const clearFilters = usePlanStore(s => s.clearFilters);
+  const plans        = usePlanStore(s => s.plans);
+  const repos        = usePlanStore(s => s.repos);
 
   // Collect all tags and packages from loaded plans
   const allTags = [...new Set(plans.flatMap(p => p.frontmatter.tags ?? []))].sort();
@@ -88,6 +93,7 @@ export function FilterBar() {
             return (
               <button
                 key={r.id}
+                aria-pressed={active}
                 onClick={() => setFilter('repos', active ? filters.repos.filter(id => id !== r.id) : [...filters.repos, r.id])}
                 className={`text-xs px-2.5 py-1 rounded-md border transition-colors font-mono ${
                   active
@@ -113,6 +119,7 @@ export function FilterBar() {
               return (
                 <button
                   key={t}
+                  aria-pressed={active}
                   onClick={() => setFilter('tags', active ? filters.tags.filter(x => x !== t) : [...filters.tags, t])}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     active ? 'bg-accent text-accent-foreground border-border' : 'text-muted-foreground border-border/50 hover:border-border'
@@ -136,6 +143,7 @@ export function FilterBar() {
               return (
                 <button
                   key={pkg}
+                  aria-pressed={active}
                   onClick={() => setFilter('packages', active ? filters.packages.filter(x => x !== pkg) : [...filters.packages, pkg])}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors font-mono ${
                     active ? 'bg-accent text-accent-foreground border-border' : 'text-muted-foreground border-border/50 hover:border-border'

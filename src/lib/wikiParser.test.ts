@@ -1,0 +1,91 @@
+import { describe, it, expect } from 'vitest';
+import { parseFrontmatter, extractSections, isPlanFile } from '@/lib/wikiParser';
+
+describe('parseFrontmatter', () => {
+  it('parses a basic block', () => {
+    const { fm, body, errors } = parseFrontmatter('---\ntitle: Hello\nstatus: planned\n---\n# Goal\nx\n');
+    expect(errors).toEqual([]);
+    expect(fm.title).toBe('Hello');
+    expect(fm.status).toBe('planned');
+    expect(body).toBe('# Goal\nx\n');
+  });
+
+  it('reports a missing block', () => {
+    const r = parseFrontmatter('# Just a heading\n');
+    expect(r.errors).toEqual(['No YAML frontmatter block found']);
+    expect(r.fm.title).toBe('Untitled');
+    expect(r.body).toBe('# Just a heading\n');
+  });
+
+  it('reports YAML errors with the surfaced prefix', () => {
+    const r = parseFrontmatter('---\ntitle: [unclosed\n---\nbody');
+    expect(r.errors).toHaveLength(1);
+    expect(r.errors[0]).toMatch(/^YAML parse error: /);
+    expect(r.fm.title).toBe('Untitled');
+  });
+
+  it('strips a BOM', () => {
+    const r = parseFrontmatter('\uFEFF---\ntitle: Bom\n---\nbody');
+    expect(r.errors).toEqual([]);
+    expect(r.fm.title).toBe('Bom');
+  });
+
+  it('handles CRLF line endings', () => {
+    const r = parseFrontmatter('---\r\ntitle: Crlf\r\n---\r\nbody');
+    expect(r.fm.title).toBe('Crlf');
+    expect(r.body).toBe('body');
+  });
+
+  it('splits scalar and comma-separated tags and packages into arrays', () => {
+    const r = parseFrontmatter('---\ntitle: T\ntags: a, b c\npackage: solo\n---\n');
+    expect(r.fm.tags).toEqual(['a', 'b', 'c']);
+    expect(r.fm.package).toEqual(['solo']);
+  });
+
+  it('keeps list tags and defaults absent ones to empty arrays', () => {
+    const r = parseFrontmatter('---\ntitle: T\ntags: [x, y]\n---\n');
+    expect(r.fm.tags).toEqual(['x', 'y']);
+    expect(r.fm.package).toEqual([]);
+  });
+
+  it('handles an empty frontmatter block', () => {
+    const r = parseFrontmatter('---\n\n---\nbody');
+    expect(r.fm.title).toBe('Untitled');
+  });
+});
+
+describe('extractSections', () => {
+  it('splits on H1 headings', () => {
+    const s = extractSections('# Goal\nA\n# Boundaries\nB\n');
+    expect(s.map(x => x.heading)).toEqual(['Goal', 'Boundaries']);
+    expect(s[0]?.body).toBe('A\n');
+  });
+
+  it('keeps leading text as a headless section', () => {
+    const s = extractSections('intro\n# Goal\nA');
+    expect(s[0]).toMatchObject({ heading: '', phases: [] });
+    expect(s[1]?.heading).toBe('Goal');
+  });
+
+  it('returns nothing for an empty body', () => {
+    expect(extractSections('')).toEqual([]);
+    expect(extractSections('  \n')).toEqual([]);
+  });
+});
+
+describe('isPlanFile', () => {
+  it('rejects files without frontmatter or with errors', () => {
+    expect(isPlanFile('# no frontmatter')).toBe(false);
+    expect(isPlanFile('---\ntitle: [x\n---\n')).toBe(false);
+  });
+
+  it('honours the type field', () => {
+    expect(isPlanFile('---\ntype: Plan\ntitle: A\n---\n')).toBe(true);
+    expect(isPlanFile('---\ntype: Index\ntitle: A\n---\n')).toBe(false);
+  });
+
+  it('falls back to the presence of a title', () => {
+    expect(isPlanFile('---\ntitle: A\n---\n')).toBe(true);
+    expect(isPlanFile('---\ndescription: d\n---\n')).toBe(false);
+  });
+});

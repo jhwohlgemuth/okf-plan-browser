@@ -15,7 +15,7 @@ export interface PendingWiki {
 export interface LoadProgress { done: number; total?: number }
 
 export function useFileSystem() {
-  const { repos } = usePlanStore();
+  const repos = usePlanStore(s => s.repos);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState<LoadProgress | null>(null);

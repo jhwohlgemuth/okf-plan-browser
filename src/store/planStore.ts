@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { ParsedPlan, WikiRepo, PlanFilters, ParseWarning } from '@/types/wiki';
 import { DEMO_PLANS, DEMO_REPOS } from '@/lib/demoData';
+import { buildSearchText } from '@/lib/wikiParser';
 import { newUuid } from '@/lib/utils';
 
 interface PlanStore {
@@ -123,16 +124,16 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
     const s = (saved ?? {}) as Partial<PlanStore>;
     return {
       ...current,
-      plans:    s.plans ?? [],
+      plans:    (s.plans ?? []).map(p => ({ ...p, searchText: buildSearchText(p) })),
       repos:    (s.repos ?? []).map(r => ({ ...r, uuid: r.uuid ?? newUuid() })),
       warnings: s.warnings ?? [],
     };
   },
-  // Demo data is never saved; raw markdown is dropped (sections already hold the content) to save space.
+  // Demo data is never saved; the derived search text is rebuilt on load rather than stored.
   partialize: s => s.isDemoData
     ? { plans: [], repos: [], warnings: [] }
     : {
-        plans:    s.plans.map(p => ({ ...p, raw: '' })),
+        plans:    s.plans.map(p => ({ ...p, searchText: undefined })),
         repos:    s.repos,
         warnings: s.warnings,
       },
@@ -153,13 +154,7 @@ export function selectFilteredPlans(s: PlanStore): ParsedPlan[] {
     if (f.packages.length   && !f.packages.some(pk => fm.package?.includes(pk))) return false;
     if (f.search) {
       const q = f.search.toLowerCase();
-      const haystack = [
-        fm.title, fm.description,
-        ...(fm.tags ?? []), ...(fm.package ?? []),
-        ...p.sections.map(s => s.heading + ' ' + s.body),
-        ...p.sections.flatMap(s => s.phases.map(ph => ph.title)),
-      ].join(' ').toLowerCase();
-      if (!haystack.includes(q)) return false;
+      if (!(p.searchText ?? buildSearchText(p)).includes(q)) return false;
     }
     return true;
   });

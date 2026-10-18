@@ -185,3 +185,24 @@
   .md-body .md-broken-link { @apply text-muted-foreground underline decoration-dotted underline-offset-2 cursor-help; }
 }
 
+
+@keyframes okf-panel-in {
+  0%   { transform: translateX(100%); }
+  70%  { transform: translateX(-1.5%); }
+  100% { transform: translateX(0); }
+}
+@keyframes okf-panel-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+@keyframes okf-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes okf-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+.okf-panel-in   { animation: okf-panel-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.okf-panel-out  { animation: okf-panel-out 200ms ease-in both; }
+.okf-fade-in    { animation: okf-fade-in 200ms ease-out both; }
+.okf-fade-out   { animation: okf-fade-out 200ms ease-in both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .okf-panel-in, .okf-panel-out, .okf-fade-in, .okf-fade-out { animation-duration: 1ms; }
+}

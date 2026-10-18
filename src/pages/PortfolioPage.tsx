@@ -1,4 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
+import { debounce } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { FilterBar } from '@/components/FilterBar';
 import { PlanTable } from '@/components/PlanTable';
@@ -8,7 +10,16 @@ import { Search } from 'lucide-react';
 export function PortfolioPage() {
   const filtered = usePlanStore(useShallow(selectFilteredPlans));
   const total    = usePlanStore(s => s.plans.length);
-  const { filters, setFilter } = usePlanStore();
+  const search    = usePlanStore(s => s.filters.search);
+  const setFilter = usePlanStore(s => s.setFilter);
+  const [query, setQuery] = useState(search);
+
+  useEffect(() => { setQuery(search); }, [search]);
+
+  const commit = useMemo(
+    () => debounce((value: unknown) => setFilter('search', String(value)), 200),
+    [setFilter],
+  );
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -25,8 +36,8 @@ export function PortfolioPage() {
           <Input
             className="pl-8 h-8 text-xs"
             placeholder="Quick search…"
-            value={filters.search}
-            onChange={e => setFilter('search', e.target.value)}
+            value={query}
+            onChange={e => { setQuery(e.target.value); commit(e.target.value); }}
           />
         </div>
       </div>

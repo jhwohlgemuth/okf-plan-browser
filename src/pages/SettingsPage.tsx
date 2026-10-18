@@ -13,7 +13,14 @@ const THEMES: { value: Theme; label: string; icon: React.ComponentType<{ classNa
 
 export function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
-  const { warnings, clearAll, clearSavedData, removeRepo, repos, plans, isDemoData, storageError } = usePlanStore();
+  const warnings       = usePlanStore(s => s.warnings);
+  const clearAll       = usePlanStore(s => s.clearAll);
+  const clearSavedData = usePlanStore(s => s.clearSavedData);
+  const removeRepo     = usePlanStore(s => s.removeRepo);
+  const repos          = usePlanStore(s => s.repos);
+  const plans          = usePlanStore(s => s.plans);
+  const isDemoData     = usePlanStore(s => s.isDemoData);
+  const storageError   = usePlanStore(s => s.storageError);
   const savedBytes = (() => {
     try { return (localStorage.getItem(PLAN_STORAGE_KEY) ?? '').length * 2; } catch { return 0; }
   })();
@@ -148,12 +155,12 @@ export function SettingsPage() {
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">About</h2>
         <div className="bg-card border border-border rounded-xl p-4 space-y-1.5 text-xs text-muted-foreground">
-          <p><span className="text-foreground font-medium">OKF Plan Browser</span> — v1.0.0</p>
+          <p><span className="text-foreground font-medium">OKF Plan Browser</span> — v{__APP_VERSION__}</p>
           <p>Parses <span className="font-mono">.wiki/</span> markdown planning portfolios client-side. No data leaves your machine.</p>
-          <p>Stack: React 18 · Vite 5 · shadcn/ui · Tailwind · D3 · Zustand · Framer Motion</p>
+          <p>Stack: React 18 · Vite 6 · shadcn/ui · Tailwind · D3 · Zustand</p>
           <p className="pt-2 border-t border-border">
             <a
-              href="https://github.com/YOUR_USERNAME/okf-plan-browser"
+              href="https://github.com/jhwohlgemuth/okf-plan-browser"
               target="_blank"
               rel="noopener noreferrer"
               className="text-od-blue hover:underline"

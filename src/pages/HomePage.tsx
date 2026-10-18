@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
 export function HomePage() {
-  const { plans, repos, warnings, isDemoData, loadDemoData, removeRepo, clearAll } = usePlanStore();
+  const plans       = usePlanStore(s => s.plans);
+  const repos       = usePlanStore(s => s.repos);
+  const warnings    = usePlanStore(s => s.warnings);
+  const isDemoData  = usePlanStore(s => s.isDemoData);
+  const loadDemoData = usePlanStore(s => s.loadDemoData);
+  const removeRepo  = usePlanStore(s => s.removeRepo);
+  const clearAll    = usePlanStore(s => s.clearAll);
   const { toast } = useToast();
 
   const isEmpty = plans.length === 0;

@@ -67,13 +67,18 @@ export function PlanTable() {
 
   const col = (key: SortKey, label: string, extra = '') => (
     <th
-      className={cn('px-3 py-2.5 text-left text-xs font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap', extra)}
-      onClick={() => handleSort(key)}
+      scope="col"
+      aria-sort={sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={cn('px-3 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap', extra)}
     >
-      <span className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => handleSort(key)}
+        className="flex items-center gap-1 select-none rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         {label}
         <SortIcon active={sortKey === key} dir={sortDir} />
-      </span>
+      </button>
     </th>
   );
 
@@ -98,8 +103,14 @@ export function PlanTable() {
             return (
               <tr
                 key={plan.id}
+                tabIndex={0}
+                role="button"
+                aria-label={`Open plan: ${fm.title ?? plan.fileName}`}
                 onClick={() => selectPlan(plan.id)}
-                className="border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); }
+                }}
+                className="border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
               >
                 {/* Title */}
                 <td className="px-3 py-2.5">

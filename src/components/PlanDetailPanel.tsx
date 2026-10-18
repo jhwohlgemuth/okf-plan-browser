@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { usePlanStore } from '@/store/planStore';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
@@ -15,7 +14,12 @@ const IMPACT_CLASSES: Record<string, string> = {
 };
 
 export function PlanDetailPanel() {
-  const { plans, selectedPlanId, detailOpen, closeDetail, repos, selectPlan } = usePlanStore();
+  const plans          = usePlanStore(s => s.plans);
+  const selectedPlanId = usePlanStore(s => s.selectedPlanId);
+  const detailOpen     = usePlanStore(s => s.detailOpen);
+  const closeDetail    = usePlanStore(s => s.closeDetail);
+  const repos          = usePlanStore(s => s.repos);
+  const selectPlan     = usePlanStore(s => s.selectPlan);
   const plan = plans.find(p => p.id === selectedPlanId);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +29,7 @@ export function PlanDetailPanel() {
   /** Resolve a relative .md link against the current plan's path, within the same wiki. */
   const resolveLink = (href: string) => {
     if (!plan) return null;
-    const pathPart = href.split('#')[0].split('?')[0];
+    const pathPart = (href.split('#')[0] ?? '').split('?')[0] ?? '';
     if (!pathPart) return null;
     let resolved: string;
     try {
@@ -45,28 +49,74 @@ export function PlanDetailPanel() {
     return () => window.removeEventListener('keydown', handler);
   }, [closeDetail]);
 
-  return (
-    <AnimatePresence>
-      {detailOpen && plan && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 z-40 bg-black/40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeDetail}
-          />
+  const open = detailOpen && !!plan;
+  const [mounted, setMounted] = useState(open);
+  const trigger = useRef<HTMLElement | null>(null);
 
-          {/* Panel */}
-          <motion.div
-            ref={panelRef}
-            className="fixed right-0 top-0 z-50 h-dvh w-full sm:w-[70vw] lg:w-[60vw] max-w-[1100px] bg-card border-l border-border shadow-2xl overflow-y-auto"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-          >
+  useEffect(() => {
+    if (open) {
+      if (!mounted) trigger.current = document.activeElement as HTMLElement | null;
+      setMounted(true);
+      return;
+    }
+    if (!mounted) return;
+    const t = setTimeout(() => {
+      setMounted(false);
+      trigger.current?.focus();
+      trigger.current = null;
+    }, 200);
+    return () => clearTimeout(t);
+  }, [open, mounted]);
+
+  useEffect(() => {
+    if (open && mounted) panelRef.current?.focus();
+  }, [open, mounted]);
+
+  const trapFocus = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab') return;
+    const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (!nodes || nodes.length === 0) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (!first || !last) return;
+    const active = document.activeElement;
+    if (e.shiftKey && (active === first || active === panelRef.current)) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  if (!mounted || !plan) return null;
+  const closing = !open;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        className={cn('fixed inset-0 z-40 bg-black/40', closing ? 'okf-fade-out' : 'okf-fade-in')}
+        onClick={closeDetail}
+      />
+
+      {/* Panel */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- dialog focus trap */}
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="plan-detail-title"
+        tabIndex={-1}
+        onKeyDown={trapFocus}
+        className={cn(
+          'fixed right-0 top-0 z-50 h-dvh w-full sm:w-[70vw] lg:w-[60vw] max-w-[1100px] bg-card border-l border-border shadow-2xl overflow-y-auto outline-none',
+          closing ? 'okf-panel-out' : 'okf-panel-in',
+        )}
+      >
             {/* Header */}
             <div className="sticky top-0 bg-card border-b border-border px-6 sm:px-8 py-5 flex items-start justify-between gap-3 z-10">
               <div className="flex-1 min-w-0">
@@ -78,10 +128,11 @@ export function PlanDetailPanel() {
                     </span>
                   )}
                 </div>
-                <h2 className="text-base font-semibold text-foreground leading-tight">{fm?.title}</h2>
+                <h2 id="plan-detail-title" className="text-base font-semibold text-foreground leading-tight">{fm?.title}</h2>
               </div>
               <button
                 onClick={closeDetail}
+                                aria-label="Close plan details"
                 className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -209,10 +260,8 @@ export function PlanDetailPanel() {
                 {plan.repoId}/{plan.fileName}
               </p>
             </div>
-          </motion.div>
+          </div>
         </>
-      )}
-    </AnimatePresence>
   );
 }
 

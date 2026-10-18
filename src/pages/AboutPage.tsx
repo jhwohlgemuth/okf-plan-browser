@@ -1,7 +1,7 @@
 import { ExternalLink, Box, Lock } from 'lucide-react';
 import {
-  siReact, siVite, siTypescript, siTailwindcss, siTauri, siFramer, siReactrouter,
-  siRadixui, siReactquery, siD3, siMarkdown, siYaml, siLucide, siGithubcopilot,
+  siReact, siVite, siTypescript, siTailwindcss, siTauri, siReactrouter,
+  siRadixui, siD3, siMarkdown, siYaml, siLucide, siGithubcopilot,
   type SimpleIcon,
 } from 'simple-icons';
 
@@ -17,9 +17,7 @@ const TECH: Tech[] = [
   { name: 'Radix UI',       url: 'https://www.radix-ui.com',           icon: siRadixui,     note: 'Accessible primitives' },
   { name: 'Zustand',        url: 'https://zustand.docs.pmnd.rs',                            note: 'State management' },
   { name: 'React Router',   url: 'https://reactrouter.com',            icon: siReactrouter, note: 'Routing' },
-  { name: 'TanStack Query', url: 'https://tanstack.com/query',         icon: siReactquery,  note: 'Async state' },
   { name: 'D3',             url: 'https://d3js.org',                   icon: siD3,          note: 'Dependency graph' },
-  { name: 'Framer Motion',  url: 'https://motion.dev',                 icon: siFramer,      note: 'Animation' },
   { name: 'Lucide',         url: 'https://lucide.dev',                 icon: siLucide,      note: 'Icons' },
   { name: 'Tauri',          url: 'https://tauri.app',                  icon: siTauri,       note: 'Desktop wrapper' },
   { name: 'Markdown',       url: 'https://commonmark.org',             icon: siMarkdown,    note: 'Wiki content format' },

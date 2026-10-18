@@ -47,23 +47,36 @@ export function DependencyGraph() {
 
     const nodeById = new Map(nodes.map(n => [n.id, n]));
 
+    const planByName = new Map<string, ParsedPlan>();
+    const planByPhase = new Map<string, ParsedPlan[]>();
+    for (const p of plans) {
+      const parts = p.fileName.split('/');
+      for (let i = 0; i < parts.length; i++) {
+        const key = parts.slice(i).join('/');
+        if (!planByName.has(key)) planByName.set(key, p);
+      }
+      for (const s of p.sections) {
+        for (const ph of s.phases) {
+          const owners = planByPhase.get(ph.id);
+          if (!owners) planByPhase.set(ph.id, [p]);
+          else if (!owners.includes(p)) owners.push(p);
+        }
+      }
+    }
+
     // Build links from .md dep links
     const links: Link[] = [];
     for (const plan of plans) {
       for (const dep of plan.dependencies) {
-        // Try to resolve href to a plan id
         const targetName = dep.href.split('/').pop()?.split('?')[0] ?? '';
-        const target = plans.find(p => p.fileName === targetName || p.id.endsWith(targetName));
+        const target = planByName.get(targetName);
         if (target && nodeById.has(target.id)) {
           links.push({ source: plan.id, target: target.id, type: 'dep' });
         }
       }
-      // PA-XX cross refs — link to any plan whose id contains that PA id in its phases
+      // PA-XX cross refs — link to the first other plan that defines that phase id
       for (const ref of plan.phaseRefs) {
-        const target = plans.find(p =>
-          p.id !== plan.id &&
-          p.sections.some(s => s.phases.some(ph => ph.id === ref)),
-        );
+        const target = planByPhase.get(ref)?.find(p => p.id !== plan.id);
         if (target && nodeById.has(target.id)) {
           links.push({ source: plan.id, target: target.id, type: 'ref' });
         }

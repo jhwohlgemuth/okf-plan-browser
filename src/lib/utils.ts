@@ -12,7 +12,7 @@ export const REPO_COLORS = [
 ] as const;
 
 export function repoColor(index: number): string {
-  return REPO_COLORS[index % REPO_COLORS.length];
+  return REPO_COLORS[index % REPO_COLORS.length] ?? REPO_COLORS[0];
 }
 
 /** Truncate a string with an ellipsis. */
@@ -35,4 +35,10 @@ export function newUuid(): string {
     const r = (Math.random() * 16) | 0;
     return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
+}
+
+export function onActivateKey(fn: () => void) {
+  return (e: { key: string; preventDefault: () => void }) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); }
+  };
 }

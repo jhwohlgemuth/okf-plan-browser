@@ -43,14 +43,13 @@ export interface Section {
 export interface PlanDependency {
   text:     string;         // link text
   href:     string;         // relative path e.g. ../other-plan.md
-  resolved?: string;        // resolved plan id once cross-linked
 }
 
 export interface ParsedPlan {
   id:           string;     // repo:filename (unique key)
   repoId:       string;
   fileName:     string;
-  raw:          string;
+  searchText?:  string;     // lowercased haystack derived at parse time
   frontmatter:  Frontmatter;
   sections:     Section[];
   dependencies: PlanDependency[];

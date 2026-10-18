@@ -1,15 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
-import { HomePage }      from '@/pages/HomePage';
-import { PortfolioPage } from '@/pages/PortfolioPage';
-import { PhasesPage }    from '@/pages/PhasesPage';
-import { GraphPage }     from '@/pages/GraphPage';
-import { SearchPage }    from '@/pages/SearchPage';
-import { SettingsPage }  from '@/pages/SettingsPage';
-import { AboutPage }     from '@/pages/AboutPage';
+import { NotFoundPage } from '@/components/NotFoundPage';
 import { useThemeStore, initTheme } from '@/store/themeStore';
 import { Toaster }       from '@/components/ui/toaster';
+
+const HomePage      = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
+const PortfolioPage = lazy(() => import('@/pages/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
+const PhasesPage    = lazy(() => import('@/pages/PhasesPage').then(m => ({ default: m.PhasesPage })));
+const GraphPage     = lazy(() => import('@/pages/GraphPage').then(m => ({ default: m.GraphPage })));
+const SearchPage    = lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })));
+const SettingsPage  = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AboutPage     = lazy(() => import('@/pages/AboutPage').then(m => ({ default: m.AboutPage })));
 
 export default function App() {
   const theme = useThemeStore(s => s.theme);
@@ -35,6 +37,7 @@ export default function App() {
           <Route path="search"    element={<SearchPage />} />
           <Route path="settings"  element={<SettingsPage />} />
           <Route path="about"     element={<AboutPage />} />
+          <Route path="*"         element={<NotFoundPage />} />
         </Route>
       </Routes>
       <Toaster />

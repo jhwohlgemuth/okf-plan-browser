@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
+import { ErrorBoundary } from './ErrorFallback';
+import { RouteFallback } from './RouteFallback';
 import { Sidebar } from './Sidebar';
 import { PlanDetailPanel } from './PlanDetailPanel';
 import { TooltipProvider } from './ui/tooltip';
@@ -15,7 +17,7 @@ export function Layout() {
     <TooltipProvider>
       <div className="flex h-dvh overflow-hidden bg-background">
         {navOpen && (
-          <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setNavOpen(false)} />
+          <div aria-hidden="true" className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setNavOpen(false)} />
         )}
         <Sidebar open={navOpen} />
         <div className="flex-1 min-w-0 flex flex-col">
@@ -31,7 +33,11 @@ export function Layout() {
             <span className="text-foreground font-semibold text-sm">Plan Browser</span>
           </header>
           <main className="flex-1 min-h-0 overflow-y-auto">
-            <Outlet />
+            <ErrorBoundary resetKey={pathname}>
+              <Suspense fallback={<RouteFallback />}>
+                <Outlet />
+              </Suspense>
+            </ErrorBoundary>
           </main>
         </div>
         <PlanDetailPanel />
