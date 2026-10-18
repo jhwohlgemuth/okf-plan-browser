@@ -176,11 +176,12 @@ okf-plan-browser/
 | Layer | Library |
 |---|---|
 | UI framework | React 18 |
-| Build tool | Vite 5 |
-| Language | TypeScript 5.3 |
+| Build tool | Vite 6 |
+| Language | TypeScript 5.9 |
+| Routing | React Router 7 |
 | Styling | Tailwind CSS 3 + One Dark palette |
 | Components | shadcn/ui (Radix primitives + CVA) |
-| State | Zustand 4 (with persist middleware) |
+| State | Zustand 5 (with persist middleware) |
 | Graph | D3 7 (force simulation) |
 | YAML | js-yaml 4 |
 | Icons | Lucide React |
