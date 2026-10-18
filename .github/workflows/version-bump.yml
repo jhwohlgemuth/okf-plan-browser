@@ -17,6 +17,7 @@ jobs:
   bump:
     permissions:
       contents: write
+      actions: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -53,3 +54,11 @@ jobs:
           git commit -m "chore: bump version to v${VERSION}"
           git tag "v${VERSION}"
           git push origin HEAD --tags
+
+      # Tags pushed with GITHUB_TOKEN do not trigger the push event, so start the release explicitly.
+      - name: Start Release workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh workflow run release.yml --ref "v${VERSION}"

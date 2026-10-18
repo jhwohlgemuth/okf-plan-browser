@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
-.PHONY: help install dev lint typecheck build ci visual visual-update visual-report tauri-dev tauri-build \
+.PHONY: help install dev lint typecheck test audit build ci visual visual-update visual-report tauri-dev tauri-build \
         pages-enable pages-deploy pages-url \
-        bump-patch bump-minor bump-major bump release-tag release-list release-view release-download release-delete \
+        bump-patch bump-minor bump-major bump release release-run release-watch release-tag release-list release-view release-download release-delete \
         runs watch logs ci-status
 
 REPO    := $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
@@ -27,10 +27,16 @@ lint: ## Run ESLint
 typecheck: ## Run the TypeScript type check
 	npm run typecheck
 
+test: ## Run unit tests
+	npm test
+
+audit: ## Audit production dependencies (fails on critical)
+	npm audit --omit=dev --audit-level=critical
+
 build: ## Production web build into dist/
 	npm run build
 
-ci: lint typecheck build ## Run everything CI runs, locally
+ci: audit lint typecheck test build ## Run everything CI runs, locally
 
 visual: ## Run visual regression tests (PW_CHANNEL=msedge to use Edge)
 	npm run test:visual
@@ -71,6 +77,17 @@ bump: ## Run the Version Bump workflow on GitHub (BUMP=patch|minor|major)
 bump-patch: ; $(MAKE) bump BUMP=patch ## Bump patch version via GitHub
 bump-minor: ; $(MAKE) bump BUMP=minor ## Bump minor version via GitHub
 bump-major: ; $(MAKE) bump BUMP=major ## Bump major version via GitHub
+
+release: ## Bump (BUMP=patch|minor|major), then watch the desktop release build
+	$(MAKE) bump BUMP=$(BUMP)
+	$(MAKE) release-watch
+
+release-run: ## Start the Release workflow for an existing tag (TAG=vX.Y.Z)
+	gh workflow run release.yml --ref $(TAG)
+
+release-watch: ## Watch the latest Release workflow run
+	@sleep 5
+	gh run watch $$(gh run list --workflow=release.yml --limit 1 --json databaseId -q '.[0].databaseId') --exit-status
 
 release-tag: ## Tag the current package.json version and push it (starts the Release workflow)
 	git tag $(TAG)
