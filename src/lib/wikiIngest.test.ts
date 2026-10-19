@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseWikiFileList, parseWikiFolder, parseWikiEntry, findWikiDir, findWikiEntry, isWikiFolderName,
+  parseWikiFileList, parseWikiFolder, parseWikiEntry, parseWikiTexts, findWikiDir, findWikiEntry, isWikiFolderName,
 } from '@/lib/wikiParser';
 import { fileList, projectRoot, dirEntry } from '@/test/handles';
 
@@ -48,5 +48,15 @@ describe('ingest paths', () => {
     expect(isWikiFolderName('.wiki')).toBe(true);
     expect(isWikiFolderName('Wiki')).toBe(true);
     expect(isWikiFolderName('proj')).toBe(false);
+  });
+
+  it('parseWikiTexts agrees with the file-list path', async () => {
+    const fromList = await parseWikiFileList(fileList(), 'r');
+    const fromTexts = await parseWikiTexts([
+      { path: 'plan-one.md', text: '---\ntype: Plan\ntitle: One\n---\n# Goal\nx\n' },
+      { path: 'sub/plan-two.md', text: '---\ntype: Plan\ntitle: Two\n---\n# Goal\ny\n' },
+      { path: 'notes.md', text: '# just notes\n' },
+    ], 'r');
+    expect(ids(fromTexts)).toEqual(ids(fromList));
   });
 });

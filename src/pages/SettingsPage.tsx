@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Monitor, Moon, Sun, Trash2 } from 'lucide-react';
 import { useThemeStore, type Theme } from '@/store/themeStore';
 import { usePlanStore, PLAN_STORAGE_KEY } from '@/store/planStore';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { getGithubToken, setGithubToken, getGitlabToken, setGitlabToken } from '@/lib/githubToken';
 
 const THEMES: { value: Theme; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: 'dark',   label: 'Dark (One Dark)', icon: Moon },
@@ -27,6 +30,8 @@ export function SettingsPage() {
   const fmtSize = (b: number) => 
     b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(2)} MB`;
   const { toast } = useToast();
+  const [githubToken, setGithubTokenField] = useState(getGithubToken);
+  const [gitlabToken, setGitlabTokenField] = useState(getGitlabToken);
 
   return (
     <div className="max-w-lg mx-auto px-6 py-10 space-y-8">
@@ -55,6 +60,57 @@ export function SettingsPage() {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* GitHub token */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">GitHub</h2>
+        <form
+          className="bg-card border border-border rounded-xl p-4 space-y-3"
+          onSubmit={e => {
+            e.preventDefault();
+            setGithubToken(githubToken);
+            toast({ title: githubToken.trim() ? 'GitHub token saved' : 'GitHub token cleared' });
+          }}
+        >
+          <p className="text-xs text-muted-foreground">
+            Optional personal access token for private GitHub repos. Stored only in this browser; never sent anywhere except api.github.com.
+          </p>
+          <Input
+            type="password"
+            autoComplete="off"
+            value={githubToken}
+            onChange={e => setGithubTokenField(e.target.value)}
+            placeholder="ghp_…"
+            aria-label="GitHub personal access token"
+          />
+          <Button type="submit" size="sm" variant="outline">Save token</Button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">GitLab</h2>
+        <form
+          className="bg-card border border-border rounded-xl p-4 space-y-3"
+          onSubmit={e => {
+            e.preventDefault();
+            setGitlabToken(gitlabToken);
+            toast({ title: gitlabToken.trim() ? 'GitLab token saved' : 'GitLab token cleared' });
+          }}
+        >
+          <p className="text-xs text-muted-foreground">
+            Optional personal access token for private or internal GitLab projects (including custom hosts). Stored only in this browser; sent as PRIVATE-TOKEN to that GitLab host.
+          </p>
+          <Input
+            type="password"
+            autoComplete="off"
+            value={gitlabToken}
+            onChange={e => setGitlabTokenField(e.target.value)}
+            placeholder="glpat-…"
+            aria-label="GitLab personal access token"
+          />
+          <Button type="submit" size="sm" variant="outline">Save token</Button>
+        </form>
       </section>
 
       {/* Data */}
@@ -156,7 +212,7 @@ export function SettingsPage() {
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">About</h2>
         <div className="bg-card border border-border rounded-xl p-4 space-y-1.5 text-xs text-muted-foreground">
           <p><span className="text-foreground font-medium">OKF Plan Browser</span> — v{__APP_VERSION__}</p>
-          <p>Parses <span className="font-mono">.wiki/</span> markdown planning portfolios client-side. No data leaves your machine.</p>
+          <p>Parses <span className="font-mono">.wiki/</span> markdown planning portfolios in the browser. Local folders never leave this machine; remote loads fetch from GitHub or GitLab.</p>
           <p>Stack: React 18 · Vite 6 · shadcn/ui · Tailwind · D3 · Zustand</p>
           <p className="pt-2 border-t border-border">
             <a

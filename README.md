@@ -32,8 +32,9 @@
 
 - 🌙 **One Dark theme** with Light / System toggle (persisted across sessions)
 - 📂 **File System Access API** (`showDirectoryPicker`) + drag-and-drop fallback
+- 🌐 **Remote repos** — paste a GitHub `owner/repo` (optional token in Settings for private repos) or a public GitLab project URL, including a custom host
 - 🗂️ **Multiple repos** — "Add another .wiki" merges data with distinct repo colour labels
-- 🔄 **One-click refresh** — re-read a single wiki or all wikis from the sidebar. Chromium browsers remember the folder (and may ask to re-allow access after a restart); in Firefox/Safari a wiki's refresh button re-opens the folder picker and re-uploads into the same project
+- 🔄 **One-click refresh** — re-read a single wiki or all wikis from the sidebar. Remote wikis re-fetch from the forge. Chromium browsers remember a local folder (and may ask to re-allow access after a restart); in Firefox/Safari a local wiki's refresh button re-opens the folder picker and re-uploads into the same project
 - 🖱️ **Slide-in detail panel** — click any plan for full frontmatter, sections, phases, dependencies
 - 🎭 **Embedded demo data** — 6 synthetic plans load instantly with no files required
 - 🖥️ **Optional Tauri desktop app** — native window, no Electron overhead
@@ -91,7 +92,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` in Chrome or Edge. Click **Open .wiki Folder** and pick any `.wiki/` directory, or click **Load Demo Data** to explore immediately.
+Open `http://localhost:5173` in Chrome or Edge. Click **Open Folder** and pick any `.wiki/` directory, paste a GitHub `owner/repo` or GitLab URL, or click **Load Demo Data** to explore immediately.
+
+Private GitHub repositories need a personal access token with `repo` (or fine-grained contents read) scope, saved under **Settings → GitHub**. GitLab, including custom hosts such as `https://code.ornl.gov/group/project`, is fetched through the Vite dev-server proxy on `npm run dev` (restart the dev server after pulling this change). Internal GitLab projects need a token under **Settings → GitLab**. The GitHub Pages build has no proxy, so custom-host GitLab still depends on that host allowing browser CORS.
 
 ---
 
@@ -122,7 +125,7 @@ Development tasks, tests, deploying to GitHub Pages, desktop builds, releases an
 
 ## Browser compatibility
 
-The **File System Access API** (`showDirectoryPicker`) is required to load `.wiki` folders directly. It is supported in:
+The **File System Access API** (`showDirectoryPicker`) is required to load `.wiki` folders directly. Remote GitHub/GitLab loads use `fetch` and work in any modern browser. Folder picking is supported in:
 
 - ✅ Chrome 86+
 - ✅ Edge 86+

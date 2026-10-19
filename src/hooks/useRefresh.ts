@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { usePlanStore } from '@/store/planStore';
-import { parseWikiFolder, parseWikiFileList, findWikiDir } from '@/lib/wikiParser';
+import { parseWikiFolder, parseWikiFileList, parseWikiTexts, findWikiDir } from '@/lib/wikiParser';
 import { commitWiki } from '@/lib/commitWiki';
 import { getHandle, ensureReadAccess } from '@/lib/handleStore';
+import { fetchRemoteWiki, type RemoteWikiRef } from '@/lib/remoteWiki';
+import { getGithubToken, getGitlabToken } from '@/lib/githubToken';
 import { useToast } from '@/components/ui/use-toast';
 
 export function useRefresh() {
@@ -17,7 +19,9 @@ export function useRefresh() {
     let live = true;
     (async () => {
       const ids = new Set<string>();
-      for (const r of usePlanStore.getState().repos) if (await getHandle(r.id)) ids.add(r.id);
+      for (const r of usePlanStore.getState().repos) {
+        if (r.remote || await getHandle(r.id)) ids.add(r.id);
+      }
       if (live) setRefreshable(ids);
     })();
     return () => { live = false; };
@@ -26,14 +30,30 @@ export function useRefresh() {
   const refresh = useCallback(async (ids: string[]) => {
     if (isDemo || !ids.length) return;
     const handles = new Map<string, FileSystemDirectoryHandle>();
+    const remotes = new Map<string, RemoteWikiRef>();
     const skipped: string[] = [];
     for (const id of ids) {
+      const repo = usePlanStore.getState().repos.find(r => r.id === id);
+      if (repo?.remote) {
+        remotes.set(id, repo.remote);
+        continue;
+      }
       const h = await getHandle(id);
       if (h && await ensureReadAccess(h)) handles.set(id, h); else skipped.push(id);
     }
-    setBusy(new Set(handles.keys()));
+    setBusy(new Set([...handles.keys(), ...remotes.keys()]));
     let plans = 0;
     const failed: string[] = [];
+    const githubToken = getGithubToken();
+    const gitlabToken = getGitlabToken();
+    for (const [id, remote] of remotes) {
+      try {
+        const wiki = await fetchRemoteWiki(remote, { githubToken, gitlabToken });
+        plans += commitWiki(id, await parseWikiTexts(wiki.files, id), { remote: wiki.remote }).plans;
+      } catch {
+        failed.push(id);
+      }
+    }
     for (const [id, handle] of handles) {
       try {
         plans += commitWiki(id, await parseWikiFolder(await findWikiDir(handle), id)).plans;
@@ -42,12 +62,12 @@ export function useRefresh() {
       }
     }
     setBusy(new Set());
-    const ok = handles.size - failed.length;
+    const ok = handles.size + remotes.size - failed.length;
     const problems = [...skipped, ...failed];
     toast({
       title: ok ? `Refreshed ${ok} wiki${ok !== 1 ? 's' : ''} (${plans} plans)` : 'Nothing refreshed',
       description: problems.length
-        ? `Skipped ${problems.join(', ')}. Use ${problems.length > 1 ? 'their' : 'its'} refresh button to re-select the folder.`
+        ? `Skipped ${problems.join(', ')}. Use ${problems.length > 1 ? 'their' : 'its'} refresh button to try again.`
         : undefined,
     });
   }, [isDemo, toast]);

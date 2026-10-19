@@ -1,3 +1,5 @@
+import type { RemoteWikiRef } from '@/lib/remoteWiki';
+
 // ─── Frontmatter ─────────────────────────────────────────────────────────────
 
 export type PlanStatus    = 'planned' | 'in-progress' | 'waiting-on-validation' | 'blocked';
@@ -69,6 +71,7 @@ export interface WikiRepo {
   label:     string;
   color:     RepoColor;
   planCount: number;
+  remote?:   RemoteWikiRef;
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────

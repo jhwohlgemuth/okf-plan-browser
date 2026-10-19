@@ -216,12 +216,36 @@ export type Progress = (done: number, total?: number) => void;
 
 const tick = () => new Promise<void>(r => setTimeout(r, 0));
 
+/** Parse already-read markdown paths (local files or a remote forge fetch). */
+export async function parseWikiTexts(
+  files: Array<{ path: string; text: string }>,
+  repoId: string,
+  report?: Progress,
+): Promise<ParseResult> {
+  const result: ParseResult = { plans: [], errors: [] };
+  const md = files.filter(f => {
+    const parts = f.path.split(/[/\\]/);
+    return f.path.toLowerCase().endsWith('.md') && !parts.some(p => SKIP_DIRS.has(p));
+  });
+  let done = 0;
+  report?.(0, md.length);
+  for (const { path, text } of md) {
+    try {
+      if (isPlanFile(text)) result.plans.push(parseWikiFile(repoId, path, text));
+    } catch (e) {
+      result.errors.push({ name: path, error: (e as Error).message });
+    }
+    report?.(++done, md.length);
+    if (done % 10 === 0) await tick();
+  }
+  return result;
+}
+
 /** Fallback for browsers without showDirectoryPicker (<input webkitdirectory>). */
 export async function parseWikiFileList(files: File[], repoId: string, report?: Progress): Promise<ParseResult> {
-  const result: ParseResult = { plans: [], errors: [] };
   const rel = (f: File) => (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
   const hasWikiDir = files.some(f => rel(f).split('/')[1] === '.wiki');
-  const candidates: Array<[string, File]> = [];
+  const candidates: Array<{ path: string; file: File }> = [];
   for (const file of files) {
     let parts = rel(file).split('/').slice(1);
     if (hasWikiDir) {
@@ -230,21 +254,10 @@ export async function parseWikiFileList(files: File[], repoId: string, report?: 
     }
     if (parts.some(p => SKIP_DIRS.has(p))) continue;
     if (!file.name.toLowerCase().endsWith('.md')) continue;
-    candidates.push([parts.join('/') || file.name, file]);
+    candidates.push({ path: parts.join('/') || file.name, file });
   }
-  let done = 0;
-  report?.(0, candidates.length);
-  for (const [path, file] of candidates) {
-    try {
-      const text = await file.text();
-      if (isPlanFile(text)) result.plans.push(parseWikiFile(repoId, path, text));
-    } catch (e) {
-      result.errors.push({ name: path, error: (e as Error).message });
-    }
-    report?.(++done, candidates.length);
-    if (done % 10 === 0) await tick();
-  }
-  return result;
+  const texts = await Promise.all(candidates.map(async ({ path, file }) => ({ path, text: await file.text() })));
+  return parseWikiTexts(texts, repoId, report);
 }
 
 const readAll = (dir: FileSystemDirectoryEntry) => new Promise<FileSystemEntry[]>((resolve, reject) => {

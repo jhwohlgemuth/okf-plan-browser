@@ -16,10 +16,11 @@ interface Props {
 
 export function FolderPicker({ label = 'Open .wiki Folder', compact = false, cards = false }: Props) {
   const {
-    openFolder, loadFileList, dropFolder, pending, confirmPending, cancelPending,
+    openFolder, loadFileList, dropFolder, loadRemote, pending, confirmPending, cancelPending,
     existingProjects, loading, error, scanning, setScanning, progress,
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
+  const [remoteSpec, setRemoteSpec] = useState('');
   useEffect(() => { if (pending) setProjectName(''); }, [pending]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -55,6 +56,27 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
       });
     }
   };
+
+  const handleRemote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = await loadRemote(remoteSpec);
+    if (result) setRemoteSpec('');
+    announce(result);
+  };
+
+  const remoteForm = (
+    <form className="flex gap-2" onSubmit={handleRemote}>
+      <Input
+        value={remoteSpec}
+        onChange={e => setRemoteSpec(e.target.value)}
+        placeholder="GitHub owner/repo or GitLab URL"
+        aria-label="GitHub owner/repo or GitLab project URL"
+        disabled={loading}
+      />
+      <Button type="submit" size="sm" disabled={loading || !remoteSpec.trim()}>Load</Button>
+    </form>
+  );
 
   const handleOpen = async () => {
     if (!('showDirectoryPicker' in window)) {
@@ -135,6 +157,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
           <FolderOpen className="h-4 w-4 mr-2" />
           {loading ? 'Loading…' : label}
         </Button>
+        {remoteForm}
         {fallbackInput}
         {nameDialog}
         {error && <p className="text-xs text-od-red">{error}</p>}
@@ -170,6 +193,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
             <p className="text-[10px] leading-tight text-muted-foreground">Drag .md files onto this area</p>
           </div>
         </div>
+        {remoteForm}
         {error && (
           <p className="text-xs text-od-red bg-od-red/10 border border-od-red/20 rounded-md px-3 py-2">
             {error}
@@ -199,6 +223,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
         </p>
         <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
       </div>
+      {remoteForm}
       {error && (
         <p className="text-xs text-od-red bg-od-red/10 border border-od-red/20 rounded-md px-3 py-2">
           {error}

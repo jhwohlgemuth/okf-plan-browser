@@ -1,6 +1,7 @@
 import { usePlanStore } from '@/store/planStore';
 import { repoColor, newUuid } from '@/lib/utils';
 import type { WikiRepo, ParseWarning, ParsedPlan } from '@/types/wiki';
+import type { RemoteWikiRef } from '@/lib/remoteWiki';
 
 export interface LoadResult {
   repoId:   string;
@@ -10,9 +11,13 @@ export interface LoadResult {
 
 export type Parsed = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }> };
 
-export function commitWiki(project: string, { plans, errors }: Parsed): LoadResult {
+export function commitWiki(
+  project: string,
+  { plans, errors }: Parsed,
+  source?: { remote?: RemoteWikiRef },
+): LoadResult {
   if (plans.length === 0) {
-    throw new Error(`No plans found in "${project}". Pick the project folder, or its .wiki folder.`);
+    throw new Error(`No plans found in "${project}". Pick the project folder, its .wiki folder, or a repo that contains .wiki plans.`);
   }
   if (usePlanStore.getState().isDemoData) usePlanStore.getState().clearAll();
   const store = usePlanStore.getState();
@@ -23,6 +28,7 @@ export function commitWiki(project: string, { plans, errors }: Parsed): LoadResu
     label:     project,
     color:     (existing?.color ?? repoColor(store.repos.length)) as WikiRepo['color'],
     planCount: plans.length,
+    remote:    source?.remote,
   };
   const warns: ParseWarning[] = [
     ...plans.filter(p => p.parseErrors.length).map(p => ({

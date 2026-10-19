@@ -67,7 +67,8 @@ This runs the **Version Bump** workflow, which updates `package.json` and `tauri
 
 - All third-party actions are pinned to commit SHAs. Dependabot keeps them current.
 - Workflows default to read-only permissions; write access is granted per job.
-- The app ships a strict Content Security Policy, set in `src-tauri/tauri.conf.json` and injected into the web build by `vite.config.ts`. Update both together when adding an external origin.
+- The app ships a strict Content Security Policy, set in `src-tauri/tauri.conf.json` and injected into the web build by `vite.config.ts`. Update both together when adding an external origin. Remote wiki loads need `connect-src` to allow `https:`.
+- `npm run dev` proxies `/__forge/{host}/…` to `https://{host}/…` so custom GitLab hosts work from the browser. Restart the dev server after changing the proxy.
 
 ## Project structure
 
@@ -78,6 +79,8 @@ okf-plan-browser/
 │   ├── types/wiki.ts          ← TypeScript interfaces for the .wiki format
 │   ├── lib/
 │   │   ├── wikiParser.ts      ← YAML frontmatter + markdown body parser
+│   │   ├── remoteWiki.ts      ← GitHub / GitLab .wiki fetch
+│   │   ├── githubToken.ts     ← Optional GitHub PAT in localStorage
 │   │   ├── commitWiki.ts      ← Parse + commit a wiki into the store
 │   │   ├── handleStore.ts     ← Persists directory handles (IndexedDB) for refresh
 │   │   ├── demoData.ts        ← Embedded synthetic plans
@@ -87,8 +90,8 @@ okf-plan-browser/
 │   │   ├── planStore.ts       ← Zustand store for plans, repos, filters
 │   │   └── themeStore.ts      ← Zustand + persist for theme
 │   ├── hooks/
-│   │   ├── useFileSystem.ts   ← showDirectoryPicker + drag-drop
-│   │   └── useRefresh.ts      ← One-click wiki refresh
+│   │   ├── useFileSystem.ts   ← showDirectoryPicker + drag-drop + remote load
+│   │   └── useRefresh.ts      ← One-click wiki refresh (folder handle or forge)
 │   ├── test/                  ← Vitest setup and file-handle stubs
 │   ├── components/
 │   │   ├── ui/                ← shadcn/ui primitives (Radix + CVA)

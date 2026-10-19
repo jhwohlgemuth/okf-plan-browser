@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { parseWikiFolder, parseWikiFileList, parseWikiEntry, findWikiEntry, findWikiDir, isWikiFolderName, type Progress } from '@/lib/wikiParser';
+import { parseWikiFolder, parseWikiFileList, parseWikiEntry, parseWikiTexts, findWikiEntry, findWikiDir, isWikiFolderName, type Progress } from '@/lib/wikiParser';
 import { usePlanStore } from '@/store/planStore';
 import { randomProjectName } from '@/lib/names';
 import { commitWiki, type LoadResult, type Parsed } from '@/lib/commitWiki';
 import { saveHandle } from '@/lib/handleStore';
+import { fetchRemoteWiki, remoteProjectId, type RemoteWikiRef } from '@/lib/remoteWiki';
+import { getGithubToken, getGitlabToken } from '@/lib/githubToken';
 
 export type { LoadResult };
 /** A wiki whose project name can't be inferred (the picked folder was `.wiki` itself). */
@@ -24,9 +26,9 @@ export function useFileSystem() {
   const [pending, setPending] = useState<PendingWiki[]>([]);
 
   useEffect(() => { if (!loading) setProgress(null); }, [loading]);
-  const commit = useCallback((project: string, parsed: Parsed): LoadResult | null => {
+  const commit = useCallback((project: string, parsed: Parsed, source?: { remote?: RemoteWikiRef }): LoadResult | null => {
     try {
-      return commitWiki(project, parsed);
+      return commitWiki(project, parsed, source);
     } catch (e) {
       setError((e as Error).message);
       return null;
@@ -71,6 +73,28 @@ export function useFileSystem() {
     if (parsed.plans.length) await saveHandle(project, dir);
     return parsed;
   };
+
+  const loadRemote = useCallback(async (spec: string): Promise<LoadResult | null> => {
+    const trimmed = spec.trim();
+    if (!trimmed) {
+      setError('Enter a GitHub owner/repo or a GitLab project URL.');
+      return null;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const wiki = await fetchRemoteWiki(trimmed, {
+        githubToken: getGithubToken(), gitlabToken: getGitlabToken(), report,
+      });
+      const project = remoteProjectId(wiki.remote);
+      return commit(project, await parseWikiTexts(wiki.files, project, report), { remote: wiki.remote });
+    } catch (e) {
+      setError((e as Error).message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [commit, report]);
 
   const openFolder = useCallback(async (): Promise<LoadResult | null> => {
     setError(null);
@@ -155,7 +179,7 @@ export function useFileSystem() {
   }, [ingest]);
 
   return {
-    openFolder, loadFileList, dropFolder,
+    openFolder, loadFileList, dropFolder, loadRemote,
     pending: pending[0] ?? null, confirmPending, cancelPending,
     existingProjects: repos.map(r => r.id),
     loading, error, scanning, setScanning, progress,

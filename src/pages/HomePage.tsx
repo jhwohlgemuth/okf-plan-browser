@@ -25,7 +25,7 @@ export function HomePage() {
           </div>
           <h1 className="text-xl font-bold text-foreground">OKF Plan Browser</h1>
           <p className="text-xs text-muted-foreground mt-2 mb-6">
-            Load a .wiki folder to explore your planning portfolio
+            Load a .wiki folder, or a GitHub / GitLab repo
           </p>
 
           <div className="w-full">
@@ -46,7 +46,7 @@ export function HomePage() {
           </Button>
 
           <p className="text-[10px] text-muted-foreground mt-5">
-            Supports the .wiki markdown format — YAML frontmatter, H1 sections, H2 phases
+            Supports the .wiki markdown format — YAML frontmatter, H1 sections, H2 phases. GitHub owner/repo or a public GitLab URL also works.
           </p>
         </div>
       </div>
@@ -61,7 +61,8 @@ export function HomePage() {
         <p className="text-muted-foreground text-sm leading-relaxed">
           Browse, filter, and visualise{' '}
           <span className="font-mono text-od-blue">.wiki/</span> markdown planning portfolios —
-          dependency graphs, phase kanban, full-text search. Everything stays local; nothing is uploaded.
+          dependency graphs, phase kanban, full-text search. Folders stay on this machine; remote
+          wikis are fetched in the browser from GitHub or GitLab.
         </p>
       </div>
 
