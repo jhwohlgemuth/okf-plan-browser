@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { File as NodeFile } from 'node:buffer';
 import {
   parseWikiFileList, parseWikiFolder, parseWikiEntry, parseWikiTexts, findWikiDir, findWikiEntry, isWikiFolderName,
 } from '@/lib/wikiParser';
@@ -11,6 +12,20 @@ describe('ingest paths', () => {
   it('parseWikiFileList reads the .wiki folder of a project', async () => {
     const r = await parseWikiFileList(fileList(), 'r');
     expect(ids(r)).toEqual(expected);
+    expect(r.errors).toEqual([]);
+  });
+
+  it('parseWikiFileList reads a flat multi-file selection without relative paths', async () => {
+    const FileCtor = NodeFile as unknown as typeof File;
+    const files = [
+      new FileCtor(['---\ntype: Plan\ntitle: One\n---\n# Goal\nx\n'], 'plan-one.md'),
+      new FileCtor(['---\ntype: Plan\ntitle: Two\n---\n# Goal\ny\n'], 'plan-two.md'),
+      new FileCtor(['# just notes\n'], 'notes.md'),
+    ];
+
+    const r = await parseWikiFileList(files, 'r');
+
+    expect(ids(r)).toEqual(['r:plan-one.md', 'r:plan-two.md']);
     expect(r.errors).toEqual([]);
   });
 

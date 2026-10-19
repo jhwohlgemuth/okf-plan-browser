@@ -81,12 +81,12 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
   const handleOpen = async () => {
     if (!('showDirectoryPicker' in window)) {
       toast({
-        title: 'Tip: pick the .wiki folder',
-        description: 'This browser reads every file in the chosen folder. For large projects, pick the .wiki folder itself or drag the project folder onto the page instead.',
+        title: 'Choose a folder or Markdown files',
+        description: 'Pick the project or .wiki folder. If this browser does not offer folder selection, select the .md plan files instead.',
       });
-      inputRef.current?.click();
       awaitingDialog.current = true;
       cancelled.current = false;
+      inputRef.current?.click();
       return;
     }
     announce(await openFolder());
@@ -139,9 +139,17 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
       <input
         ref={inputRef}
         type="file"
-        className="hidden"
+        className="sr-only"
+        tabIndex={-1}
+        multiple
+        accept=".md,text/markdown"
         onChange={async e => {
           const input = e.target;
+          // Safari can dispatch change before restoring window focus. Prevent the
+          // delayed focus cue from turning the scanning overlay back on afterward.
+          awaitingDialog.current = false;
+          cancelled.current = true;
+          setScanning(false);
           announce(await loadFileList(input.files));
           input.value = '';
         }}

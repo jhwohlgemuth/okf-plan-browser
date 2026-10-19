@@ -125,12 +125,14 @@ Development tasks, tests, deploying to GitHub Pages, desktop builds, releases an
 
 ## Browser compatibility
 
-The **File System Access API** (`showDirectoryPicker`) is required to load `.wiki` folders directly. Remote GitHub/GitLab loads use `fetch` and work in any modern browser. Folder picking is supported in:
+Chromium uses the **File System Access API** (`showDirectoryPicker`) to load `.wiki` folders. Other browsers use a directory-upload input or drag-and-drop fallback. Remote GitHub/GitLab loads use `fetch` and work in any modern browser. Folder picking is supported in:
 
 - ✅ Chrome 86+
 - ✅ Edge 86+
 - ❌ Firefox (drag-and-drop works via `getAsFileSystemHandle` where available)
-- ❌ Safari
+- ✅ Safari 11.1+ on macOS; Safari 18.4+ on iOS/iPadOS
+
+Older iOS/iPadOS Safari versions can use the picker to select multiple Markdown plan files instead of a folder.
 
 The demo data and all other features work in all modern browsers.
 
