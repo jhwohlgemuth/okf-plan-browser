@@ -1,9 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Home, LayoutGrid, Layers, Share2, Search, Settings, AlertTriangle, Info, RefreshCw,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlanStore } from '@/store/planStore';
+import { useUiStore } from '@/store/uiStore';
 import { useRefresh } from '@/hooks/useRefresh';
 
 const NAV = [
@@ -23,15 +25,30 @@ export function Sidebar({ open = false }: { open?: boolean }) {
   const warnings   = usePlanStore(s => s.warnings);
   const isDemoData = usePlanStore(s => s.isDemoData);
   const { busy, refreshable, refreshOne, refreshAll } = useRefresh();
+  const collapsed = useUiStore(s => s.sidebarCollapsed);
+  const toggleSidebar = useUiStore(s => s.toggleSidebar);
+  // The mobile drawer is always expanded; collapsing only applies from md up.
+  const hideLabel = collapsed ? 'md:hidden' : '';
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
-    <aside className={cn('w-[220px] shrink-0 flex flex-col h-dvh bg-card border-r border-border', 'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:transition-transform', !open && 'max-md:-translate-x-full')}>
+    <aside className={cn('w-[220px] shrink-0 flex flex-col h-dvh bg-card border-r border-border transition-[width] duration-200', collapsed && 'md:w-14', 'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:transition-transform', !open && 'max-md:-translate-x-full')}>
       {/* Brand */}
-      <div className="px-4 pt-5 pb-4 border-b border-border">
-        <div className="flex items-center gap-2">
+      <div className={cn('px-4 pt-5 pb-4 border-b border-border', collapsed && 'md:px-2')}>
+        <div className={cn('flex items-center gap-2', collapsed && 'md:flex-col md:gap-3')}>
           <span className="text-od-blue font-mono text-lg font-semibold">OKF</span>
-          <span className="text-foreground font-semibold text-sm">Plan Browser</span>
+          <span className={cn('text-foreground font-semibold text-sm', hideLabel)}>Plan Browser</span>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!collapsed}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={cn('ml-auto max-md:hidden rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors', collapsed && 'md:ml-0')}
+          >
+            <ToggleIcon className="h-4 w-4" />
+          </button>
         </div>
-        <p className="text-muted-foreground text-xs mt-0.5">
+        <p className={cn('text-muted-foreground text-xs mt-0.5', hideLabel)}>
           {plans.length} plan{plans.length !== 1 ? 's' : ''} · {repos.length} repo{repos.length !== 1 ? 's' : ''}
           {isDemoData && <span className="ml-1 text-od-yellow">(demo)</span>}
         </p>
@@ -45,17 +62,20 @@ export function Sidebar({ open = false }: { open?: boolean }) {
             <NavLink
               key={to}
               to={to}
+              title={collapsed ? label : undefined}
+              aria-label={label}
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                collapsed && 'md:justify-center md:px-0',
                 active
                   ? 'bg-primary/15 text-primary'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {label}
+              <span className={hideLabel}>{label}</span>
               {label === 'Settings' && warnings.length > 0 && (
-                <span className="ml-auto flex items-center gap-1 text-od-orange text-xs">
+                <span className={cn('ml-auto flex items-center gap-1 text-od-orange text-xs', hideLabel)}>
                   <AlertTriangle className="h-3 w-3" />
                   {warnings.length}
                 </span>
@@ -67,7 +87,7 @@ export function Sidebar({ open = false }: { open?: boolean }) {
 
       {/* Repo colour pills */}
       {repos.length > 0 && (
-        <div className="px-4 pb-4 border-t border-border pt-3 space-y-1.5 max-h-[40%] overflow-y-auto">
+        <div className={cn('px-4 pb-4 border-t border-border pt-3 space-y-1.5 max-h-[40%] overflow-y-auto', hideLabel)}>
           <div className="flex items-center mb-2">
             <p className="text-xs text-muted-foreground font-medium">Repos</p>
             {!isDemoData && (
