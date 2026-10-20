@@ -104,7 +104,9 @@ $env:OKF_GITLAB_HOSTS = 'gitlab.example.com'
 npm run dev
 ```
 
-Production web builds use the same variable to generate their CSP allowlist. Custom-host GitLab also requires that host to permit browser CORS.
+Production web builds use the same variable to generate their CSP allowlist. Custom-host GitLab also requires that host to permit browser CORS. In supported browsers, the hosted app reads a GitLab `.wiki` archive in one request; if archives are unavailable, it falls back to the file API. A GitLab token does not bypass a host's CORS or gateway restrictions.
+
+If `code.ornl.gov` reports that your IP address is restricted, ask your ORNL collaboration partner to request an exception for your network range. You can open an existing local checkout's `.wiki` folder in the meantime.
 
 ### Deployment security
 

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { gzipSync } from 'node:zlib';
 import {
   parseRemoteSpec, remoteProjectId, fetchRemoteWiki, parseRemoteWiki,
 } from '@/lib/remoteWiki';
@@ -76,6 +77,30 @@ function mockFetch(routes: Record<string, Route>): typeof fetch {
 
 function b64(text: string): string {
   return btoa(unescape(encodeURIComponent(text)));
+}
+
+function wikiArchive(files: Record<string, string>): ArrayBuffer {
+  const encoder = new TextEncoder();
+  const blocks: Uint8Array[] = [];
+  for (const [path, text] of Object.entries(files)) {
+    const content = encoder.encode(text);
+    const header = new Uint8Array(512);
+    header.set(encoder.encode(`acorn-main/.wiki/${path}`));
+    header.set(encoder.encode(`${content.length.toString(8).padStart(11, '0')}\0`), 124);
+    header[156] = 48;
+    blocks.push(header, content, new Uint8Array((512 - content.length % 512) % 512));
+  }
+  const size = blocks.reduce((total, block) => total + block.length, 0);
+  const tar = new Uint8Array(size + 1024);
+  let offset = 0;
+  for (const block of blocks) {
+    tar.set(block, offset);
+    offset += block.length;
+  }
+  const compressed = gzipSync(tar);
+  const copy = new ArrayBuffer(compressed.length);
+  new Uint8Array(copy).set(compressed);
+  return copy;
 }
 
 describe('fetchRemoteWiki GitHub', () => {
@@ -156,6 +181,33 @@ describe('fetchRemoteWiki GitHub', () => {
 describe('fetchRemoteWiki GitLab', () => {
   const base = 'https://code.ornl.gov/api/v4/projects/research-enablement%2Facorn';
 
+  it('imports the .wiki archive without requesting individual files', async () => {
+    const archiveUrl = `${base}/repository/archive.tar.gz?sha=main&path=.wiki`;
+    const archive = wikiArchive({
+      'plan-one.md': planOne,
+      'sub/plan-two.md': planTwo,
+    });
+    const requested: string[] = [];
+    const tokens: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      requested.push(url);
+      tokens.push((init?.headers as Record<string, string>)?.['PRIVATE-TOKEN'] ?? '');
+      if (url === base) return Response.json({ default_branch: 'main' });
+      if (url === archiveUrl) return new Response(archive);
+      throw new Error(`unexpected fetch ${url}`);
+    };
+    const wiki = await fetchRemoteWiki('https://code.ornl.gov/research-enablement/acorn', {
+      fetch: fetchImpl, gitlabToken: 'glpat-secret',
+    });
+    expect(requested).toEqual([base, archiveUrl]);
+    expect(tokens).toEqual(['glpat-secret', 'glpat-secret']);
+    expect(wiki.files).toEqual([
+      { path: 'plan-one.md', text: planOne },
+      { path: 'sub/plan-two.md', text: planTwo },
+    ]);
+  });
+
   it('loads a custom-host public project', async () => {
     const routes: Record<string, Route> = {
       [base]: { json: { default_branch: 'main' } },
@@ -166,14 +218,15 @@ describe('fetchRemoteWiki GitLab', () => {
           { type: 'tree', path: '.wiki/sub' },
         ],
       },
-      [`${base}/repository/files/${encodeURIComponent('.wiki/plan-one.md')}/raw?ref=main`]: { text: planOne },
-      [`${base}/repository/files/${encodeURIComponent('.wiki/sub/plan-two.md')}/raw?ref=main`]: { text: planTwo },
+      [`${base}/repository/files/${encodeURIComponent('.wiki/plan-one.md')}?ref=main`]: { json: { encoding: 'base64', content: b64(planOne) } },
+      [`${base}/repository/files/${encodeURIComponent('.wiki/sub/plan-two.md')}?ref=main`]: { json: { encoding: 'base64', content: b64(planTwo) } },
     };
     const wiki = await fetchRemoteWiki('https://code.ornl.gov/research-enablement/acorn', {
       fetch: mockFetch(routes),
     });
     expect(wiki.remote.host).toBe('code.ornl.gov');
     expect(wiki.files.map(f => f.path).sort()).toEqual(['plan-one.md', 'sub/plan-two.md']);
+    expect(wiki.files.map(f => f.text)).toEqual([planOne, planTwo]);
   });
 
   it('surfaces a missing GitLab project', async () => {
@@ -184,12 +237,33 @@ describe('fetchRemoteWiki GitLab', () => {
     })).rejects.toThrow(/not found/);
   });
 
+  it('reports an IP restriction without falling back to more requests', async () => {
+    const archiveUrl = `${base}/repository/archive.tar.gz?sha=main&path=.wiki`;
+    const requested: string[] = [];
+    const fetchImpl: typeof fetch = async input => {
+      const url = String(input);
+      requested.push(url);
+      if (url === base) return Response.json({ default_branch: 'main' });
+      if (url === archiveUrl) {
+        return new Response(
+          'Access from your IP address is currently restricted due to security controls applied to your network range.',
+          { status: 403, headers: { server: 'Microsoft-Azure-Application-Gateway/v2' } },
+        );
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    };
+    await expect(fetchRemoteWiki('https://code.ornl.gov/research-enablement/acorn', {
+      fetch: fetchImpl, gitlabToken: 'glpat-secret',
+    })).rejects.toThrow(/blocking your IP address.*token cannot override/);
+    expect(requested).toEqual([base, archiveUrl]);
+  });
+
   it('sends the GitLab token', async () => {
     let token = '';
     const routes: Record<string, Route> = {
       [base]: { json: { default_branch: 'main' } },
       [`${base}/repository/tree?`]: { json: [{ type: 'blob', path: '.wiki/plan-one.md' }] },
-      [`${base}/repository/files/${encodeURIComponent('.wiki/plan-one.md')}/raw?ref=main`]: { text: planOne },
+      [`${base}/repository/files/${encodeURIComponent('.wiki/plan-one.md')}?ref=main`]: { json: { encoding: 'base64', content: b64(planOne) } },
     };
     const fetchImpl: typeof fetch = async (input, init) => {
       token = (init?.headers as Record<string, string> | undefined)?.['PRIVATE-TOKEN'] ?? '';

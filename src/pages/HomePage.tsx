@@ -4,6 +4,29 @@ import { FolderPicker } from '@/components/FolderPicker';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
+function HomeFooter() {
+  const linkClass = 'font-medium text-foreground hover:text-od-blue transition-colors underline underline-offset-4 decoration-border hover:decoration-od-blue';
+
+  return (
+    <footer className="w-full border-t border-border pt-6 text-center text-xs leading-relaxed text-muted-foreground">
+      Made with <span role="img" aria-label="love">❤️</span> by{' '}
+      <a href="https://github.com/jhwohlgemuth" target="_blank" rel="noreferrer" className={linkClass}>
+        jhwohlgemuth
+      </a>{' '}
+      with{' '}
+      <a href="https://openai.com/codex/" target="_blank" rel="noreferrer" className={linkClass}>
+        Codex
+      </a>,{' '}
+      <a href="https://github.com/features/copilot" target="_blank" rel="noreferrer" className={linkClass}>
+        GitHub Copilot
+      </a>, and{' '}
+      <a href="https://www.microsoft.com/microsoft-365/copilot" target="_blank" rel="noreferrer" className={linkClass}>
+        Microsoft 365 Copilot
+      </a>
+    </footer>
+  );
+}
+
 export function HomePage() {
   const plans       = usePlanStore(s => s.plans);
   const repos       = usePlanStore(s => s.repos);
@@ -18,8 +41,8 @@ export function HomePage() {
 
   if (isEmpty) {
     return (
-      <div className="min-h-full flex items-center justify-center px-6 py-10">
-        <div className="w-full max-w-[420px] flex flex-col items-center text-center">
+      <div className="min-h-full flex flex-col items-center px-6 py-10 gap-8">
+        <div className="w-full max-w-[420px] flex flex-1 flex-col items-center justify-center text-center">
           <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center mb-4">
             <Layers className="h-6 w-6 text-od-blue" />
           </div>
@@ -48,6 +71,9 @@ export function HomePage() {
           <p className="text-[10px] text-muted-foreground mt-5">
             Supports the .wiki markdown format — YAML frontmatter, H1 sections, H2 phases. GitHub owner/repo or a public GitLab URL also works.
           </p>
+        </div>
+        <div className="w-full max-w-2xl">
+          <HomeFooter />
         </div>
       </div>
     );
@@ -173,6 +199,7 @@ Narrative...
 **Status:** planned
 ...`}</pre>
       </div>
+      <HomeFooter />
     </div>
   );
 }

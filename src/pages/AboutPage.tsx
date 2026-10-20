@@ -1,7 +1,7 @@
-import { ExternalLink, Box, Lock } from 'lucide-react';
+import { ExternalLink, Box, Lock, Star } from 'lucide-react';
 import {
   siReact, siVite, siTypescript, siTailwindcss, siTauri, siReactrouter,
-  siRadixui, siD3, siMarkdown, siYaml, siLucide, siGithubcopilot,
+  siRadixui, siD3, siMarkdown, siYaml, siLucide, siGithub, siGithubcopilot,
   type SimpleIcon,
 } from 'simple-icons';
 
@@ -56,6 +56,39 @@ export function AboutPage() {
         <p className="text-sm text-muted-foreground mt-0.5">
           OKF Plan Browser — a local-first viewer for <code>.wiki</code> planning portfolios.
         </p>
+        <a
+          href="https://github.com/jhwohlgemuth/okf-plan-browser"
+          target="_blank" rel="noreferrer"
+          className="group mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-gradient-to-br from-od-blue/10 to-card p-4 transition-colors hover:border-od-blue/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-od-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-foreground">
+            <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-hidden="true">
+              <path d={siGithub.path} />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              OKF Plan Browser
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-od-blue" aria-hidden="true" />
+            </span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Explore the source, suggest ideas, or contribute on GitHub.
+            </span>
+          </span>
+          <span className="flex flex-wrap items-center gap-3">
+            <img
+              src="https://img.shields.io/github/stars/jhwohlgemuth/okf-plan-browser?style=flat&color=eab308&label=Stars"
+              alt="GitHub star count"
+              height={20}
+              className="h-5"
+              onError={event => { event.currentTarget.hidden = true; }}
+            />
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground">
+              <Star className="h-3.5 w-3.5 text-yellow-500" aria-hidden="true" />
+              Star on GitHub
+            </span>
+          </span>
+        </a>
       </div>
 
       <Section title="Open Knowledge Format">
@@ -113,10 +146,13 @@ export function AboutPage() {
             />
           </a>
           <p className="text-sm text-foreground/90">
-            The application code, documentation and this page were written by an AI coding
-            assistant (<span className="inline-flex items-center gap-1 align-middle">
+            The application code, documentation and this page were created with assistance from{' '}
+            <a className="underline" href="https://openai.com/codex/" target="_blank" rel="noreferrer">Codex</a>,{' '}
+            <a className="inline-flex items-center gap-1 align-middle underline" href="https://github.com/features/copilot" target="_blank" rel="noreferrer">
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true"><path d={siGithubcopilot.path} /></svg>
-              GitHub Copilot</span>) working from prompts and feedback from a human maintainer.
+              GitHub Copilot</a>, and{' '}
+            <a className="underline" href="https://www.microsoft.com/microsoft-365/copilot" target="_blank" rel="noreferrer">Microsoft 365 Copilot</a>,
+            working from prompts and feedback from a human maintainer.
           </p>
           <p className="text-xs text-muted-foreground">
             The human role was product direction, requirements, running the app against real wikis and reporting

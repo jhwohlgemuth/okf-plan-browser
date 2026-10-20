@@ -113,12 +113,25 @@ function wikiEntries(absPaths: string[]): Array<{ abs: string; rel: string }> {
   return md.map(abs => ({ abs, rel: abs }));
 }
 
-function forgeError(status: number, forge: ForgeKind): Error {
+class GitlabIpRestrictedError extends Error {}
+
+async function forgeError(res: Response, forge: ForgeKind, url: string, hasToken: boolean): Promise<Error> {
+  const status = res.status;
+  if (forge === 'gitlab' && status === 403) {
+    const body = await res.text();
+    if (body.includes('Access from your IP address is currently restricted')) {
+      return new GitlabIpRestrictedError(
+        `${new URL(url).host} is blocking your IP address. Ask your ORNL collaboration partner to request an exception; a GitLab token cannot override this restriction.`,
+      );
+    }
+  }
   if (status === 401 || status === 403) {
     return new Error(
       forge === 'github'
         ? 'GitHub denied access. For a private repo, add a token in Settings.'
-        : 'GitLab denied access. If the project is private or internal, add a GitLab token in Settings.',
+        : hasToken
+          ? 'GitLab denied access. Check that the token saved for this exact host can read the project.'
+          : 'GitLab denied access. If the project is private or internal, add a GitLab token in Settings.',
     );
   }
   if (status === 404) {
@@ -174,13 +187,13 @@ async function req(
     if (e instanceof TypeError) {
       throw new Error(
         forge === 'gitlab'
-          ? 'This GitLab host blocked the browser (CORS). npm run dev proxies GitLab; a 403 often means the project is internal — add a GitLab token in Settings.'
+          ? 'GitLab blocked this browser request (CORS or gateway). A token cannot bypass this restriction. Try the desktop app or open a local clone.'
           : 'Network error talking to GitHub.',
       );
     }
     throw e;
   }
-  if (!res.ok) throw forgeError(res.status, forge);
+  if (!res.ok) throw await forgeError(res, forge, url, !!headers['PRIVATE-TOKEN']);
   return res;
 }
 
@@ -202,6 +215,60 @@ function decodeBase64(content: string): string {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return new TextDecoder().decode(bytes);
+}
+
+async function readWikiArchive(compressed: ArrayBuffer, report?: Progress): Promise<RemoteFile[]> {
+  const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
+  const tar = new Uint8Array(await new Response(stream).arrayBuffer());
+  const decoder = new TextDecoder();
+  const field = (start: number, length: number) =>
+    decoder.decode(tar.subarray(start, start + length)).replace(/\0.*$/s, '');
+  const entries = new Map<string, Uint8Array>();
+  let offset = 0;
+  let extendedPath: string | undefined;
+  while (offset + 512 <= tar.length) {
+    if (tar.subarray(offset, offset + 512).every(byte => byte === 0)) break;
+    const name = field(offset, 100);
+    const prefix = field(offset + 345, 155);
+    const size = parseInt(field(offset + 124, 12).trim(), 8);
+    if (!Number.isSafeInteger(size) || size < 0) throw new Error('Invalid GitLab archive.');
+    const type = tar[offset + 156];
+    const start = offset + 512;
+    const end = start + size;
+    if (end > tar.length) throw new Error('Incomplete GitLab archive.');
+    const content = tar.subarray(start, end);
+    offset = start + Math.ceil(size / 512) * 512;
+
+    if (type === 120) { // POSIX extended header, including paths longer than the tar name field.
+      let position = 0;
+      while (position < content.length) {
+        const space = content.indexOf(32, position);
+        if (space < 0) break;
+        const length = parseInt(decoder.decode(content.subarray(position, space)), 10);
+        if (!Number.isSafeInteger(length) || length <= 0) break;
+        const record = decoder.decode(content.subarray(space + 1, position + length - 1));
+        if (record.startsWith('path=')) extendedPath = record.slice(5);
+        position += length;
+      }
+      continue;
+    }
+    const path = extendedPath ?? (prefix ? `${prefix}/${name}` : name);
+    extendedPath = undefined;
+    if (type !== 0 && type !== 48) continue;
+    const marker = '/.wiki/';
+    const markerAt = path.indexOf(marker);
+    const absolute = markerAt >= 0 ? path.slice(markerAt + 1) : path;
+    if (!absolute.startsWith('.wiki/') || !absolute.toLowerCase().endsWith('.md')) continue;
+    if (absolute.split('/').some(part => SKIP.has(part))) continue;
+    entries.set(absolute, content);
+  }
+  const selected = wikiEntries([...entries.keys()]);
+  report?.(0, selected.length);
+  return selected.map((entry, i) => {
+    const text = decoder.decode(entries.get(entry.abs));
+    report?.(i + 1, selected.length);
+    return { path: entry.rel, text };
+  });
 }
 
 async function fetchGithub(
@@ -313,20 +380,41 @@ async function fetchGitlab(
   const ref = remote.ref || project.default_branch;
   const resolved: RemoteWikiRef = { ...remote, ref };
 
+  // A single archive request avoids gateway limits on bursts of individual file reads.
+  const native = typeof window !== 'undefined' && '__TAURI__' in window;
+  if (!native && typeof DecompressionStream !== 'undefined') {
+    try {
+      const archive = await req(
+        fetchImpl,
+        `${base}/repository/archive.tar.gz?sha=${encodeURIComponent(ref)}&path=.wiki`,
+        'gitlab',
+        headers,
+      );
+      const files = await readWikiArchive(await archive.arrayBuffer(), report);
+      if (files.length) return { remote: resolved, files };
+    } catch (error) {
+      if (error instanceof GitlabIpRestrictedError) throw error;
+      // Some GitLab hosts disable archives; try the file API below.
+    }
+  }
+
   const listed = await gitlabTree(fetchImpl, base, ref, headers);
   const pairs = wikiEntries(listed);
 
   report?.(0, pairs.length);
-  const files = await mapPool(pairs, 6, async (entry, i) => {
+  const files = await mapPool(pairs, 2, async (entry, i) => {
     const filePath = encodeURIComponent(entry.abs);
-    const res = await req(
+    const file = await (await req(
       fetchImpl,
-      `${base}/repository/files/${filePath}/raw?ref=${encodeURIComponent(ref)}`,
+      `${base}/repository/files/${filePath}?ref=${encodeURIComponent(ref)}`,
       'gitlab',
       headers,
-    );
+    )).json() as { content?: string; encoding?: string };
+    if (file.encoding !== 'base64' || !file.content) {
+      throw new Error(`GitLab returned an unreadable file: ${entry.abs}`);
+    }
     report?.(i + 1, pairs.length);
-    return { path: entry.rel, text: await res.text() };
+    return { path: entry.rel, text: decodeBase64(file.content) };
   });
   return { remote: resolved, files };
 }
@@ -343,6 +431,7 @@ async function gitlabTree(
       if (path && blobs.length) return blobs;
       if (!path) return blobs;
     } catch (e) {
+      if (e instanceof GitlabIpRestrictedError) throw e;
       if (path === '') throw e;
     }
   }
