@@ -4,7 +4,7 @@ import { usePlanStore } from '@/store/planStore';
 import { randomProjectName } from '@/lib/names';
 import { commitWiki, type LoadResult, type Parsed } from '@/lib/commitWiki';
 import { saveHandle } from '@/lib/handleStore';
-import { fetchRemoteWiki, remoteProjectId, type RemoteWikiRef } from '@/lib/remoteWiki';
+import { fetchRemoteWiki, parseRemoteSpec, remoteProjectId, type RemoteWikiRef } from '@/lib/remoteWiki';
 import { getGithubToken, getGitlabToken } from '@/lib/githubToken';
 
 export type { LoadResult };
@@ -83,8 +83,11 @@ export function useFileSystem() {
     setError(null);
     setLoading(true);
     try {
-      const wiki = await fetchRemoteWiki(trimmed, {
-        githubToken: getGithubToken(), gitlabToken: getGitlabToken(), report,
+      const remote = parseRemoteSpec(trimmed);
+      const wiki = await fetchRemoteWiki(remote, {
+        githubToken: remote.forge === 'github' ? await getGithubToken() : undefined,
+        gitlabToken: remote.forge === 'gitlab' ? await getGitlabToken(remote.host) : undefined,
+        report,
       });
       const project = remoteProjectId(wiki.remote);
       return commit(project, await parseWikiTexts(wiki.files, project, report), { remote: wiki.remote });

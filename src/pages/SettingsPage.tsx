@@ -1,12 +1,15 @@
-import { useState } from 'react';
-import { Monitor, Moon, Sun, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { KeyRound, Monitor, Moon, ShieldAlert, Sun, Trash2 } from 'lucide-react';
 import { useThemeStore, type Theme } from '@/store/themeStore';
 import { usePlanStore, PLAN_STORAGE_KEY } from '@/store/planStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { getGithubToken, setGithubToken, getGitlabToken, setGitlabToken } from '@/lib/githubToken';
+import {
+  canStoreForgeTokens, clearForgeTokens, hasGithubToken, hasGitlabToken,
+  normalizeGitlabHost, setGithubToken, setGitlabToken,
+} from '@/lib/githubToken';
 
 const THEMES: { value: Theme; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: 'dark',   label: 'Dark (One Dark)', icon: Moon },
@@ -30,8 +33,34 @@ export function SettingsPage() {
   const fmtSize = (b: number) => 
     b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(2)} MB`;
   const { toast } = useToast();
-  const [githubToken, setGithubTokenField] = useState(getGithubToken);
-  const [gitlabToken, setGitlabTokenField] = useState(getGitlabToken);
+  const [githubToken, setGithubTokenField] = useState('');
+  const [githubConfigured, setGithubConfigured] = useState(false);
+  const [gitlabHost, setGitlabHost] = useState('gitlab.com');
+  const [gitlabToken, setGitlabTokenField] = useState('');
+  const [gitlabConfigured, setGitlabConfigured] = useState(false);
+  const [credentialBusy, setCredentialBusy] = useState(false);
+  const tokenStorageAvailable = canStoreForgeTokens();
+
+  useEffect(() => {
+    let live = true;
+    hasGithubToken().then(value => { if (live) setGithubConfigured(value); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    const timer = window.setTimeout(() => {
+      try {
+        const host = normalizeGitlabHost(gitlabHost);
+        hasGitlabToken(host).then(value => { if (live) setGitlabConfigured(value); }).catch(() => {
+          if (live) setGitlabConfigured(false);
+        });
+      } catch {
+        setGitlabConfigured(false);
+      }
+    }, 200);
+    return () => { live = false; window.clearTimeout(timer); };
+  }, [gitlabHost]);
 
   return (
     <div className="max-w-lg mx-auto px-6 py-10 space-y-8">
@@ -65,52 +94,156 @@ export function SettingsPage() {
       {/* GitHub token */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">GitHub</h2>
-        <form
-          className="bg-card border border-border rounded-xl p-4 space-y-3"
-          onSubmit={e => {
-            e.preventDefault();
-            setGithubToken(githubToken);
-            toast({ title: githubToken.trim() ? 'GitHub token saved' : 'GitHub token cleared' });
-          }}
-        >
-          <p className="text-xs text-muted-foreground">
-            Optional personal access token for private GitHub repos. Stored only in this browser; never sent anywhere except api.github.com.
-          </p>
-          <Input
-            type="password"
-            autoComplete="off"
-            value={githubToken}
-            onChange={e => setGithubTokenField(e.target.value)}
-            placeholder="ghp_…"
-            aria-label="GitHub personal access token"
-          />
-          <Button type="submit" size="sm" variant="outline">Save token</Button>
-        </form>
+        {!tokenStorageAvailable ? (
+          <div className="flex gap-2 rounded-xl border border-od-red/30 bg-od-red/10 p-4 text-xs text-od-red">
+            <ShieldAlert className="h-4 w-4 shrink-0" />
+            Tokens are disabled because this page is not using a secure HTTPS connection.
+          </div>
+        ) : (
+          <form
+            className="bg-card border border-border rounded-xl p-4 space-y-3"
+            onSubmit={async e => {
+              e.preventDefault();
+              if (!githubToken.trim()) return;
+              setCredentialBusy(true);
+              try {
+                await setGithubToken(githubToken);
+                setGithubTokenField('');
+                setGithubConfigured(true);
+                toast({ title: 'GitHub token configured' });
+              } catch (error) {
+                toast({ title: 'Could not save GitHub token', description: (error as Error).message });
+              } finally {
+                setCredentialBusy(false);
+              }
+            }}
+          >
+            <p className="text-xs text-muted-foreground">
+              Use an expiring fine-grained token limited to the required repositories with <span className="font-mono">Contents: read</span>.
+              Web tokens last only for this tab. The desktop app uses the operating system credential store.
+            </p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <KeyRound className="h-3.5 w-3.5" /> {githubConfigured ? 'A token is configured.' : 'No token configured.'}
+            </p>
+            <Input
+              type="password"
+              autoComplete="new-password"
+              spellCheck={false}
+              value={githubToken}
+              onChange={e => setGithubTokenField(e.target.value)}
+              placeholder="github_pat_…"
+              aria-label="GitHub personal access token"
+            />
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" variant="outline" disabled={credentialBusy || !githubToken.trim()}>Save token</Button>
+              {githubConfigured && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={credentialBusy}
+                  onClick={async () => {
+                    setCredentialBusy(true);
+                    try {
+                      await setGithubToken('');
+                      setGithubConfigured(false);
+                      toast({ title: 'GitHub token forgotten' });
+                    } catch (error) {
+                      toast({ title: 'Could not forget GitHub token', description: (error as Error).message });
+                    } finally {
+                      setCredentialBusy(false);
+                    }
+                  }}
+                >
+                  Forget
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
       </section>
 
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">GitLab</h2>
-        <form
-          className="bg-card border border-border rounded-xl p-4 space-y-3"
-          onSubmit={e => {
-            e.preventDefault();
-            setGitlabToken(gitlabToken);
-            toast({ title: gitlabToken.trim() ? 'GitLab token saved' : 'GitLab token cleared' });
-          }}
-        >
-          <p className="text-xs text-muted-foreground">
-            Optional personal access token for private or internal GitLab projects (including custom hosts). Stored only in this browser; sent as PRIVATE-TOKEN to that GitLab host.
-          </p>
-          <Input
-            type="password"
-            autoComplete="off"
-            value={gitlabToken}
-            onChange={e => setGitlabTokenField(e.target.value)}
-            placeholder="glpat-…"
-            aria-label="GitLab personal access token"
-          />
-          <Button type="submit" size="sm" variant="outline">Save token</Button>
-        </form>
+        {!tokenStorageAvailable ? (
+          <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground">
+            GitLab tokens are unavailable until the app is loaded over HTTPS.
+          </div>
+        ) : (
+          <form
+            className="bg-card border border-border rounded-xl p-4 space-y-3"
+            onSubmit={async e => {
+              e.preventDefault();
+              if (!gitlabToken.trim()) return;
+              setCredentialBusy(true);
+              try {
+                const host = normalizeGitlabHost(gitlabHost);
+                await setGitlabToken(host, gitlabToken);
+                setGitlabHost(host);
+                setGitlabTokenField('');
+                setGitlabConfigured(true);
+                toast({ title: `GitLab token configured for ${host}` });
+              } catch (error) {
+                toast({ title: 'Could not save GitLab token', description: (error as Error).message });
+              } finally {
+                setCredentialBusy(false);
+              }
+            }}
+          >
+            <p className="text-xs text-muted-foreground">
+              Tokens are isolated by exact host. Prefer an expiring project token, or a personal token with only <span className="font-mono">read_repository</span>.
+            </p>
+            <Input
+              type="text"
+              inputMode="url"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={gitlabHost}
+              onChange={e => setGitlabHost(e.target.value)}
+              placeholder="gitlab.com"
+              aria-label="GitLab host"
+            />
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <KeyRound className="h-3.5 w-3.5" /> {gitlabConfigured ? 'A token is configured for this exact host.' : 'No token configured for this host.'}
+            </p>
+            <Input
+              type="password"
+              autoComplete="new-password"
+              spellCheck={false}
+              value={gitlabToken}
+              onChange={e => setGitlabTokenField(e.target.value)}
+              placeholder="glpat-…"
+              aria-label="GitLab personal access token"
+            />
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" variant="outline" disabled={credentialBusy || !gitlabToken.trim()}>Save token</Button>
+              {gitlabConfigured && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={credentialBusy}
+                  onClick={async () => {
+                    setCredentialBusy(true);
+                    try {
+                      const host = normalizeGitlabHost(gitlabHost);
+                      await setGitlabToken(host, '');
+                      setGitlabConfigured(false);
+                      toast({ title: `GitLab token forgotten for ${host}` });
+                    } catch (error) {
+                      toast({ title: 'Could not forget GitLab token', description: (error as Error).message });
+                    } finally {
+                      setCredentialBusy(false);
+                    }
+                  }}
+                >
+                  Forget
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
       </section>
 
       {/* Data */}
@@ -177,15 +310,35 @@ export function SettingsPage() {
               variant="outline"
               size="sm"
               className="flex-1 text-od-red border-od-red/30 hover:bg-od-red/10"
-              onClick={() => { clearSavedData(); toast({ title: 'Cleared loaded wikis and saved browser data' }); }}
+              onClick={async () => {
+                setCredentialBusy(true);
+                clearSavedData();
+                try {
+                  await clearForgeTokens();
+                  setGithubConfigured(false);
+                  setGitlabConfigured(false);
+                  setGithubTokenField('');
+                  setGitlabTokenField('');
+                  toast({ title: 'Cleared saved wikis and forgot all credentials' });
+                } catch (error) {
+                  toast({
+                    title: 'Cleared saved wikis, but some credentials remain',
+                    description: (error as Error).message,
+                  });
+                } finally {
+                  setCredentialBusy(false);
+                }
+              }}
+              disabled={credentialBusy}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Clear saved data
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Wikis are saved in this browser&apos;s localStorage. &quot;Clear saved data&quot; removes them from storage too.
-          </p>        </div>
+            &quot;Clear saved data&quot; removes persisted wikis and all configured forge credentials.
+          </p>
+        </div>
       </section>
 
       {/* Warnings detail */}

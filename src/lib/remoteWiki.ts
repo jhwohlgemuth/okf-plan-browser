@@ -52,7 +52,11 @@ export function parseRemoteSpec(raw: string): RemoteWikiRef {
     throw new Error('Enter a GitHub owner/repo or a GitLab project URL.');
   }
 
-  const host = url.hostname.replace(/^www\./i, '').toLowerCase();
+  if (url.protocol !== 'https:' || url.username || url.password) {
+    throw new Error('Repository URLs must use HTTPS and must not contain credentials.');
+  }
+
+  const host = url.host.replace(/^www\./i, '').toLowerCase();
   const dash = url.pathname.split('/-/');
   const beforeDash = (dash[0] ?? '').replace(/^\/+|\/+$/g, '');
   const afterDash = dash[1];
@@ -134,14 +138,23 @@ function forgeError(status: number, forge: ForgeKind): Error {
   return new Error(`Forge request failed (${status}).`);
 }
 
-function forgeProxyUrl(url: string): string {
-  if (!import.meta.env.DEV || !url.startsWith('https://')) return url;
+function forgeProxyUrl(url: string, forge: ForgeKind): string {
+  if (forge !== 'gitlab' || !import.meta.env.DEV || !url.startsWith('https://')) return url;
   try {
     const parsed = new URL(url);
+    if (!__GITLAB_HOSTS__.includes(parsed.host)) {
+      throw new Error(`GitLab host ${parsed.host} is not in OKF_GITLAB_HOSTS.`);
+    }
     return `/__forge/${parsed.host}${parsed.pathname}${parsed.search}`;
   } catch {
-    return url;
+    throw new Error('This GitLab host is not enabled in the development proxy. Add it to OKF_GITLAB_HOSTS and restart the dev server.');
   }
+}
+
+async function nativeRequest(url: string, headers: Record<string, string>): Promise<Response> {
+  const { invoke } = await import('@tauri-apps/api/tauri');
+  const result = await invoke<{ status: number; body: string }>('forge_request', { url, headers });
+  return new Response(result.body, { status: result.status });
 }
 
 async function req(
@@ -150,10 +163,13 @@ async function req(
   forge: ForgeKind,
   headers: Record<string, string> = {},
 ): Promise<Response> {
-  const target = fetchImpl === fetch ? forgeProxyUrl(url) : url;
+  const useNative = fetchImpl === fetch && typeof window !== 'undefined' && '__TAURI__' in window;
+  const target = fetchImpl === fetch && !useNative ? forgeProxyUrl(url, forge) : url;
   let res: Response;
   try {
-    res = await fetchImpl(target, { headers });
+    res = useNative
+      ? await nativeRequest(url, headers)
+      : await fetchImpl(target, { headers });
   } catch (e) {
     if (e instanceof TypeError) {
       throw new Error(

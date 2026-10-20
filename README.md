@@ -5,7 +5,7 @@
 ![CI](https://github.com/jhwohlgemuth/okf-plan-browser/actions/workflows/ci.yml/badge.svg)
 ![Pages](https://github.com/jhwohlgemuth/okf-plan-browser/actions/workflows/deploy-pages.yml/badge.svg)
 
-🌐 **Live demo:** `https://jhwohlgemuth.github.io/okf-plan-browser/`
+🌐 **Live demo:** `https://www.jasonwohlgemuth.com/okf-plan-browser/`
 
 ![Portfolio](docs/screenshots/portfolio.png)
 
@@ -94,7 +94,20 @@ npm run dev
 
 Open `http://localhost:5173` in Chrome or Edge. Click **Open Folder** and pick any `.wiki/` directory, paste a GitHub `owner/repo` or GitLab URL, or click **Load Demo Data** to explore immediately.
 
-Private GitHub repositories need a personal access token with `repo` (or fine-grained contents read) scope, saved under **Settings → GitHub**. GitLab, including custom hosts such as `https://code.ornl.gov/group/project`, is fetched through the Vite dev-server proxy on `npm run dev` (restart the dev server after pulling this change). Internal GitLab projects need a token under **Settings → GitLab**. The GitHub Pages build has no proxy, so custom-host GitLab still depends on that host allowing browser CORS.
+Private GitHub repositories should use an expiring fine-grained token limited to the selected repositories with **Contents: read**, saved under **Settings → GitHub**. GitLab tokens are stored per exact host; prefer an expiring project token or a personal token with only `read_repository`. Web tokens are session-only and are disabled on insecure HTTP. The desktop app stores credentials in the operating system credential store and performs authenticated requests outside the webview.
+
+GitLab development proxy hosts are allowlisted. `gitlab.com` and `code.ornl.gov` are always enabled; add any other custom hosts before starting Vite, for example:
+
+```powershell
+$env:OKF_GITLAB_HOSTS = 'gitlab.example.com'
+npm run dev
+```
+
+Production web builds use the same variable to generate their CSP allowlist. Custom-host GitLab also requires that host to permit browser CORS.
+
+### Deployment security
+
+The hosted web app must be served directly over HTTPS. Configure GitHub Pages and the custom-domain provider to redirect HTTP to HTTPS, then enable HSTS. The app attempts an HTTPS upgrade and refuses token storage in an insecure context, but client-side safeguards do not replace a server-side HTTPS redirect. Host the app on a dedicated origin so unrelated same-origin applications cannot access its browser storage.
 
 ---
 

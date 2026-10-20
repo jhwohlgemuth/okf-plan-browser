@@ -44,11 +44,12 @@ export function useRefresh() {
     setBusy(new Set([...handles.keys(), ...remotes.keys()]));
     let plans = 0;
     const failed: string[] = [];
-    const githubToken = getGithubToken();
-    const gitlabToken = getGitlabToken();
     for (const [id, remote] of remotes) {
       try {
-        const wiki = await fetchRemoteWiki(remote, { githubToken, gitlabToken });
+        const wiki = await fetchRemoteWiki(remote, {
+          githubToken: remote.forge === 'github' ? await getGithubToken() : undefined,
+          gitlabToken: remote.forge === 'gitlab' ? await getGitlabToken(remote.host) : undefined,
+        });
         plans += commitWiki(id, await parseWikiTexts(wiki.files, id), { remote: wiki.remote }).plans;
       } catch {
         failed.push(id);

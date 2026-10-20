@@ -5,8 +5,15 @@ import pkg from './package.json';
 
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 const repoName = process.env.REPO_NAME ?? 'okf-plan-browser';
+const builtInGitlabHosts = ['gitlab.com', 'code.ornl.gov'];
+const configuredGitlabHosts = (process.env.OKF_GITLAB_HOSTS ?? '')
+    .split(',')
+    .map(host => host.trim().toLowerCase())
+    .filter(host => /^[a-z0-9.-]+(?::\d+)?$/.test(host));
+const gitlabHosts = [...new Set([...builtInGitlabHosts, ...configuredGitlabHosts])];
+const gitlabOrigins = gitlabHosts.map(host => `https://${host}`).join(' ');
 
-const csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'";
+const csp = `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' https://api.github.com ${gitlabOrigins}; object-src 'none'; base-uri 'self'; form-action 'self'`;
 
 // Injected at build time only: the dev server needs inline scripts for React refresh.
 const cspPlugin = (): Plugin => ({
@@ -16,15 +23,10 @@ const cspPlugin = (): Plugin => ({
     { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: csp }, injectTo: 'head-prepend' },
   ],
 });
-const forgeProxy: ProxyOptions = {
-  target: 'https://gitlab.com',
+const forgeProxy = (host: string): ProxyOptions => ({
+  target: `https://${host}`,
   changeOrigin: true,
   rewrite: p => p.replace(/^\/__forge\/[^/]+/, '') || '/',
-  router(req) {
-    const host = req.url?.match(/^\/__forge\/([^/?#]+)/)?.[1] ?? '';
-    if (!/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(host)) return 'https://gitlab.com';
-    return `https://${host}`;
-  },
   configure(proxy) {
     proxy.on('proxyReq', proxyReq => {
       proxyReq.removeHeader('origin');
@@ -32,14 +34,22 @@ const forgeProxy: ProxyOptions = {
       proxyReq.setHeader('User-Agent', 'okf-plan-browser');
     });
   },
-};
+});
+
+const forgeProxies = Object.fromEntries(gitlabHosts.map(host => [
+  `^/__forge/${host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:/|$)`,
+  forgeProxy(host),
+]));
 
 export default defineConfig({
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __GITLAB_HOSTS__: JSON.stringify(gitlabHosts),
+  },
   plugins: [react(), cspPlugin()],
   base: isGitHubPages ? `/${repoName}/` : '/',
-  server: { proxy: { '/__forge': forgeProxy } },
-  preview: { proxy: { '/__forge': forgeProxy } },
+  server: { proxy: forgeProxies },
+  preview: { proxy: forgeProxies },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

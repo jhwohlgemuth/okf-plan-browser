@@ -67,8 +67,10 @@ This runs the **Version Bump** workflow, which updates `package.json` and `tauri
 
 - All third-party actions are pinned to commit SHAs. Dependabot keeps them current.
 - Workflows default to read-only permissions; write access is granted per job.
-- The app ships a strict Content Security Policy, set in `src-tauri/tauri.conf.json` and injected into the web build by `vite.config.ts`. Update both together when adding an external origin. Remote wiki loads need `connect-src` to allow `https:`.
-- `npm run dev` proxies `/__forge/{host}/…` to `https://{host}/…` so custom GitLab hosts work from the browser. Restart the dev server after changing the proxy.
+- The app ships a strict Content Security Policy, set in `src-tauri/tauri.conf.json` and injected into the web build by `vite.config.ts`. Web forge destinations come from `OKF_GITLAB_HOSTS`; never restore a blanket `https:` source.
+- `npm run dev` always supports `gitlab.com` and `code.ornl.gov`, and proxies additional hosts listed in `OKF_GITLAB_HOSTS`. Set a comma-separated list before starting Vite when testing another GitLab host.
+- Production Pages/custom-domain configuration must redirect HTTP to HTTPS before token entry is enabled. Verify the effective URL and enable HSTS after HTTPS works.
+- Browser tokens are session-only. Desktop tokens are stored by the Rust backend in the operating system credential store and are attached only to exact-host requests.
 
 ## Project structure
 
@@ -80,7 +82,7 @@ okf-plan-browser/
 │   ├── lib/
 │   │   ├── wikiParser.ts      ← YAML frontmatter + markdown body parser
 │   │   ├── remoteWiki.ts      ← GitHub / GitLab .wiki fetch
-│   │   ├── githubToken.ts     ← Optional GitHub PAT in localStorage
+│   │   ├── githubToken.ts     ← Session/native forge credential boundary
 │   │   ├── commitWiki.ts      ← Parse + commit a wiki into the store
 │   │   ├── handleStore.ts     ← Persists directory handles (IndexedDB) for refresh
 │   │   ├── demoData.ts        ← Embedded synthetic plans

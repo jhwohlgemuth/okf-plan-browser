@@ -4,6 +4,15 @@ import App from './App';
 import './index.css';
 import { useThemeStore, initTheme } from './store/themeStore';
 
+const localDevHost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+const requiresHttpsUpgrade = window.location.protocol === 'http:' && !localDevHost;
+
+if (requiresHttpsUpgrade) {
+  const secure = new URL(window.location.href);
+  secure.protocol = 'https:';
+  window.location.replace(secure);
+}
+
 // Sync stored theme to DOM before first paint
 initTheme(useThemeStore.getState().theme);
 
@@ -17,8 +26,10 @@ if ('__TAURI__' in window) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+if (!requiresHttpsUpgrade) {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+}

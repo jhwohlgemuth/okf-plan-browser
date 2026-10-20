@@ -39,6 +39,8 @@ describe('parseRemoteSpec', () => {
   it('rejects empty and malformed specs', () => {
     expect(() => parseRemoteSpec('')).toThrow(/owner\/repo/);
     expect(() => parseRemoteSpec('justone')).toThrow(/owner\/repo/);
+    expect(() => parseRemoteSpec('http://gitlab.com/group/project')).toThrow(/HTTPS/);
+    expect(() => parseRemoteSpec('https://token@gitlab.com/group/project')).toThrow(/credentials/);
   });
 });
 
