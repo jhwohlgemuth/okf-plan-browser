@@ -29,6 +29,7 @@
 | **Phase Tracker** | Kanban board across `planned → ready → blocked → in-progress` |
 | **Dependency Graph** | D3 force-directed graph — nodes are plans, edges are `.md` links and `PA-XX` cross-references |
 | **Search** | Full-text across titles, descriptions, section content, tags, packages, and phase titles |
+| **Planning Skill** | Copy-ready `$planning` prompts plus the complete bundled skill, references, validator, tests, and agent metadata |
 
 - 🌙 **One Dark theme** with Light / System toggle (persisted across sessions)
 - 📂 **File System Access API** (`showDirectoryPicker`) + drag-and-drop fallback

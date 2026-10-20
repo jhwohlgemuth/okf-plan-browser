@@ -3,6 +3,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
 import type { PhaseStatus, Phase, ParsedPlan } from '@/types/wiki';
+import { AgentCommandButton } from './AgentCommandButton';
+import { phaseAgentCommand, planAgentCommand } from '@/lib/agentCommand';
 
 interface PhaseCard { plan: ParsedPlan; phase: Phase }
 
@@ -89,12 +91,20 @@ export function KanbanBoard() {
                     {/* Phase ID + status */}
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span className="font-mono text-xs text-od-blue font-medium">{phase.id}</span>
-                      {fm.impact && (
-                        <span
-                          className={cn('inline-block w-2 h-2 rounded-full', IMPACT_DOT[fm.impact] ?? 'bg-od-muted')}
-                          title={`Impact: ${fm.impact}`}
+                      <span className="flex items-center gap-1.5">
+                        {fm.impact && (
+                          <span
+                            className={cn('inline-block w-2 h-2 rounded-full', IMPACT_DOT[fm.impact] ?? 'bg-od-muted')}
+                            title={`Impact: ${fm.impact}`}
+                          />
+                        )}
+                        <AgentCommandButton
+                          command={phase.id === 'Plan' ? planAgentCommand(plan) : phaseAgentCommand(plan, phase)}
+                          label={phase.id === 'Plan'
+                            ? `Copy agent command for ${fm.title ?? plan.fileName}`
+                            : `Copy agent command for phase ${phase.id}`}
                         />
-                      )}
+                      </span>
                     </div>
 
                     {/* Phase title */}

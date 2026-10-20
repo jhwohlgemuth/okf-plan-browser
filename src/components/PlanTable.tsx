@@ -6,6 +6,8 @@ import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
+import { AgentCommandButton } from './AgentCommandButton';
+import { planAgentCommand } from '@/lib/agentCommand';
 
 type SortKey = 'title' | 'status' | 'priority' | 'impact' | 'difficulty';
 
@@ -94,6 +96,7 @@ export function PlanTable() {
             {col('difficulty', 'Difficulty')}
             <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Repo</th>
             <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Tags</th>
+            <th className="w-12 px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Agent</th>
           </tr>
         </thead>
         <tbody>
@@ -160,6 +163,14 @@ export function PlanTable() {
                       <span className="text-xs text-muted-foreground">+{fm.tags!.length - 2}</span>
                     )}
                   </div>
+                </td>
+
+                {/* Agent command */}
+                <td className="px-3 py-2.5 text-right">
+                  <AgentCommandButton
+                    command={planAgentCommand(plan)}
+                    label={`Copy agent command for ${fm.title ?? plan.fileName}`}
+                  />
                 </td>
               </tr>
             );
