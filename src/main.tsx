@@ -5,7 +5,7 @@ import './index.css';
 import { useThemeStore, initTheme } from './store/themeStore';
 
 const localDevHost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
-const requiresHttpsUpgrade = window.location.protocol === 'http:' && !localDevHost;
+const requiresHttpsUpgrade = window.location.protocol === 'http:' && !localDevHost && !('__TAURI__' in window);
 
 if (requiresHttpsUpgrade) {
   const secure = new URL(window.location.href);

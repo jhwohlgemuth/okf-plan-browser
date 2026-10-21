@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { usePlanStore } from '@/store/planStore';
 import { DependencyGraph } from '@/components/DependencyGraph';
 
@@ -13,6 +14,7 @@ export function GraphPage() {
         <h1 className="text-base font-semibold text-foreground">Dependency Graph</h1>
         <p className="text-xs text-muted-foreground">
           {plans.length} nodes · {deps} .md links · {refs} PA-XX cross-references
+          {' · '}<TimeRemaining plans={plans} />
           · Scroll to zoom · Drag nodes · Click to open detail
         </p>
       </div>

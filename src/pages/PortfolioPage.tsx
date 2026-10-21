@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { useEffect, useMemo, useState } from 'react';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
 import { debounce } from '@/lib/utils';
@@ -29,6 +30,7 @@ export function PortfolioPage() {
           <h1 className="text-base font-semibold text-foreground">Portfolio</h1>
           <p className="text-xs text-muted-foreground">
             {filtered.length} of {total} plan{total !== 1 ? 's' : ''}
+            {' · '}<TimeRemaining plans={filtered} />
           </p>
         </div>
         <div className="relative w-full sm:w-64 sm:ml-auto">

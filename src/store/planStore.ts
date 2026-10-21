@@ -3,7 +3,7 @@ import { persist, createJSONStorage, type StateStorage } from 'zustand/middlewar
 import type { ParsedPlan, WikiRepo, PlanFilters, ParseWarning } from '@/types/wiki';
 import { DEMO_PLANS, DEMO_REPOS } from '@/lib/demoData';
 import { buildSearchText } from '@/lib/wikiParser';
-import { newUuid } from '@/lib/utils';
+import { restorePortfolio } from '@/lib/restorePortfolio';
 
 interface PlanStore {
   plans:          ParsedPlan[];
@@ -120,15 +120,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
   name:    PLAN_STORAGE_KEY,
   version: 1,
   storage: createJSONStorage(() => safeStorage),
-  merge: (saved, current) => {
-    const s = (saved ?? {}) as Partial<PlanStore>;
-    return {
-      ...current,
-      plans:    (s.plans ?? []).map(p => ({ ...p, searchText: buildSearchText(p) })),
-      repos:    (s.repos ?? []).map(r => ({ ...r, uuid: r.uuid ?? newUuid() })),
-      warnings: s.warnings ?? [],
-    };
-  },
+  merge: (saved, current) => ({ ...current, ...restorePortfolio(saved) }),
   // Demo data is never saved; the derived search text is rebuilt on load rather than stored.
   partialize: s => s.isDemoData
     ? { plans: [], repos: [], warnings: [] }

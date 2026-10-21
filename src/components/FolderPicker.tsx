@@ -16,8 +16,8 @@ interface Props {
 
 export function FolderPicker({ label = 'Open .wiki Folder', compact = false, cards = false }: Props) {
   const {
-    openFolder, loadFileList, dropFolder, loadRemote, pending, confirmPending, cancelPending,
-    existingProjects, loading, error, scanning, setScanning, progress,
+    openFolder, loadFileList, dropFolder, loadRemote, cancelRemote, pending, confirmPending, cancelPending,
+    existingProjects, loading, remoteLoading, error, scanning, setScanning, progress,
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
   const [remoteSpec, setRemoteSpec] = useState('');
@@ -46,7 +46,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
     return () => input?.removeEventListener('cancel', onCancel);
   }, [setScanning]);
 
-  const overlay = <LoadingOverlay open={loading || scanning} scanning={scanning && !loading} progress={progress} />;
+  const overlay = <LoadingOverlay open={loading || scanning} scanning={scanning && !loading} progress={progress} onCancel={remoteLoading ? cancelRemote : undefined} />;
 
   const announce = (result: { plans: number; repoId: string; warnings: number } | null) => {
     if (result) {
@@ -122,7 +122,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
             placeholder="e.g. acorn (optional)"
           />
           {existingProjects.includes(projectName.trim()) && (
-            <p className="text-xs text-od-yellow">A project with this name is loaded and will be replaced.</p>
+            <p className="text-xs text-od-yellow">A project with this name is loaded. This folder will be added separately.</p>
           )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={cancelPending}>Cancel</Button>

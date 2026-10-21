@@ -26,7 +26,7 @@ export default defineConfig({
     { name: 'phone',   use: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true } },
   ],
   webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    command: `"${process.execPath}" node_modules/vite/bin/vite.js build && "${process.execPath}" node_modules/vite/bin/vite.js preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

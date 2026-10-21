@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { Layers, Sparkles, Trash2, AlertTriangle } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { FolderPicker } from '@/components/FolderPicker';
@@ -37,7 +38,7 @@ export function HomePage() {
   const clearAll    = usePlanStore(s => s.clearAll);
   const { toast } = useToast();
 
-  const isEmpty = plans.length === 0;
+  const isEmpty = repos.length === 0;
 
   if (isEmpty) {
     return (
@@ -107,6 +108,8 @@ export function HomePage() {
             ))}
           </div>
 
+          <div><TimeRemaining plans={plans} /></div>
+
           {/* Repo list */}
           <div className="bg-card border border-border rounded-xl divide-y divide-border">
             {repos.map(repo => (
@@ -123,7 +126,10 @@ export function HomePage() {
                     </span>
                   )}
                 </span>
-                <span className="text-xs text-muted-foreground">{repo.planCount} plan{repo.planCount !== 1 ? 's' : ''}</span>
+                <span className="text-right text-xs text-muted-foreground">
+                  <span className="block">{repo.planCount} plan{repo.planCount !== 1 ? 's' : ''}</span>
+                  <TimeRemaining plans={plans.filter(p => p.repoId === repo.id)} />
+                </span>
                 {!isDemoData && (
                   <button
                     onClick={() => removeRepo(repo.id)}

@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PriorityBadge } from './PriorityBadge';
@@ -99,7 +100,7 @@ export function KanbanBoard() {
                           />
                         )}
                         <AgentCommandButton
-                          command={phase.id === 'Plan' ? planAgentCommand(plan) : phaseAgentCommand(plan, phase)}
+                          command={phase.id === 'Plan' ? planAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId }) : phaseAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId }, phase)}
                           label={phase.id === 'Plan'
                             ? `Copy agent command for ${fm.title ?? plan.fileName}`
                             : `Copy agent command for phase ${phase.id}`}
@@ -111,6 +112,8 @@ export function KanbanBoard() {
                     <p className="text-xs font-medium text-foreground leading-snug mb-2">
                       {truncate(phase.title, 80)}
                     </p>
+
+                    <div className="mb-2"><TimeRemaining plans={[plan]} phase={phase.id === 'Plan' ? undefined : phase} /></div>
 
                     {/* Plan title */}
                     <p className="text-xs text-muted-foreground leading-tight mb-2">

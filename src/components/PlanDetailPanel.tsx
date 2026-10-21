@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
@@ -5,6 +6,7 @@ import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn } from '@/lib/utils';
 import { Markdown } from './Markdown';
+import { resolvePlanLink } from '@/lib/planLinks';
 
 const IMPACT_CLASSES: Record<string, string> = {
   critical: 'text-od-red',
@@ -29,16 +31,7 @@ export function PlanDetailPanel() {
   /** Resolve a relative .md link against the current plan's path, within the same wiki. */
   const resolveLink = (href: string) => {
     if (!plan) return null;
-    const pathPart = (href.split('#')[0] ?? '').split('?')[0] ?? '';
-    if (!pathPart) return null;
-    let resolved: string;
-    try {
-      const url = new URL(decodeURI(pathPart), `http://w/${plan.fileName}`);
-      resolved = decodeURIComponent(url.pathname).replace(/^\//, '');
-    } catch {
-      return null;
-    }
-    const target = plans.find(p => p.repoId === plan.repoId && p.fileName.toLowerCase() === resolved.toLowerCase());
+    const target = resolvePlanLink(plans, plan, href);
     return { exists: !!target, open: () => target && selectPlan(target.id) };
   };
 
@@ -168,6 +161,8 @@ export function PlanDetailPanel() {
                 )}
               </div>
 
+              <div><TimeRemaining plans={[plan]} /></div>
+
               {/* phase_budget_hours */}
               {fm?.phase_budget_hours != null && (
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -208,7 +203,7 @@ export function PlanDetailPanel() {
               {plan.dependencies.length > 0 && (
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2">
-                    <GitBranch className="h-3.5 w-3.5" /> Dependencies
+                    <GitBranch className="h-3.5 w-3.5" /> Plan links
                   </div>
                   <ul className="space-y-1.5 pl-5 border-l border-border/60">
                     {[...new Map(plan.dependencies.map(d => [d.href, d])).values()].map(d => {
@@ -245,6 +240,7 @@ export function PlanDetailPanel() {
                           <span key={ph.id} className="inline-flex items-center gap-1.5 bg-secondary rounded px-2.5 py-1" title={ph.title}>
                             <span className="font-mono text-xs text-od-blue font-medium">{ph.id}</span>
                             <StatusBadge status={ph.status} />
+                            <TimeRemaining plans={[plan]} phase={ph} label={false} />
                           </span>
                         ))}
                       </div>

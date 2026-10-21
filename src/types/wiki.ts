@@ -2,7 +2,7 @@ import type { RemoteWikiRef } from '@/lib/remoteWiki';
 
 // ─── Frontmatter ─────────────────────────────────────────────────────────────
 
-export type PlanStatus    = 'planned' | 'in-progress' | 'waiting-on-validation' | 'blocked';
+export type PlanStatus    = 'planned' | 'ready' | 'in-progress' | 'waiting-on-validation' | 'blocked';
 export type PlanPriority  = 'next' | 'high' | 'medium' | 'low';
 export type PlanDifficulty = 'easy' | 'medium' | 'hard';
 export type PlanImpact    = 'low' | 'medium' | 'high' | 'critical';
@@ -43,6 +43,7 @@ export interface Section {
 // ─── Plan ─────────────────────────────────────────────────────────────────────
 
 export interface PlanDependency {
+  kind?: 'dependency' | 'reference';
   text:     string;         // link text
   href:     string;         // relative path e.g. ../other-plan.md
 }

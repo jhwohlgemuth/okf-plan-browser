@@ -25,7 +25,7 @@ export function Sidebar({ open = false }: { open?: boolean }) {
   const repos      = usePlanStore(s => s.repos);
   const warnings   = usePlanStore(s => s.warnings);
   const isDemoData = usePlanStore(s => s.isDemoData);
-  const { busy, refreshable, refreshOne, refreshAll } = useRefresh();
+  const { busy, refreshable, refreshOne, refreshAll, cancelRefresh } = useRefresh();
   const collapsed = useUiStore(s => s.sidebarCollapsed);
   const toggleSidebar = useUiStore(s => s.toggleSidebar);
   // The mobile drawer is always expanded; collapsing only applies from md up.
@@ -105,6 +105,7 @@ export function Sidebar({ open = false }: { open?: boolean }) {
               </button>
             )}
           </div>
+          {busy.size > 0 && <button type="button" onClick={cancelRefresh} className="text-xs underline">Cancel refresh</button>}
           {repos.map(r => (
             <div key={r.id} className="group flex items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: r.color }} />

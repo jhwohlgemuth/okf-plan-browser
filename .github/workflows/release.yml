@@ -10,7 +10,11 @@ permissions:
   contents: read
 
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
   build-tauri:
+    needs: checks
     permissions:
       contents: write
     strategy:
@@ -19,9 +23,9 @@ jobs:
         include:
           - platform: ubuntu-22.04
             args: ''
-          - platform: macos-latest
+          - platform: macos-15
             args: '--target aarch64-apple-darwin'
-          - platform: macos-13
+          - platform: macos-15-intel
             args: '--target x86_64-apple-darwin'
           - platform: windows-latest
             args: ''
@@ -33,13 +37,13 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
-          toolchain: 1.88.0
+          toolchain: 1.99.0
           targets: ${{ startsWith(matrix.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
@@ -65,6 +69,26 @@ jobs:
           releaseName: OKF Plan Browser ${{ github.ref_name }}
           releaseBody: |
             Desktop builds for Windows, macOS (Apple Silicon and Intel) and Linux. Builds are unsigned, so your OS may warn on first launch.
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Verify packaged artifacts
+        shell: bash
+        run: |
+          find src-tauri/target -type f \( -name '*.dmg' -o -name '*.msi' -o -name '*.AppImage' -o -name '*.deb' \) | tee artifacts.txt
+          test -s artifacts.txt
+
+  publish:
+    needs: build-tauri
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish only after every platform succeeds
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release edit "$RELEASE_TAG" --draft=false

@@ -1,31 +1,31 @@
 # Planning portfolio
 
-Planning wiki for `okf-plan-browser`. The portfolio currently contains 1 executable plan and
-1 coordination record.
-
-## Entry point
-
-[code-health-hardening.md](code-health-hardening.md) — coordination record carrying the
-remaining review finding and its routing to an executable plan.
+The portfolio contains 9 executable plans and 1 coordination record. The seven high-impact
+review recommendations are implemented; durable behavior and validation are described in
+[review-hardening.md](../docs/review-hardening.md). The eight remaining recommendations and
+the pre-existing desktop ingest verification are tracked below.
 
 ## Executable plans
 
-| Order | Plan | Difficulty | Impact | Phases |
+Ranked by impact descending, then difficulty ascending.
+
+| Order | Plan | Difficulty | Impact | Outcome |
 |---|---|---|---|---|
-| 1 | [plans/tauri-desktop-ingest.md](plans/tauri-desktop-ingest.md) | high | critical | 3 |
+| 1 | [tauri-desktop-ingest.md](plans/tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
+| 2 | [Make dropped files match the import interface](plans/folder-drop-contract.md) | low | medium | Make dropped files match the import interface |
+| 3 | [Forget folder access when removing saved data](plans/forget-folder-handles.md) | low | medium | Forget folder access when removing saved data |
+| 4 | [Persist portfolio changes without rewriting on navigation](plans/persistence-write-scope.md) | medium | medium | Persist portfolio changes without rewriting on navigation |
+| 5 | [Track refresh work independently for each repository](plans/refresh-concurrency.md) | medium | medium | Track refresh work independently for each repository |
+| 6 | [Load branches containing slashes unambiguously](plans/remote-branch-selection.md) | medium | medium | Load branches containing slashes unambiguously |
+| 7 | [Make navigation and graph usable without a pointer](plans/accessible-navigation.md) | medium | medium | Make navigation and graph usable without a pointer |
+| 8 | [Restore and share selected plans and phases](plans/plan-deep-links.md) | medium | medium | Restore and share selected plans and phases |
+| 9 | [Reduce initial loading and graph layout work](plans/rendering-performance.md) | medium | medium | Reduce initial loading and graph layout work |
 
 ## Supporting views
 
-- [plans/index.md](plans/index.md) — the executable plan index with outcomes.
-- [plan-network.md](plan-network.md) — genuine blockers between plans and between phases.
-- [parallel-execution.md](parallel-execution.md) — one primary integration lock per ready
-  phase, and the lanes that avoid write-set collisions.
+- [code-health-hardening.md](code-health-hardening.md) routes remaining findings.
+- [plans/index.md](plans/index.md) is the nearest executable index.
+- [plan-network.md](plan-network.md) lists actual prerequisites.
+- [parallel-execution.md](parallel-execution.md) records integration locks and write collisions.
 
-## Conventions
-
-- Executable plans use `execution: phased` with `phase_budget_hours: 5`. Coordination records
-  use `execution: coordination` and carry no phases.
-- A completed phase is removed from its plan, never marked done. A plan whose acceptance
-  criteria hold is deleted along with every reference to it.
-- Validate after any change with
-  `python3 .agents/skills/planning/scripts/validate_wiki.py .`.
+Validate changes with `python3 .agents/skills/planning/scripts/validate_wiki.py .`.

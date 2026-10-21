@@ -8,7 +8,27 @@ use reqwest::{
     Client, Url,
 };
 use serde::Serialize;
-use std::{collections::HashMap, net::IpAddr, str::FromStr};
+use std::{collections::HashMap, net::IpAddr, str::FromStr, sync::Mutex, time::Duration};
+
+const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+#[derive(Default)]
+struct Requests(Mutex<HashMap<String, tokio::sync::oneshot::Sender<()>>>);
+
+fn append_response(bytes: &mut Vec<u8>, chunk: &[u8]) -> Result<(), String> {
+    if bytes.len().saturating_add(chunk.len()) > MAX_RESPONSE_BYTES {
+        return Err("Remote response exceeds the size limit".into());
+    }
+    bytes.extend_from_slice(chunk);
+    Ok(())
+}
+
+fn same_origin_redirect(origin: &str, next: &Url, previous: usize) -> bool {
+    let host = next.port().map_or_else(
+        || next.host_str().unwrap_or_default().to_string(),
+        |port| format!("{}:{port}", next.host_str().unwrap_or_default()),
+    );
+    previous < 5 && next.scheme() == "https" && host.eq_ignore_ascii_case(origin)
+}
 
 const CREDENTIAL_SERVICE: &str = "com.okf.planbrowser";
 const HOST_INDEX: &str = "configured-forge-hosts";
@@ -144,10 +164,40 @@ fn clear_forge_tokens() -> Result<(), String> {
 struct ForgeResponse {
     status: u16,
     body: String,
+    headers: HashMap<String, String>,
+}
+
+#[tauri::command]
+fn cancel_forge_request(request_id: String, requests: tauri::State<'_, Requests>) {
+    if let Some(cancel) = requests.0.lock().unwrap().remove(&request_id) {
+        let _ = cancel.send(());
+    }
 }
 
 #[tauri::command]
 async fn forge_request(
+    url: String,
+    headers: HashMap<String, String>,
+    request_id: String,
+    requests: tauri::State<'_, Requests>,
+) -> Result<ForgeResponse, String> {
+    let (send, receive) = tokio::sync::oneshot::channel();
+    {
+        let mut active = requests.0.lock().unwrap();
+        if active.len() >= 8 {
+            return Err("Too many active requests".into());
+        }
+        active.insert(request_id.clone(), send);
+    }
+    let result = tokio::select! {
+        result = perform_forge_request(url, headers) => result,
+        _ = receive => Err("Remote request cancelled".into()),
+    };
+    requests.0.lock().unwrap().remove(&request_id);
+    result
+}
+
+async fn perform_forge_request(
     url: String,
     headers: HashMap<String, String>,
 ) -> Result<ForgeResponse, String> {
@@ -202,13 +252,10 @@ async fn forge_request(
 
     let origin_host = host.clone();
     let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
         .redirect(Policy::custom(move |attempt| {
-            let next = attempt.url();
-            let next_host = next.port().map_or_else(
-                || next.host_str().unwrap_or_default().to_string(),
-                |port| format!("{}:{port}", next.host_str().unwrap_or_default()),
-            );
-            if next.scheme() == "https" && next_host.eq_ignore_ascii_case(&origin_host) {
+            if same_origin_redirect(&origin_host, attempt.url(), attempt.previous().len()) {
                 attempt.follow()
             } else {
                 attempt.stop()
@@ -216,24 +263,47 @@ async fn forge_request(
         }))
         .build()
         .map_err(|e| e.to_string())?;
-    let response = client
+    let mut response = client
         .get(parsed)
         .headers(request_headers)
         .send()
         .await
         .map_err(|e| e.to_string())?;
     let status = response.status().as_u16();
-    let body = response.text().await.map_err(|e| e.to_string())?;
-    Ok(ForgeResponse { status, body })
+    let headers = ["retry-after", "x-ratelimit-remaining", "x-ratelimit-reset"]
+        .iter()
+        .filter_map(|name| {
+            response
+                .headers()
+                .get(*name)
+                .and_then(|v| v.to_str().ok())
+                .map(|v| (name.to_string(), v.to_string()))
+        })
+        .collect();
+    if response.content_length().unwrap_or(0) > MAX_RESPONSE_BYTES as u64 {
+        return Err("Remote response exceeds the size limit".into());
+    }
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
+        append_response(&mut bytes, &chunk)?;
+    }
+    let body = String::from_utf8(bytes).map_err(|_| "Invalid UTF-8 response".to_string())?;
+    Ok(ForgeResponse {
+        status,
+        body,
+        headers,
+    })
 }
 
 fn main() {
     tauri::Builder::default()
+        .manage(Requests::default())
         .invoke_handler(tauri::generate_handler![
             save_forge_token,
             has_forge_token,
             clear_forge_tokens,
             forge_request,
+            cancel_forge_request,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -241,7 +311,57 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::normalized_host;
+    use super::{
+        append_response, normalized_host, perform_forge_request, same_origin_redirect,
+        MAX_RESPONSE_BYTES,
+    };
+    use reqwest::Url;
+    use std::collections::HashMap;
+
+    #[test]
+    fn response_limit_does_not_append_an_overflowing_chunk() {
+        let mut bytes = vec![0; MAX_RESPONSE_BYTES - 1];
+        append_response(&mut bytes, &[1]).unwrap();
+        assert!(append_response(&mut bytes, &[2]).is_err());
+        assert_eq!(bytes.len(), MAX_RESPONSE_BYTES);
+    }
+
+    #[test]
+    fn redirects_are_bounded_and_keep_credentials_on_origin() {
+        assert!(same_origin_redirect(
+            "api.github.com",
+            &Url::parse("https://api.github.com/next").unwrap(),
+            1
+        ));
+        assert!(!same_origin_redirect(
+            "api.github.com",
+            &Url::parse("https://other.example/next").unwrap(),
+            1
+        ));
+        assert!(!same_origin_redirect(
+            "api.github.com",
+            &Url::parse("http://api.github.com/next").unwrap(),
+            1
+        ));
+        assert!(!same_origin_redirect(
+            "api.github.com",
+            &Url::parse("https://api.github.com/next").unwrap(),
+            5
+        ));
+    }
+
+    #[tokio::test]
+    async fn rejects_unsafe_urls_before_network_access() {
+        for url in [
+            "http://api.github.com",
+            "https://secret@api.github.com",
+            "https://127.0.0.1",
+        ] {
+            assert!(perform_forge_request(url.into(), HashMap::new())
+                .await
+                .is_err());
+        }
+    }
 
     #[test]
     fn credentials_are_bound_to_expected_hosts() {

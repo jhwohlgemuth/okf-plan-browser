@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
 import { useShallow } from 'zustand/react/shallow';
 import { FilterBar } from '@/components/FilterBar';
@@ -15,6 +16,7 @@ export function PhasesPage() {
         <h1 className="text-base font-semibold text-foreground">Phase Tracker</h1>
         <p className="text-xs text-muted-foreground">
           {phaseCount} phase{phaseCount !== 1 ? 's' : ''} across {filtered.length} plan{filtered.length !== 1 ? 's' : ''}
+          {' · '}<TimeRemaining plans={filtered} />
         </p>
       </div>
 

@@ -46,12 +46,12 @@ describe('parseRemoteSpec', () => {
 });
 
 describe('remoteProjectId', () => {
-  it('omits github.com and gitlab.com, keeps a custom host', () => {
-    expect(remoteProjectId({ forge: 'github', host: 'github.com', project: 'acme/widgets' })).toBe('acme/widgets');
-    expect(remoteProjectId({ forge: 'gitlab', host: 'gitlab.com', project: 'g/p' })).toBe('g/p');
+  it('includes forge and host in source identity', () => {
+    expect(remoteProjectId({ forge: 'github', host: 'github.com', project: 'acme/widgets' })).toBe('remote:github:github.com/acme/widgets@');
+    expect(remoteProjectId({ forge: 'gitlab', host: 'gitlab.com', project: 'g/p' })).toBe('remote:gitlab:gitlab.com/g/p@');
     expect(remoteProjectId({
       forge: 'gitlab', host: 'code.ornl.gov', project: 'research-enablement/acorn',
-    })).toBe('code.ornl.gov/research-enablement/acorn');
+    })).toBe('remote:gitlab:code.ornl.gov/research-enablement/acorn@');
   });
 });
 
@@ -180,6 +180,19 @@ describe('fetchRemoteWiki GitHub', () => {
 
 describe('fetchRemoteWiki GitLab', () => {
   const base = 'https://code.ornl.gov/api/v4/projects/research-enablement%2Facorn';
+
+  it('rejects oversized archive members without falling back to file requests', async () => {
+    const archive = wikiArchive({ 'large.md': 'x'.repeat(2 * 1024 * 1024 + 1) });
+    const requests: string[] = [];
+    await expect(fetchRemoteWiki('https://code.ornl.gov/research-enablement/acorn', {
+      fetch: async input => {
+        const url = String(input);
+        requests.push(url);
+        return url === base ? Response.json({ default_branch: 'main' }) : new Response(archive);
+      },
+    })).rejects.toThrow(/file limits/);
+    expect(requests).toHaveLength(2);
+  });
 
   it('imports the .wiki archive without requesting individual files', async () => {
     const archiveUrl = `${base}/repository/archive.tar.gz?sha=main&path=.wiki`;

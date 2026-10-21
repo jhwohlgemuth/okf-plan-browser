@@ -4,7 +4,7 @@ import { usePlanStore } from '@/store/planStore';
 import { Button } from './ui/button';
 import type { PlanStatus, PlanPriority, PlanImpact, PlanDifficulty } from '@/types/wiki';
 
-const STATUS_OPTIONS:     PlanStatus[]     = ['planned', 'in-progress', 'waiting-on-validation', 'blocked'];
+const STATUS_OPTIONS:     PlanStatus[]     = ['planned', 'ready', 'in-progress', 'waiting-on-validation', 'blocked'];
 const PRIORITY_OPTIONS:   PlanPriority[]   = ['next', 'high', 'medium', 'low'];
 const IMPACT_OPTIONS:     PlanImpact[]     = ['critical', 'high', 'medium', 'low'];
 const DIFFICULTY_OPTIONS: PlanDifficulty[] = ['easy', 'medium', 'hard'];

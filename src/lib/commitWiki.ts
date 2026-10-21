@@ -14,9 +14,12 @@ export type Parsed = { plans: ParsedPlan[]; errors: Array<{ name: string; error:
 export function commitWiki(
   project: string,
   { plans, errors }: Parsed,
-  source?: { remote?: RemoteWikiRef },
+  source?: { remote?: RemoteWikiRef; label?: string; refresh?: boolean },
 ): LoadResult {
-  if (plans.length === 0) {
+  if (errors.length) {
+    throw new Error(`Import failed; existing plans were kept. ${errors.map(e => `${e.name}: ${e.error}`).join('; ')}`);
+  }
+  if (plans.length === 0 && !(source?.refresh && usePlanStore.getState().repos.some(r => r.id === project))) {
     throw new Error(`No plans found in "${project}". Pick the project folder, its .wiki folder, or a repo that contains .wiki plans.`);
   }
   if (usePlanStore.getState().isDemoData) usePlanStore.getState().clearAll();
@@ -25,10 +28,10 @@ export function commitWiki(
   const repo: WikiRepo = {
     id:        project,
     uuid:      existing?.uuid ?? newUuid(),
-    label:     project,
+    label:     source?.label ?? existing?.label ?? project,
     color:     (existing?.color ?? repoColor(store.repos.length)) as WikiRepo['color'],
     planCount: plans.length,
-    remote:    source?.remote,
+    remote:    source?.remote ?? existing?.remote,
   };
   const warns: ParseWarning[] = [
     ...plans.filter(p => p.parseErrors.length).map(p => ({

@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { parseWikiFolder, parseWikiFileList, parseWikiEntry, parseWikiTexts, findWikiEntry, findWikiDir, isWikiFolderName, type Progress } from '@/lib/wikiParser';
 import { usePlanStore } from '@/store/planStore';
 import { randomProjectName } from '@/lib/names';
+import { newUuid } from '@/lib/utils';
 import { commitWiki, type LoadResult, type Parsed } from '@/lib/commitWiki';
-import { saveHandle } from '@/lib/handleStore';
+import { getHandle, saveHandle } from '@/lib/handleStore';
 import { fetchRemoteWiki, parseRemoteSpec, remoteProjectId, type RemoteWikiRef } from '@/lib/remoteWiki';
 import { getGithubToken, getGitlabToken } from '@/lib/githubToken';
 
@@ -17,7 +18,11 @@ export interface PendingWiki {
 export interface LoadProgress { done: number; total?: number }
 
 export function useFileSystem() {
+  const remoteController = useRef<AbortController | null>(null);
+  useEffect(() => () => remoteController.current?.abort(), []);
+  const cancelRemote = () => remoteController.current?.abort(new DOMException('Remote load cancelled', 'AbortError'));
   const repos = usePlanStore(s => s.repos);
+  const [remoteLoading, setRemoteLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState<LoadProgress | null>(null);
@@ -26,7 +31,7 @@ export function useFileSystem() {
   const [pending, setPending] = useState<PendingWiki[]>([]);
 
   useEffect(() => { if (!loading) setProgress(null); }, [loading]);
-  const commit = useCallback((project: string, parsed: Parsed, source?: { remote?: RemoteWikiRef }): LoadResult | null => {
+  const commit = useCallback((project: string, parsed: Parsed, source?: { remote?: RemoteWikiRef; label?: string }): LoadResult | null => {
     try {
       return commitWiki(project, parsed, source);
     } catch (e) {
@@ -44,20 +49,22 @@ export function useFileSystem() {
       setPending(q => [...q, { folderName, parse }]);
       return null;
     }
-    return commit(folderName, await parse(folderName, report));
+    const id = `local:${newUuid()}`;
+    return commit(id, await parse(id, report), { label: folderName });
   }, [commit, report]);
 
   const confirmPending = useCallback(async (project: string): Promise<LoadResult | null> => {
     const next = pending[0];
     if (!next) return null;
     // Browsers never expose a picked folder's parent, so a blank name gets a random Docker-style name.
-    const taken = new Set(usePlanStore.getState().repos.map(r => r.id));
+    const taken = new Set(usePlanStore.getState().repos.map(r => r.label));
     let name = project.trim();
     if (!name) name = randomProjectName(taken);
     setPending(q => q.slice(1));
     setLoading(true);
     try {
-      return commit(name, await next.parse(name, report));
+      const id = `local:${newUuid()}`;
+      return commit(id, await next.parse(id, report), { label: name });
     } catch (e) {
       setError((e as Error).message);
       return null;
@@ -67,6 +74,17 @@ export function useFileSystem() {
   }, [pending, commit, report]);
 
   const cancelPending = useCallback(() => setPending(q => q.slice(1)), []);
+
+  const ingestDir = async (dir: FileSystemDirectoryHandle): Promise<LoadResult | null> => {
+    for (const repo of usePlanStore.getState().repos) {
+      if (repo.remote) continue;
+      const previous = await getHandle(repo.id);
+      if (previous && await dir.isSameEntry(previous).catch(() => false)) {
+        return commit(repo.id, await dirParser(dir)(repo.id, report), { label: repo.label });
+      }
+    }
+    return ingest(dir.name, dirParser(dir));
+  };
 
   const dirParser = (dir: FileSystemDirectoryHandle) => async (project: string, r?: Progress) => {
     const parsed = await parseWikiFolder(await findWikiDir(dir), project, r);
@@ -82,24 +100,32 @@ export function useFileSystem() {
     }
     setError(null);
     setLoading(true);
+    setRemoteLoading(true);
     try {
+      remoteController.current?.abort();
+      const controller = new AbortController();
+      remoteController.current = controller;
       const remote = parseRemoteSpec(trimmed);
       const wiki = await fetchRemoteWiki(remote, {
+        signal: controller.signal,
         githubToken: remote.forge === 'github' ? await getGithubToken() : undefined,
         gitlabToken: remote.forge === 'gitlab' ? await getGitlabToken(remote.host) : undefined,
         report,
       });
       const project = remoteProjectId(wiki.remote);
-      return commit(project, await parseWikiTexts(wiki.files, project, report), { remote: wiki.remote });
+      const parsed = await parseWikiTexts(wiki.files, project, report);
+      controller.signal.throwIfAborted();
+      return commit(project, parsed, { remote: wiki.remote, label: `${wiki.remote.host}/${wiki.remote.project} (${wiki.remote.ref})` });
     } catch (e) {
       setError((e as Error).message);
       return null;
     } finally {
       setLoading(false);
+      setRemoteLoading(false);
     }
   }, [commit, report]);
 
-  const openFolder = useCallback(async (): Promise<LoadResult | null> => {
+  const openFolder = async (): Promise<LoadResult | null> => {
     setError(null);
     if (!('showDirectoryPicker' in window)) {
       setError('This browser cannot open folders directly. Use the fallback picker.');
@@ -110,14 +136,14 @@ export function useFileSystem() {
         showDirectoryPicker: () => Promise<FileSystemDirectoryHandle>
       }).showDirectoryPicker();
       setLoading(true);
-      return await ingest(handle.name, dirParser(handle));
+      return await ingestDir(handle);
     } catch (e) {
       if ((e as Error).name !== 'AbortError') setError((e as Error).message);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [ingest]);
+  };
 
   /** <input webkitdirectory> fallback — works in any modern browser */
   const loadFileList = useCallback(async (list: FileList | null): Promise<LoadResult | null> => {
@@ -138,7 +164,7 @@ export function useFileSystem() {
   }, [ingest]);
 
   /** Drag-and-drop — handles must be grabbed synchronously, before any await. Accepts several folders. */
-  const dropFolder = useCallback(async (items: DataTransferItemList): Promise<LoadResult[]> => {
+  const dropFolder = async (items: DataTransferItemList): Promise<LoadResult[]> => {
     setError(null);
     const pendingHandles: Promise<FileSystemHandle | null>[] = [];
     const entries: FileSystemDirectoryEntry[] = [];
@@ -170,7 +196,7 @@ export function useFileSystem() {
         .filter((h): h is FileSystemDirectoryHandle => !!h && h.kind === 'directory');
       if (!dirs.length) setError('Please drop a folder, not a file.');
       for (const dir of dirs) {
-        const r = await ingest(dir.name, dirParser(dir));
+        const r = await ingestDir(dir);
         if (r) results.push(r);
       }
     } catch (e) {
@@ -179,13 +205,13 @@ export function useFileSystem() {
       setLoading(false);
     }
     return results;
-  }, [ingest]);
+  };
 
   return {
-    openFolder, loadFileList, dropFolder, loadRemote,
+    openFolder, loadFileList, dropFolder, loadRemote, cancelRemote,
     pending: pending[0] ?? null, confirmPending, cancelPending,
-    existingProjects: repos.map(r => r.id),
-    loading, error, scanning, setScanning, progress,
+    existingProjects: repos.map(r => r.label),
+    loading, remoteLoading, error, scanning, setScanning, progress,
   };
 }
 

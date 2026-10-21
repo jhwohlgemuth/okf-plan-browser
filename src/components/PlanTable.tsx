@@ -1,3 +1,5 @@
+import { planTime } from '@/lib/timeRemaining';
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { useState } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
@@ -9,16 +11,23 @@ import type { ParsedPlan } from '@/types/wiki';
 import { AgentCommandButton } from './AgentCommandButton';
 import { planAgentCommand } from '@/lib/agentCommand';
 
-type SortKey = 'title' | 'status' | 'priority' | 'impact' | 'difficulty';
+type SortKey = 'title' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining';
 
 const PRIORITY_ORDER: Record<string, number> = { next: 0, high: 1, medium: 2, low: 3 };
 const IMPACT_ORDER:   Record<string, number>  = { critical: 0, high: 1, medium: 2, low: 3 };
-const STATUS_ORDER:   Record<string, number>  = { 'in-progress': 0, 'waiting-on-validation': 1, blocked: 2, planned: 3 };
+const STATUS_ORDER:   Record<string, number>  = { 'in-progress': 0, 'waiting-on-validation': 1, blocked: 2, ready: 3, planned: 4 };
 const DIFF_ORDER:     Record<string, number>  = { hard: 0, medium: 1, easy: 2 };
 
 function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
   return [...plans].sort((a, b) => {
     let diff = 0;
+    if (key === 'remaining') {
+      const ae = planTime(a), be = planTime(b);
+      const aKnown = ae.estimated > 0 && ae.unknown === 0;
+      const bKnown = be.estimated > 0 && be.unknown === 0;
+      if (aKnown !== bKnown) return aKnown ? -1 : 1;
+      return (dir === 'asc' ? 1 : -1) * (ae.hours - be.hours);
+    }
     const afm = a.frontmatter, bfm = b.frontmatter;
     switch (key) {
       case 'title':      diff = (afm.title ?? '').localeCompare(bfm.title ?? ''); break;
@@ -94,6 +103,7 @@ export function PlanTable() {
             {col('priority', 'Priority')}
             {col('impact', 'Impact')}
             {col('difficulty', 'Difficulty')}
+            {col('remaining', 'Time remaining')}
             <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Repo</th>
             <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Tags</th>
             <th className="w-12 px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Agent</th>
@@ -143,6 +153,8 @@ export function PlanTable() {
                   {fm.difficulty ?? '—'}
                 </td>
 
+                <td className="px-3 py-2.5 whitespace-nowrap"><TimeRemaining plans={[plan]} label={false} /></td>
+
                 {/* Repo */}
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   {repo && (
@@ -168,7 +180,7 @@ export function PlanTable() {
                 {/* Agent command */}
                 <td className="px-3 py-2.5 text-right">
                   <AgentCommandButton
-                    command={planAgentCommand(plan)}
+                    command={planAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId })}
                     label={`Copy agent command for ${fm.title ?? plan.fileName}`}
                   />
                 </td>

@@ -76,9 +76,9 @@ describe('extractDependencies', () => {
   it('finds markdown links to .md files only', () => {
     const deps = extractDependencies('See [a](a.md), [b](../b.md#x) and [web](https://x.io) and [c](c.md).');
     expect(deps).toEqual([
-      { text: 'a', href: 'a.md' },
-      { text: 'b', href: '../b.md#x' },
-      { text: 'c', href: 'c.md' },
+      { text: 'a', href: 'a.md', kind: 'reference' },
+      { text: 'b', href: '../b.md#x', kind: 'reference' },
+      { text: 'c', href: 'c.md', kind: 'reference' },
     ]);
   });
 

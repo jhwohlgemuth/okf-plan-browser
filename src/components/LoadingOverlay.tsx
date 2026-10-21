@@ -19,12 +19,13 @@ const FLYERS = [
 ];
 
 interface Props {
+  onCancel?: () => void;
   open: boolean;
   scanning: boolean;
   progress: LoadProgress | null;
 }
 
-export function LoadingOverlay({ open, scanning, progress }: Props) {
+export function LoadingOverlay({ open, scanning, progress, onCancel }: Props) {
   const [msg, setMsg] = useState(0);
   useEffect(() => {
     if (!open) return;
@@ -70,6 +71,7 @@ export function LoadingOverlay({ open, scanning, progress }: Props) {
             <div className="okf-sweep absolute inset-y-0 left-0 w-1/4 rounded-full bg-primary" />
           )}
         </div>
+        {onCancel && <button type="button" className="mt-4 text-sm underline" onClick={onCancel}>Cancel remote load</button>}
         {determinate && <p className="mt-1 text-[10px] tabular-nums text-muted-foreground">{pct}%</p>}
       </div>
     </div>,

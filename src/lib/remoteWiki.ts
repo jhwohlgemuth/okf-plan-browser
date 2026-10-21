@@ -1,3 +1,5 @@
+import { boundedFetch, readBounded, REMOTE_LIMITS, RemoteLimitError } from './remoteLimits';
+import { newUuid } from './utils';
 import { isWikiFolderName, parseWikiTexts, type Progress } from '@/lib/wikiParser';
 
 export type ForgeKind = 'github' | 'gitlab';
@@ -15,6 +17,7 @@ export interface RemoteFile {
 }
 
 export interface FetchRemoteOptions {
+  signal?: AbortSignal;
   githubToken?: string;
   gitlabToken?: string;
   fetch?: typeof fetch;
@@ -81,20 +84,35 @@ export function parseRemoteSpec(raw: string): RemoteWikiRef {
 }
 
 export function remoteProjectId(remote: RemoteWikiRef): string {
-  if (remote.host === 'github.com' || remote.host === 'gitlab.com') return remote.project;
-  return `${remote.host}/${remote.project}`;
+  return `remote:${remote.forge}:${remote.host.toLowerCase()}/${remote.project}@${encodeURIComponent(remote.ref ?? '')}`;
 }
 
 export async function fetchRemoteWiki(spec: string | RemoteWikiRef, opts: FetchRemoteOptions = {}): Promise<RemoteWiki> {
   const remote = typeof spec === 'string' ? parseRemoteSpec(spec) : spec;
-  const fetchImpl = opts.fetch ?? fetch;
-  const fetched = remote.forge === 'github'
-    ? await fetchGithub(remote, fetchImpl, opts.githubToken, opts.report)
-    : await fetchGitlab(remote, fetchImpl, opts.gitlabToken, opts.report);
-  if (!fetched.files.length) {
-    throw new Error(`No markdown found in "${remoteProjectId(fetched.remote)}". The repo needs a .wiki folder.`);
+  const controller = new AbortController();
+  const abort = () => controller.abort(opts.signal?.reason);
+  opts.signal?.throwIfAborted();
+  opts.signal?.addEventListener('abort', abort, { once: true });
+  const timer = setTimeout(() => controller.abort(new DOMException('Remote load timed out. Open a local clone instead.', 'TimeoutError')), REMOTE_LIMITS.loadMs);
+  const transport: typeof fetch = async (url, init) => {
+    if (!opts.fetch && typeof window !== 'undefined' && '__TAURI__' in window) {
+      return nativeRequest(String(url), init?.headers as Record<string, string> ?? {}, init?.signal ?? undefined);
+    }
+    const target = opts.fetch ? url : forgeProxyUrl(String(url), remote.forge);
+    return (opts.fetch ?? fetch)(target, init);
+  };
+  const fetchImpl = boundedFetch(transport, controller.signal);
+  try {
+    const fetched = remote.forge === 'github'
+      ? await fetchGithub(remote, fetchImpl, opts.githubToken, opts.report)
+      : await fetchGitlab(remote, fetchImpl, opts.gitlabToken, opts.report, controller.signal);
+    controller.signal.throwIfAborted();
+    return fetched;
+  } finally {
+    controller.abort();
+    clearTimeout(timer);
+    opts.signal?.removeEventListener('abort', abort);
   }
-  return fetched;
 }
 
 export function parseRemoteWiki(project: string, files: RemoteFile[], report?: Progress) {
@@ -107,6 +125,7 @@ function wikiEntries(absPaths: string[]): Array<{ abs: string; rel: string }> {
     return p.toLowerCase().endsWith('.md') && !parts.some(part => SKIP.has(part));
   });
   const wikiHits = md.filter(p => isWikiFolderName(p.split('/')[0] ?? ''));
+  if ((wikiHits.length || md.length) > REMOTE_LIMITS.files) throw new RemoteLimitError('Too many Markdown files. Open a local clone instead.');
   if (wikiHits.length) {
     return wikiHits.map(abs => ({ abs, rel: abs.split('/').slice(1).join('/') }));
   }
@@ -114,6 +133,9 @@ function wikiEntries(absPaths: string[]): Array<{ abs: string; rel: string }> {
 }
 
 class GitlabIpRestrictedError extends Error {}
+class ForgeHttpError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
 
 async function forgeError(res: Response, forge: ForgeKind, url: string, hasToken: boolean): Promise<Error> {
   const status = res.status;
@@ -124,6 +146,9 @@ async function forgeError(res: Response, forge: ForgeKind, url: string, hasToken
         `${new URL(url).host} is blocking your IP address. Ask your ORNL collaboration partner to request an exception; a GitLab token cannot override this restriction.`,
       );
     }
+  }
+  if (status === 429 || (status === 403 && res.headers.get('x-ratelimit-remaining') === '0')) {
+    return new Error(`The ${forge} host rate-limited this request. Retry later${res.headers.get('retry-after') ? ` (Retry-After: ${res.headers.get('retry-after')})` : ''}, or open a local clone.`);
   }
   if (status === 401 || status === 403) {
     return new Error(
@@ -164,10 +189,19 @@ function forgeProxyUrl(url: string, forge: ForgeKind): string {
   }
 }
 
-async function nativeRequest(url: string, headers: Record<string, string>): Promise<Response> {
+async function nativeRequest(url: string, headers: Record<string, string>, signal?: AbortSignal): Promise<Response> {
   const { invoke } = await import('@tauri-apps/api/tauri');
-  const result = await invoke<{ status: number; body: string }>('forge_request', { url, headers });
-  return new Response(result.body, { status: result.status });
+  signal?.throwIfAborted();
+  const requestId = newUuid();
+  const cancel = () => { void invoke('cancel_forge_request', { requestId }).catch(() => undefined); };
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    const result = await invoke<{ status: number; body: string; headers: Record<string, string> }>('forge_request', { url, headers, requestId });
+    signal?.throwIfAborted();
+    return new Response(result.body, { status: result.status, headers: result.headers });
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  } finally { signal?.removeEventListener('abort', cancel); }
 }
 
 async function req(
@@ -176,13 +210,9 @@ async function req(
   forge: ForgeKind,
   headers: Record<string, string> = {},
 ): Promise<Response> {
-  const useNative = fetchImpl === fetch && typeof window !== 'undefined' && '__TAURI__' in window;
-  const target = fetchImpl === fetch && !useNative ? forgeProxyUrl(url, forge) : url;
   let res: Response;
   try {
-    res = useNative
-      ? await nativeRequest(url, headers)
-      : await fetchImpl(target, { headers });
+    res = await fetchImpl(url, { headers });
   } catch (e) {
     if (e instanceof TypeError) {
       throw new Error(
@@ -193,7 +223,11 @@ async function req(
     }
     throw e;
   }
-  if (!res.ok) throw await forgeError(res, forge, url, !!headers['PRIVATE-TOKEN']);
+  if (!res.ok) {
+    const error = await forgeError(res, forge, url, !!headers['PRIVATE-TOKEN']);
+    if (error instanceof GitlabIpRestrictedError) throw error;
+    throw new ForgeHttpError(error.message, res.status);
+  }
   return res;
 }
 
@@ -214,12 +248,13 @@ function decodeBase64(content: string): string {
   const bin = atob(content.replace(/\s/g, ''));
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  if (bytes.length > REMOTE_LIMITS.fileBytes) throw new RemoteLimitError('Markdown file exceeds the size limit.');
   return new TextDecoder().decode(bytes);
 }
 
-async function readWikiArchive(compressed: ArrayBuffer, report?: Progress): Promise<RemoteFile[]> {
+async function readWikiArchive(compressed: ArrayBuffer, report?: Progress, signal?: AbortSignal): Promise<RemoteFile[]> {
   const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
-  const tar = new Uint8Array(await new Response(stream).arrayBuffer());
+  const tar = await readBounded(new Response(stream), REMOTE_LIMITS.archiveBytes, signal);
   const decoder = new TextDecoder();
   const field = (start: number, length: number) =>
     decoder.decode(tar.subarray(start, start + length)).replace(/\0.*$/s, '');
@@ -260,6 +295,7 @@ async function readWikiArchive(compressed: ArrayBuffer, report?: Progress): Prom
     const absolute = markerAt >= 0 ? path.slice(markerAt + 1) : path;
     if (!absolute.startsWith('.wiki/') || !absolute.toLowerCase().endsWith('.md')) continue;
     if (absolute.split('/').some(part => SKIP.has(part))) continue;
+    if (size > REMOTE_LIMITS.fileBytes || entries.size >= REMOTE_LIMITS.files) throw new RemoteLimitError('Wiki archive exceeds the file limits.');
     entries.set(absolute, content);
   }
   const selected = wikiEntries([...entries.keys()]);
@@ -329,6 +365,7 @@ async function fetchGithub(
       );
       text = await res.text();
     }
+    if (new TextEncoder().encode(text).length > REMOTE_LIMITS.fileBytes) throw new RemoteLimitError('Markdown file exceeds the size limit.');
     report?.(i + 1, pairs.length);
     return { path: entry.rel, text };
   });
@@ -341,7 +378,9 @@ async function walkGithubContents(
   ref: string,
   headers: Record<string, string>,
   path = '',
+  depth = 0,
 ): Promise<string[]> {
+  if (depth > 30) throw new RemoteLimitError('Remote folder depth exceeds the limit.');
   const qs = `?ref=${encodeURIComponent(ref)}`;
   const url = path
     ? `https://api.github.com/repos/${project}/contents/${path}${qs}`
@@ -358,7 +397,7 @@ async function walkGithubContents(
   for (const e of entries) {
     if (e.type === 'dir') {
       if (SKIP.has(e.name)) continue;
-      out.push(...await walkGithubContents(fetchImpl, project, ref, headers, e.path));
+      out.push(...await walkGithubContents(fetchImpl, project, ref, headers, e.path, depth + 1));
     } else if (e.path.toLowerCase().endsWith('.md')) {
       out.push(e.path);
     }
@@ -371,6 +410,7 @@ async function fetchGitlab(
   fetchImpl: typeof fetch,
   token: string | undefined,
   report?: Progress,
+  signal?: AbortSignal,
 ): Promise<RemoteWiki> {
   const headers: Record<string, string> = {};
   if (token) headers['PRIVATE-TOKEN'] = token;
@@ -390,10 +430,12 @@ async function fetchGitlab(
         'gitlab',
         headers,
       );
-      const files = await readWikiArchive(await archive.arrayBuffer(), report);
-      if (files.length) return { remote: resolved, files };
+      const files = await readWikiArchive(await archive.arrayBuffer(), report, signal);
+      return { remote: resolved, files };
     } catch (error) {
-      if (error instanceof GitlabIpRestrictedError) throw error;
+      signal?.throwIfAborted();
+      if (error instanceof GitlabIpRestrictedError || error instanceof RemoteLimitError || (error instanceof DOMException && error.name === 'TimeoutError')) throw error;
+      if (error instanceof ForgeHttpError && ![400, 404, 405, 501].includes(error.status)) throw error;
       // Some GitLab hosts disable archives; try the file API below.
     }
   }
@@ -428,10 +470,9 @@ async function gitlabTree(
   for (const path of ['.wiki', 'wiki', '']) {
     try {
       const blobs = await gitlabTreePages(fetchImpl, base, ref, path, headers);
-      if (path && blobs.length) return blobs;
-      if (!path) return blobs;
+      return blobs;
     } catch (e) {
-      if (e instanceof GitlabIpRestrictedError) throw e;
+      if (!(e instanceof ForgeHttpError) || e.status !== 404) throw e;
       if (path === '') throw e;
     }
   }
@@ -455,6 +496,7 @@ async function gitlabTreePages(
       ref,
     });
     if (path) params.set('path', path);
+    if (page > 100) throw new RemoteLimitError('Remote tree exceeds the page limit.');
     const res = await req(fetchImpl, `${base}/repository/tree?${params}`, 'gitlab', headers);
     const batch = await res.json() as Array<{ type?: string; path?: string }>;
     for (const e of batch) {

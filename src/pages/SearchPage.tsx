@@ -1,3 +1,4 @@
+import { TimeRemaining } from '@/components/TimeRemaining';
 import { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
@@ -96,6 +97,7 @@ export function SearchPage() {
         {query && (
           <p className="text-xs text-muted-foreground mt-2">
             {hits.length} result{hits.length !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
+            {' · '}<TimeRemaining plans={hits.map(hit => hit.plan)} />
           </p>
         )}
       </div>
@@ -156,6 +158,8 @@ export function SearchPage() {
                   {repo.label} / {plan.fileName}
                 </div>
               )}
+
+              <div className="mb-2"><TimeRemaining plans={[plan]} /></div>
 
               {/* Match snippets */}
               <div className="space-y-1">

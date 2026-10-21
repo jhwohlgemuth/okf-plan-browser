@@ -1,17 +1,11 @@
 import yaml from 'js-yaml';
+import { validateFrontmatter } from './frontmatter';
 import type {
   Frontmatter, Section, Phase, PhaseStatus,
   PlanDependency, ParsedPlan,
 } from '@/types/wiki';
 
 // ─── Frontmatter ──────────────────────────────────────────────────────────────
-
-function normArray(val: unknown): string[] {
-  if (!val) return [];
-  if (Array.isArray(val)) return val.map(String);
-  if (typeof val === 'string') return val.split(/[,\s]+/).map(s => s.trim()).filter(Boolean);
-  return [];
-}
 
 export function parseFrontmatter(raw: string): { fm: Frontmatter; body: string; errors: string[] } {
   const errors: string[] = [];
@@ -23,13 +17,9 @@ export function parseFrontmatter(raw: string): { fm: Frontmatter; body: string; 
   }
   let fm: Frontmatter = { title: 'Untitled' };
   try {
-    const parsed = (yaml.load(match[1] ?? '') ?? {}) as Record<string, unknown>;
-    fm = {
-      ...parsed,
-      title:    String(parsed.title ?? 'Untitled'),
-      package:  normArray(parsed.package),
-      tags:     normArray(parsed.tags),
-    } as Frontmatter;
+    const validated = validateFrontmatter(yaml.load(match[1] ?? '') ?? {});
+    fm = validated.fm;
+    errors.push(...validated.errors);
   } catch (e) {
     errors.push(`YAML parse error: ${(e as Error).message}`);
   }
@@ -109,7 +99,20 @@ export function extractSections(body: string, defaultStatus: PhaseStatus = 'plan
 const LINK_RE = /\[([^\]]+)\]\(([^)]+\.md[^)]*)\)/g;
 
 export function extractDependencies(body: string): PlanDependency[] {
-  return [...body.matchAll(LINK_RE)].map(m => ({ text: m[1] ?? '', href: m[2] ?? '' }));
+  let dependencySection = false;
+  let fence = '';
+  const links: PlanDependency[] = [];
+  for (const line of body.split('\n')) {
+    const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker) { fence = fence ? '' : marker; continue; }
+    if (fence) continue;
+    const heading = /^#{1,6}\s+(.+)/.exec(line)?.[1];
+    if (heading) dependencySection = /\b(dependencies|prerequisites|blocked by)\b/i.test(heading);
+    for (const m of line.matchAll(LINK_RE)) {
+      links.push({ text: m[1] ?? '', href: m[2] ?? '', kind: dependencySection ? 'dependency' : 'reference' });
+    }
+  }
+  return links;
 }
 
 // ─── Phase refs (all PA-XX in the entire file) ───────────────────────────────
@@ -157,9 +160,18 @@ export function parseWikiFile(
 /** Index pages, assets and other notes aren't plans: only files whose frontmatter marks them as one count. */
 export function isPlanFile(raw: string): boolean {
   const { fm, errors } = parseFrontmatter(raw);
-  if (errors.length) return false;
+  if (errors.some(e => e.startsWith('YAML parse error') || e.startsWith('No YAML'))) return false;
   if (fm.type) return String(fm.type).toLowerCase() === 'plan';
   return fm.title !== 'Untitled';
+}
+
+function ingestText(result: ParseResult, repoId: string, path: string, text: string): void {
+  const parsed = parseWikiFile(repoId, path, text);
+  if (parsed.parseErrors.some(e => e.startsWith('YAML parse error'))) {
+    result.errors.push({ name: path, error: parsed.parseErrors.join('; ') });
+    return;
+  }
+  if (isPlanFile(text)) result.plans.push(parsed);
 }
 
 const SKIP_DIRS = new Set(['node_modules', '.git']);
@@ -188,7 +200,7 @@ export async function parseWikiFolder(
         const file = await (entry as FileSystemFileHandle).getFile();
         const text = await file.text();
         report?.(++seen);
-        if (isPlanFile(text)) result.plans.push(parseWikiFile(repoId, path, text));
+        ingestText(result, repoId, path, text);
       } catch (e) {
         result.errors.push({ name: path, error: (e as Error).message });
       }
@@ -231,7 +243,7 @@ export async function parseWikiTexts(
   report?.(0, md.length);
   for (const { path, text } of md) {
     try {
-      if (isPlanFile(text)) result.plans.push(parseWikiFile(repoId, path, text));
+      ingestText(result, repoId, path, text);
     } catch (e) {
       result.errors.push({ name: path, error: (e as Error).message });
     }
@@ -296,7 +308,7 @@ export async function parseWikiEntry(root: FileSystemDirectoryEntry, repoId: str
       try {
         const text = await (await entryFile(entry as FileSystemFileEntry)).text();
         report?.(++seen);
-        if (isPlanFile(text)) result.plans.push(parseWikiFile(repoId, path, text));
+        ingestText(result, repoId, path, text);
       } catch (e) {
         result.errors.push({ name: path, error: (e as Error).message });
       }

@@ -39,7 +39,7 @@ test('refresh re-reads a stored folder handle', async ({ page }, info) => {
   const btn = page.getByRole('button', { name: 'Refresh proj' });
   await expect(btn).toBeEnabled();
   await page.getByRole('button', { name: 'Refresh all wikis' }).click();
-  await expect(page.getByText('Refreshed 1 wiki')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText('Refreshed 1 wiki')).toBeVisible();
 
   await page.evaluate(async (md) => {
     const root = await navigator.storage.getDirectory();
@@ -50,7 +50,7 @@ test('refresh re-reads a stored folder handle', async ({ page }, info) => {
 
   await page.goto('/search');
   await btn.click();
-  await expect(page.getByText('Refreshed 1 wiki').last()).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText('Refreshed 1 wiki').last()).toBeVisible();
   await page.getByRole('textbox').first().fill('Changed');
   await expect(page.getByText('Changed title').first()).toBeVisible();
 });

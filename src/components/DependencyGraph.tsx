@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { buildPlanEdges } from '@/lib/planLinks';
 import { usePlanStore } from '@/store/planStore';
 import type { ParsedPlan } from '@/types/wiki';
 
@@ -18,6 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   'in-progress': '#61afef',
   'waiting-on-validation': '#e5c07b',
   blocked:       '#e06c75',
+  ready:         '#98c379',
   planned:        '#5c6370',
 };
 
@@ -45,43 +47,7 @@ export function DependencyGraph() {
       };
     });
 
-    const nodeById = new Map(nodes.map(n => [n.id, n]));
-
-    const planByName = new Map<string, ParsedPlan>();
-    const planByPhase = new Map<string, ParsedPlan[]>();
-    for (const p of plans) {
-      const parts = p.fileName.split('/');
-      for (let i = 0; i < parts.length; i++) {
-        const key = parts.slice(i).join('/');
-        if (!planByName.has(key)) planByName.set(key, p);
-      }
-      for (const s of p.sections) {
-        for (const ph of s.phases) {
-          const owners = planByPhase.get(ph.id);
-          if (!owners) planByPhase.set(ph.id, [p]);
-          else if (!owners.includes(p)) owners.push(p);
-        }
-      }
-    }
-
-    // Build links from .md dep links
-    const links: Link[] = [];
-    for (const plan of plans) {
-      for (const dep of plan.dependencies) {
-        const targetName = dep.href.split('/').pop()?.split('?')[0] ?? '';
-        const target = planByName.get(targetName);
-        if (target && nodeById.has(target.id)) {
-          links.push({ source: plan.id, target: target.id, type: 'dep' });
-        }
-      }
-      // PA-XX cross refs — link to the first other plan that defines that phase id
-      for (const ref of plan.phaseRefs) {
-        const target = planByPhase.get(ref)?.find(p => p.id !== plan.id);
-        if (target && nodeById.has(target.id)) {
-          links.push({ source: plan.id, target: target.id, type: 'ref' });
-        }
-      }
-    }
+    const links: Link[] = buildPlanEdges(plans);
 
     // Clear old content
     const sel = d3.select(svg);
@@ -205,11 +171,11 @@ export function DependencyGraph() {
           <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 bg-card border border-border rounded-lg p-3 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
               <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#61afef" strokeWidth="1.5" /></svg>
-              .md link
+              Dependency link
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#5c6370" strokeWidth="1" strokeDasharray="4,3" /></svg>
-              PA-XX ref
+              Plan / phase reference
             </div>
             <div className="flex items-center gap-2 text-muted-foreground mt-1">
               <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#61afef22', borderColor: '#61afef' }} />
