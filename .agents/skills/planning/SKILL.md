@@ -5,6 +5,8 @@ description: Maintain and execute a repository's .wiki planning portfolio in bou
 
 # Planning
 
+Official guide, examples, and skill download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning. Canonical source: https://github.com/jhwohlgemuth/okf-plan-browser/tree/main/.agents/skills/planning.
+
 Keep `.wiki` aligned with the current repository and useful as a queue of remaining work. Plans are not historical ledgers: remove completed plans and prune completed sections, phases, and tasks after preserving durable evidence in code, tests, user documentation, architecture documentation, release history, or a concise current-evidence statement.
 
 ## Route the task

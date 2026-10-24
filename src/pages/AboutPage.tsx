@@ -1,4 +1,5 @@
 import { ExternalLink, Box, Lock, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   siReact, siVite, siTypescript, siTailwindcss, siTauri, siReactrouter,
   siRadixui, siD3, siMarkdown, siYaml, siLucide, siGithub, siGithubcopilot,
@@ -54,7 +55,7 @@ export function AboutPage() {
       <div>
         <h1 className="text-xl font-bold text-foreground">About</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          OKF Plan Browser — a local-first viewer for <code>.wiki</code> planning portfolios.
+          The official home of the planning skill and a local-first viewer for <code>.wiki</code> planning portfolios.
         </p>
         <a
           href="https://github.com/jhwohlgemuth/okf-plan-browser"
@@ -90,6 +91,18 @@ export function AboutPage() {
           </span>
         </a>
       </div>
+
+      <Section title="Planning skill">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          This project maintains the canonical planning skill: portfolio maintenance, bounded implementation loops,
+          source-backed drafts, and factual claim review. Progress notes preserve decisions and validation evidence
+          so an agent can resume across sessions. The browser provides portfolio views and the downloadable skill;
+          execution happens in your agent environment.
+        </p>
+        <Link to="/planning" className="inline-block mt-3 text-sm text-od-blue underline underline-offset-4">
+          Read the workflows and download the planning skill
+        </Link>
+      </Section>
 
       <Section title="Open Knowledge Format">
         <a

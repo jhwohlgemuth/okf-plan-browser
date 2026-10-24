@@ -1,4 +1,5 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
+import { Link } from 'react-router-dom';
 import { Layers, Sparkles, Trash2, AlertTriangle } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { FolderPicker } from '@/components/FolderPicker';
@@ -28,6 +29,18 @@ function HomeFooter() {
   );
 }
 
+function PlanningLink() {
+  return (
+    <Link to="/planning" className="block rounded-xl border border-border bg-card p-4 text-left hover:border-od-blue/60 transition-colors">
+      <span className="block text-sm font-semibold text-foreground">Official home of the planning skill</span>
+      <span className="block text-xs text-muted-foreground mt-1 leading-relaxed">
+        Plan and implement in bounded phases, resume from saved progress, and draft articles with evidence review.
+        Explore the workflows and download the skill.
+      </span>
+    </Link>
+  );
+}
+
 export function HomePage() {
   const plans       = usePlanStore(s => s.plans);
   const repos       = usePlanStore(s => s.repos);
@@ -48,6 +61,7 @@ export function HomePage() {
             <Layers className="h-6 w-6 text-od-blue" />
           </div>
           <h1 className="text-xl font-bold text-foreground">OKF Plan Browser</h1>
+          <div className="w-full mt-4"><PlanningLink /></div>
           <p className="text-xs text-muted-foreground mt-2 mb-6">
             Load a .wiki folder, or a GitHub / GitLab repo
           </p>
@@ -92,6 +106,8 @@ export function HomePage() {
           wikis are fetched in the browser from GitHub or GitLab.
         </p>
       </div>
+
+      <PlanningLink />
 
       <div className="space-y-4">
           {/* Stats */}

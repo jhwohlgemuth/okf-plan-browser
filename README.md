@@ -1,11 +1,47 @@
 # OKF Plan Browser
 
-> A web + desktop application for browsing, visualising, and searching `.wiki` markdown planning portfolios — built with React, Vite, shadcn/ui, and Tauri.
+> The official home of the **planning skill** and a web + desktop application for browsing, visualising, and searching `.wiki` markdown planning portfolios.
 
 ![CI](https://github.com/jhwohlgemuth/okf-plan-browser/actions/workflows/ci.yml/badge.svg)
 ![Pages](https://github.com/jhwohlgemuth/okf-plan-browser/actions/workflows/deploy-pages.yml/badge.svg)
 
 🌐 **Live demo:** `https://www.jasonwohlgemuth.com/okf-plan-browser/`
+
+## Planning skill
+
+This repository is the canonical home for the planning skill concept, instructions, references, and validator. The source of truth is [`.agents/skills/planning/`](.agents/skills/planning/SKILL.md). The site's [Planning Skill page](https://www.jasonwohlgemuth.com/okf-plan-browser/planning) provides copy-ready prompts, the full source, and a downloadable package built from those files.
+
+| Workflow | Outcome |
+| --- | --- |
+| Plan and maintain | Ground `.wiki` plans in current repository evidence, divide work into phases of at most five active hours, and prune completed work. |
+| Implement and resume | Continue through eligible phases, validate each outcome, and save compact decisions, evidence, blockers, and the next action in `progress.md`. |
+| Draft and review | Read `sources/` and opened primary sources, save an outline and article, and check factual claims with an evidence reviewer. |
+| Continue writing | Inspect the draft and checks referenced by `progress.md`, reconcile stale state, and resume the next unfinished action. |
+
+### Use the skill in another repository
+
+Download the skill ZIP from the Planning Skill page and extract it into your target repository, or copy this repository's complete `.agents/skills/planning/` directory to the same location in your project. Keep the references, scripts, and agent metadata together. Use an agent that supports the `$planning` invocation:
+
+```text
+Use $planning to create or update a .wiki plan for: <goal>.
+Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
+
+Use $planning to implement .wiki/<plan-file>.md through eligible phases within its scope. Validate each outcome and save checkpoints in progress.md.
+Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
+
+Use $planning to read the implementation section of progress.md, inspect the referenced plan and validation evidence, and continue the next unfinished action. Update progress.md.
+Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
+
+Use $planning to draft an article about <topic> from sources/ and verify its claims against opened primary sources.
+Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
+
+Use $planning to read progress.md and inspect the referenced draft and checks. Continue from the recorded next action and update the progress note.
+Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
+```
+
+The [execution loop](.agents/skills/planning/references/execution-loop.md) preserves a compact handoff across sessions, reuses applicable evidence, and stops unproductive retries. It does not schedule future runs. The browser displays portfolios and distributes the skill; your agent performs the work.
+
+The [draft workflow](.agents/skills/planning/references/write-draft.md) saves `drafts/outline.md`, `drafts/article.md`, and `drafts/checks.md`. The [evidence reviewer](.agents/skills/planning/references/evidence-reviewer.md) reports **verified**, **incorrect**, or **unresolved** claims with source references and required corrections. Unresolved claims name the missing evidence. Writing artifacts remain available after completion; finished `.wiki` phases and plans are pruned after preserving durable evidence.
 
 ![Portfolio](docs/screenshots/portfolio.png)
 
@@ -29,7 +65,7 @@
 | **Phase Tracker** | Kanban board across `planned → ready → blocked → in-progress` |
 | **Dependency Graph** | D3 force-directed graph — nodes are plans, edges are `.md` links and `PA-XX` cross-references |
 | **Search** | Full-text across titles, descriptions, section content, tags, packages, and phase titles |
-| **Planning Skill** | Copy-ready `$planning` prompts plus the complete bundled skill, references, validator, tests, and agent metadata |
+| **Planning Skill** | Official skill source and download, with prompts for portfolio maintenance, resumable implementation, drafting, and evidence review |
 
 - 🌙 **One Dark theme** with Light / System toggle (persisted across sessions)
 - 📂 **File System Access API** (`showDirectoryPicker`) + drag-and-drop fallback

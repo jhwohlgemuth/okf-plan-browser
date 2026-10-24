@@ -47,3 +47,5 @@ Write the note after each phase and before an expected handoff; checkpoint withi
 ## Resume prompt
 
 > Read the implementation section of progress.md and inspect its referenced plan, active phase, changes, and validation evidence. Reconcile the saved state with the current tree. Continue from the first unfinished action through eligible phases within the authorized scope. Validate each outcome and update the progress note before proceeding or handing off.
+>
+> Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning

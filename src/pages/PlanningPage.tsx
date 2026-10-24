@@ -5,16 +5,45 @@ import { AgentCommandButton } from '@/components/AgentCommandButton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { createTextZip } from '@/lib/zip';
+import { PLANNING_SITE_URL, withPlanningReference } from '@/lib/agentCommand';
 import skillSource from '../../.agents/skills/planning/SKILL.md?raw';
 import openaiSource from '../../.agents/skills/planning/agents/openai.yaml?raw';
 import slicesSource from '../../.agents/skills/planning/references/five-hour-slices.md?raw';
 import portfolioSource from '../../.agents/skills/planning/references/portfolio-review.md?raw';
 import templatesSource from '../../.agents/skills/planning/references/templates.md?raw';
 import lifecycleSource from '../../.agents/skills/planning/references/wiki-lifecycle.md?raw';
+import executionSource from '../../.agents/skills/planning/references/execution-loop.md?raw';
+import draftSource from '../../.agents/skills/planning/references/write-draft.md?raw';
+import evidenceSource from '../../.agents/skills/planning/references/evidence-reviewer.md?raw';
 import validatorSource from '../../.agents/skills/planning/scripts/validate_wiki.py?raw';
 import validatorTestsSource from '../../.agents/skills/planning/scripts/test_validate_wiki.py?raw';
 
 const PROMPTS = [
+  {
+    title: 'Implement a long plan',
+    description: 'Continue through ready phases, validate each outcome, and save checkpoints across sessions.',
+    command: 'Use $planning to implement .wiki/<plan-file>.md through eligible phases within its scope. Validate each outcome and save a compact handoff in progress.md.',
+  },
+  {
+    title: 'Resume implementation',
+    description: 'Reconcile the saved handoff with the current tree and continue the first unfinished action.',
+    command: 'Use $planning to read the implementation section of progress.md, inspect its referenced plan and validation evidence, and continue from the next unfinished action. Update progress.md.',
+  },
+  {
+    title: 'Write a draft',
+    description: 'Outline an article from sources, review factual claims, and save the draft and checks.',
+    command: 'Use $planning to draft an article about <topic> from sources/. Open primary sources, ask evidence-reviewer to check claims, correct errors, and save drafts/article.md, drafts/checks.md, and progress.md.',
+  },
+  {
+    title: 'Resume a draft',
+    description: 'Inspect the recorded draft and checks, then continue without repeating unaffected review work.',
+    command: 'Use $planning to read progress.md and inspect the referenced draft and checks. Continue from the recorded next action and update the progress note.',
+  },
+  {
+    title: 'Review factual claims',
+    description: 'Check opened primary sources and identify the evidence missing from unresolved claims.',
+    command: 'Use $planning to review <draft-path> against its source material and opened primary sources. Return a table of claim, verdict, source URL, and required correction using verified, incorrect, or unresolved.',
+  },
   {
     title: 'Create or update a plan',
     description: 'Ground a plan in the current repository and divide the remaining work into mergeable phases.',
@@ -35,13 +64,15 @@ const PROMPTS = [
     description: 'Remove finished phases and retire plans whose durable outcomes now live outside the active queue.',
     command: 'Use $planning to prune completed work and retire finished plans in .wiki.',
   },
-];
+].map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
 
 const RULES = [
   { icon: Clock3, title: 'Five-hour slices', text: 'Every executable phase fits at most five active agent hours.' },
   { icon: GitMerge, title: 'Mergeable handoffs', text: 'Each phase names one write set, one primary lock, focused validation, and a clean handoff.' },
-  { icon: ListChecks, title: 'Evidence before plans', text: 'The agent inspects current code, tests, documentation, history, and worktree state before trusting wiki claims.' },
-  { icon: Scissors, title: 'Remaining work only', text: 'Completed phases are removed, and a plan is deleted when no work remains.' },
+  { icon: ListChecks, title: 'Traceable evidence', text: 'Inspect code and test results for repository claims; open primary sources for article claims. Record verified, incorrect, or unresolved verdicts.' },
+  { icon: Scissors, title: 'Remaining work only', text: 'Completed wiki phases and plans are removed after preserving durable evidence. Articles and claim checks remain writing artifacts.' },
+  { icon: Clock3, title: 'Resume with context', text: 'Compact progress notes preserve decisions, validation, blockers, and the next action. Recheck affected evidence and stop unproductive retries.' },
+  { icon: BookOpenCheck, title: 'Review before completion', text: 'Validate each outcome before advancing. Mark unresolved claims and state exactly what evidence is missing.' },
 ];
 
 const SKILL_FILES = [
@@ -51,6 +82,9 @@ const SKILL_FILES = [
   { path: 'references/five-hour-slices.md', kind: 'Phase-sizing reference', language: 'markdown', source: slicesSource },
   { path: 'references/templates.md', kind: 'Authoring templates', language: 'markdown', source: templatesSource },
   { path: 'references/portfolio-review.md', kind: 'Portfolio-review reference', language: 'markdown', source: portfolioSource },
+  { path: 'references/execution-loop.md', kind: 'Resumable implementation', language: 'markdown', source: executionSource },
+  { path: 'references/write-draft.md', kind: 'Drafting and continuation', language: 'markdown', source: draftSource },
+  { path: 'references/evidence-reviewer.md', kind: 'Primary-source claim review', language: 'markdown', source: evidenceSource },
   { path: 'scripts/validate_wiki.py', kind: 'Validator', language: 'python', source: validatorSource },
   { path: 'scripts/test_validate_wiki.py', kind: 'Validator tests', language: 'python', source: validatorTestsSource },
 ];
@@ -111,11 +145,33 @@ export function PlanningPage() {
           <h1 className="text-xl font-bold text-foreground">Planning Skill</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-          The bundled <code>$planning</code> skill maintains a repository&apos;s <code>.wiki</code> as an accurate queue
-          of remaining work. It creates, reviews, executes, prunes, and retires plans using bounded phases that an
-          agent can finish and hand off cleanly.
+          The official home of the <code>$planning</code> skill: maintain <code>.wiki</code> portfolios,
+          implement long plans in bounded phases, and write articles with primary-source claim checks.
+          Durable progress notes let an agent resume across sessions while preserving decisions and validation evidence.
+        </p>
+        <p className="text-xs text-muted-foreground mt-3">
+          The <a className="underline underline-offset-4" href="https://github.com/jhwohlgemuth/okf-plan-browser/tree/main/.agents/skills/planning" target="_blank" rel="noreferrer">repository skill folder</a>{' '}
+          is the canonical source. This page and its download embed that source at build time.
+        </p>
+        <p className="text-xs text-muted-foreground mt-3">
+          Every copied planning prompt includes the official guide and download:{' '}
+          <a className="underline underline-offset-4 break-all" href={PLANNING_SITE_URL}>{PLANNING_SITE_URL}</a>.
+          Share the complete prompt so the skill can be found from another repository or agent session.
         </p>
       </div>
+
+      <section className="rounded-xl border border-border bg-card p-4 space-y-2">
+        <h2 className="text-sm font-semibold text-foreground">Install and start</h2>
+        <p className="text-sm text-muted-foreground">
+          Download the skill folder below and extract the ZIP into your target repository. Keep the complete
+          <code> .agents/skills/planning/</code> folder, including its references and scripts, then use a prompt below
+          with an agent that supports <code>$planning</code>.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          The browser displays planning portfolios and provides the skill package. Your agent performs implementation,
+          drafting, and review. The execution loop saves resumable state; it does not schedule future runs.
+        </p>
+      </section>
 
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Use the skill</h2>
@@ -162,7 +218,7 @@ export function PlanningPage() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground">Complete planning skill package</p>
               <p className="text-xs text-muted-foreground mt-1">
-                All eight authored files are embedded below from <code>.agents/skills/planning</code>. Generated
+                All {SKILL_FILES.length} authored files are embedded below from <code>.agents/skills/planning</code>. Generated
                 <code> __pycache__</code> bytecode is intentionally excluded.
               </p>
             </div>

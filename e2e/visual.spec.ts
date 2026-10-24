@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('empty state', () => {
-  for (const [name, path] of [['home-empty', '/home'], ['about', '/about'], ['settings', '/settings']] as const) {
+  for (const [name, path] of [['home-empty', '/home'], ['about', '/about'], ['planning', '/planning'], ['settings', '/settings']] as const) {
     test(name, async ({ page }) => {
       await page.goto(path);
       await settle(page);

@@ -6,13 +6,13 @@ const plan = { repoId: 'acorn', fileName: 'features/auth.md' };
 describe('agent commands', () => {
   it('identifies a plan by repository and wiki path', () => {
     expect(planAgentCommand(plan)).toBe(
-      'Use $planning to execute the plan in repository "acorn" at ".wiki/features/auth.md".',
+      'Use $planning to execute the plan in repository "acorn" at ".wiki/features/auth.md".\n\nOfficial planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning',
     );
   });
 
   it('identifies a phase without copying plan-authored instructions', () => {
     expect(phaseAgentCommand(plan, { id: 'PA-02' })).toBe(
-      'Use $planning to execute phase "PA-02" of the plan in repository "acorn" at ".wiki/features/auth.md".',
+      'Use $planning to execute phase "PA-02" of the plan in repository "acorn" at ".wiki/features/auth.md".\n\nOfficial planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning',
     );
   });
 
