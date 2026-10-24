@@ -60,7 +60,11 @@ jobs:
 
       - name: Verify HTTPS-only deployment
         shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
+          # Pages can report an HTTP URL even when the site supports HTTPS.
+          HTTPS_URL="${PAGE_URL/#http:/https:}"
           curl --silent --show-error --fail --location \
             --proto '=https' --proto-redir '=https' \
-            --output /dev/null '${{ steps.deployment.outputs.page_url }}'
+            --output /dev/null "$HTTPS_URL"
