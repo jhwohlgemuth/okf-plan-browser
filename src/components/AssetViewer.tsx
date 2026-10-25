@@ -1,23 +1,45 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { Image as ImageIcon, X } from 'lucide-react';
 import { getAssetUrl } from '@/lib/wikiAssets';
 
 export interface AssetTarget { repoId: string; path: string }
 
-function useAssetUrl(target: AssetTarget): { url?: string; error?: string } {
+function useAssetUrl(target: AssetTarget, enabled = true): { url?: string; error?: string } {
   const [state, setState] = useState<{ url?: string; error?: string }>({});
   useEffect(() => {
     let active = true;
     setState({});
+    if (!enabled) return () => { active = false; };
     getAssetUrl(target.repoId, target.path).then(url => {
       if (active) setState({ url });
     }, error => {
       if (active) setState({ error: (error as Error).message });
     });
     return () => { active = false; };
-  }, [target.repoId, target.path]);
+  }, [target.repoId, target.path, enabled]);
   return state;
+}
+
+export function AssetThumbnail({ target }: { target: AssetTarget }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    if (!('IntersectionObserver' in window)) { setVisible(true); return; }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) { setVisible(true); observer.disconnect(); }
+    }, { rootMargin: '200px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const { url, error } = useAssetUrl(target, visible);
+  return (
+    <span ref={ref} className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-secondary/40" title={error}>
+      {url ? <img src={url} alt="" loading="lazy" className="h-full w-full object-contain" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
+    </span>
+  );
 }
 
 export function InlineWikiImage({ target, alt, onOpen }: { target: AssetTarget; alt: string; onOpen: () => void }) {

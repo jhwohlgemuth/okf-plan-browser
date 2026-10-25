@@ -1,13 +1,13 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
 import { useState, useMemo } from 'react';
-import { FileText, Image as ImageIcon, Search } from 'lucide-react';
+import { FileText, Search } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { PriorityBadge } from '@/components/PriorityBadge';
 import { truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
-import { AssetViewer, type AssetTarget } from '@/components/AssetViewer';
+import { AssetThumbnail, AssetViewer, type AssetTarget } from '@/components/AssetViewer';
 
 interface Hit {
   plan:    ParsedPlan;
@@ -134,7 +134,7 @@ export function SearchPage() {
         )}
         {mode === 'assets' && assets.map(({ repo, path }) => (
           <button key={`${repo.id}:${path}`} type="button" onClick={() => setSelectedAsset({ repoId: repo.id, path })} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
-            {path.toLowerCase().endsWith('.pdf') ? <FileText className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ImageIcon className="h-5 w-5 shrink-0 text-muted-foreground" />}
+            {path.toLowerCase().endsWith('.pdf') ? <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded border border-border bg-secondary/40"><FileText className="h-5 w-5 text-muted-foreground" /></span> : <AssetThumbnail target={{ repoId: repo.id, path }} />}
             <span className="min-w-0"><span className="block truncate text-sm text-foreground">{highlight(path, query)}</span><span className="block truncate text-xs text-muted-foreground">{repo.label}</span></span>
           </button>
         ))}

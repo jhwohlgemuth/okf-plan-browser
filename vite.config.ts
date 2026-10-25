@@ -13,7 +13,7 @@ const configuredGitlabHosts = (process.env.OKF_GITLAB_HOSTS ?? '')
 const gitlabHosts = [...new Set([...builtInGitlabHosts, ...configuredGitlabHosts])];
 const gitlabOrigins = gitlabHosts.map(host => `https://${host}`).join(' ');
 
-const csp = `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' https://api.github.com ${gitlabOrigins}; object-src 'none'; base-uri 'self'; form-action 'self'`;
+const csp = `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self' https://api.github.com ${gitlabOrigins}; object-src 'none'; base-uri 'self'; form-action 'self'`;
 
 // Injected at build time only: the dev server needs inline scripts for React refresh.
 const cspPlugin = (): Plugin => ({

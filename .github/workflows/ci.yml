@@ -42,8 +42,8 @@ jobs:
         env:
           GITHUB_PAGES: false
 
-      - name: Install browser
-        run: npx playwright install --with-deps chromium
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium firefox
 
       - name: Browser behavior
         run: npx playwright test --grep-invert "empty state|with demo data"
