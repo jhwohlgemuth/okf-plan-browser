@@ -2,6 +2,8 @@ import { usePlanStore } from '@/store/planStore';
 import { repoColor, newUuid } from '@/lib/utils';
 import type { WikiRepo, ParseWarning, ParsedPlan } from '@/types/wiki';
 import type { RemoteWikiRef } from '@/lib/remoteWiki';
+import { registerAssetFiles } from '@/lib/wikiAssets';
+import type { WikiAsset } from '@/lib/wikiParser';
 
 export interface LoadResult {
   repoId:   string;
@@ -9,11 +11,11 @@ export interface LoadResult {
   warnings: number;
 }
 
-export type Parsed = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }> };
+export type Parsed = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }>; assets?: WikiAsset[] };
 
 export function commitWiki(
   project: string,
-  { plans, errors }: Parsed,
+  { plans, errors, assets = [] }: Parsed,
   source?: { remote?: RemoteWikiRef; label?: string; refresh?: boolean },
 ): LoadResult {
   if (errors.length) {
@@ -31,6 +33,7 @@ export function commitWiki(
     label:     source?.label ?? existing?.label ?? project,
     color:     (existing?.color ?? repoColor(store.repos.length)) as WikiRepo['color'],
     planCount: plans.length,
+    assets:    assets.map(asset => asset.path),
     remote:    source?.remote ?? existing?.remote,
   };
   const warns: ParseWarning[] = [
@@ -40,5 +43,6 @@ export function commitWiki(
     ...errors.map(e => ({ repoId: project, fileName: e.name, errors: [e.error] })),
   ];
   store.addPlans(plans, repo, warns);
+  registerAssetFiles(project, assets);
   return { repoId: project, plans: plans.length, warnings: warns.length };
 }

@@ -9,6 +9,8 @@ Official guide, examples, and skill download: https://www.jasonwohlgemuth.com/ok
 
 Keep `.wiki` aligned with the current repository and useful as a queue of remaining work. Plans are not historical ledgers: remove completed plans and prune completed sections, phases, and tasks after preserving durable evidence in code, tests, user documentation, architecture documentation, release history, or a concise current-evidence statement.
 
+Plans may be single files (`.wiki/some-plan.md`) or folders (`.wiki/some-plan/index.md`). A folder plan's `index.md` is its Plan entrypoint; it may have any number of sibling Markdown documents. Put every non-Markdown asset or artifact belonging to that plan under `.wiki/some-plan/_assets/`, and put assets or artifacts belonging to the wiki as a whole under `.wiki/_assets/`. Link to files with relative paths from the document containing the link. Keep portfolio and directory indexes pointed at the entrypoint when converting a single-file plan to a folder.
+
 ## Route the task
 
 - For implementing or resuming a long plan, read [execution-loop.md](references/execution-loop.md) and [five-hour-slices.md](references/five-hour-slices.md). Continue through eligible phases within the user's authorized scope, checkpointing between phases.

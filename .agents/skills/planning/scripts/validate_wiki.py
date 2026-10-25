@@ -132,12 +132,15 @@ def _read_plan(path: Path) -> Plan:
 def _membership_errors(plan: Plan, root: Path, wiki: Path) -> list[str]:
     errors = []
     relative = plan.path.relative_to(wiki).as_posix()
-    nearest_index = plan.path.parent / "index.md"
+    folder_plan = plan.path.name == "index.md"
+    nearest_dir = plan.path.parent.parent if folder_plan else plan.path.parent
+    nearest_index = nearest_dir / "index.md"
+    nearest_link = plan.path.relative_to(nearest_dir).as_posix()
     candidates = (
-        (nearest_index, plan.path.name, "nearest index"),
+        (nearest_index, nearest_link, "nearest index"),
         (wiki / "index.md", relative, "portfolio index"),
-        (wiki / "parallel-execution.md", plan.path.name, "parallel guide"),
-        (wiki / "plan-network.md", plan.path.name, "dependency network"),
+        (wiki / "parallel-execution.md", relative, "parallel guide"),
+        (wiki / "plan-network.md", relative, "dependency network"),
     )
     for path, needle, label in candidates:
         if path.exists() and needle not in path.read_text(encoding="utf-8"):
@@ -166,6 +169,9 @@ def _validate_phase(plan: Plan, phase: Phase, root: Path) -> list[str]:
 def _validate_plan(plan: Plan, root: Path, wiki: Path) -> list[str]:
     label = str(plan.path.relative_to(root))
     errors = [f"{label}: missing frontmatter `{field}`" for field in sorted(REQUIRED_PLAN_FIELDS - plan.fields.keys())]
+    parent_entrypoint = plan.path.parent / "index.md"
+    if plan.path.name != "index.md" and parent_entrypoint.exists() and _frontmatter(parent_entrypoint.read_text(encoding="utf-8")).get("type") == "Plan":
+        errors.append(f"{label}: adjacent Markdown in a folder-format plan cannot be a second Plan entrypoint")
     difficulty = str(plan.fields.get("difficulty", ""))
     execution = str(plan.fields.get("execution", ""))
     impact = str(plan.fields.get("impact", ""))
@@ -208,6 +214,18 @@ def validate_repository(root: Path) -> list[str]:
         return [f"{resolved_root}: .wiki directory not found"]
     plans = tuple(_read_plan(path) for path in _plan_files(wiki))
     errors = [error for plan in plans for error in _validate_plan(plan, resolved_root, wiki)]
+    for path in wiki.rglob("*"):
+        if not path.is_file() or path.suffix.lower() == ".md":
+            continue
+        relative = path.relative_to(wiki)
+        parts = relative.parts
+        asset_dir = parts.index("_assets") if "_assets" in parts[:-1] else -1
+        valid = asset_dir == 0
+        if asset_dir > 0:
+            entrypoint = wiki.joinpath(*parts[:asset_dir]) / "index.md"
+            valid = entrypoint.exists() and _frontmatter(entrypoint.read_text(encoding="utf-8")).get("type") == "Plan"
+        if not valid:
+            errors.append(f"{path.relative_to(resolved_root)}: non-Markdown artifact must be in an adjacent _assets directory")
     phase_ids = [phase.identifier for plan in plans for phase in plan.phases]
     duplicates = sorted({identifier for identifier in phase_ids if phase_ids.count(identifier) > 1})
     errors.extend(f"duplicate phase ID `{identifier}`" for identifier in duplicates)

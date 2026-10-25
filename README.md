@@ -26,7 +26,7 @@ Download the skill ZIP from the Planning Skill page and extract it into your tar
 Use $planning to create or update a .wiki plan for: <goal>.
 Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
 
-Use $planning to implement .wiki/<plan-file>.md through eligible phases within its scope. Validate each outcome and save checkpoints in progress.md.
+Use $planning to implement .wiki/<plan>.md or .wiki/<plan>/index.md through eligible phases within its scope. Validate each outcome and save checkpoints in progress.md.
 Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
 
 Use $planning to read the implementation section of progress.md, inspect the referenced plan and validation evidence, and continue the next unfinished action. Update progress.md.
@@ -116,7 +116,7 @@ Phase body with cross-references like PA-02, PA-03...
 - Status values are `planned | ready | in-progress | blocked | waiting-on-validation` — completed plans are **deleted** from `.wiki/`, not marked done.
 - Phase IDs follow the pattern `PA-01`, `PA-02`, etc. (or `1.`, `2.` numbered variants).
 - Dependency links use standard markdown: `[text](../relative/path.md)`.
-- Each repo has one `.wiki/` root folder containing multiple `.md` plan files.
+- Each repo has one `.wiki/` root folder. Plans can be `.md` files or folders with `index.md` as the Plan entrypoint and adjacent Markdown documents. Keep plan assets in the folder's `_assets/` and wiki-wide assets in `.wiki/_assets/`.
 
 ---
 
@@ -130,6 +130,8 @@ npm run dev
 ```
 
 Open `http://localhost:5173` in Chrome or Edge. Click **Open Folder** and pick any `.wiki/` directory, paste a GitHub `owner/repo` or GitLab URL, or click **Load Demo Data** to explore immediately.
+
+Plan details display images inline and let you open image and PDF links. The **Images & PDFs** tab on Search lists viewable assets from the entire `.wiki`, including shared files in `.wiki/_assets/`. Browser folder uploads cache these assets for viewing after reload.
 
 Private GitHub repositories should use an expiring fine-grained token limited to the selected repositories with **Contents: read**, saved under **Settings → GitHub**. GitLab tokens are stored per exact host; prefer an expiring project token or a personal token with only `read_repository`. Web tokens are session-only and are disabled on insecure HTTP. The desktop app stores credentials in the operating system credential store and performs authenticated requests outside the webview.
 

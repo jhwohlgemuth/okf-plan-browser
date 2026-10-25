@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { File as NodeFile } from 'node:buffer';
+import { readFileSync } from 'node:fs';
 import {
   parseWikiFileList, parseWikiFolder, parseWikiEntry, parseWikiTexts, findWikiDir, findWikiEntry, isWikiFolderName,
 } from '@/lib/wikiParser';
@@ -73,5 +74,26 @@ describe('ingest paths', () => {
       { path: 'notes.md', text: '# just notes\n' },
     ], 'r');
     expect(ids(fromTexts)).toEqual(ids(fromList));
+  });
+
+  it('imports a folder plan, sibling Markdown, and real image and PDF fixtures', async () => {
+    const paths = [
+      'index.md', 'image-review/index.md', 'image-review/notes.md',
+      '_assets/overview.svg', 'image-review/_assets/sample.svg',
+      'image-review/_assets/sample.png', 'image-review/_assets/sample.webp',
+      'image-review/_assets/sample.jpg', 'image-review/_assets/sample.pdf',
+    ];
+    const FileCtor = NodeFile as unknown as typeof File;
+    const files = paths.map(path => {
+      const bytes = readFileSync(new URL(`../../e2e/fixtures/gallery-project/.wiki/${path}`, import.meta.url));
+      const file = new FileCtor([bytes], path.split('/').at(-1)!);
+      Object.defineProperty(file, 'webkitRelativePath', { value: `gallery-project/.wiki/${path}` });
+      return file;
+    });
+    const result = await parseWikiFileList(files, 'gallery');
+    expect(ids(result)).toEqual(['gallery:image-review/index.md']);
+    expect(result.plans[0]?.documents?.map(doc => doc.fileName)).toEqual(['image-review/notes.md']);
+    expect(result.assets?.map(asset => asset.path).sort()).toEqual(paths.filter(path => !path.endsWith('.md')).sort());
+    expect(result.assets?.every(asset => (asset.file?.size ?? 0) > 0)).toBe(true);
   });
 });

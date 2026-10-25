@@ -25,6 +25,7 @@ export function restorePortfolio(value: unknown): { plans: ParsedPlan[]; repos: 
     if (repos.some(repo => repo.id === id)) continue;
     ids.set(r.id, id);
     repos.push({ id, remote, label: typeof r.label === 'string' ? r.label : r.id,
+      assets: Array.isArray(r.assets) ? r.assets.filter((path): path is string => typeof path === 'string' && !path.includes('..')) : [],
       uuid: typeof r.uuid === 'string' ? r.uuid : newUuid(), color: typeof r.color === 'string' && /^#[a-f0-9]{6}$/i.test(r.color) ? r.color as WikiRepo['color'] : '#61afef', planCount: 0 });
   }
   for (const item of Array.isArray(saved.warnings) ? saved.warnings : []) {
@@ -52,7 +53,12 @@ export function restorePortfolio(value: unknown): { plans: ParsedPlan[]; repos: 
     const sections = extractSections(body, fm.status ?? 'planned');
     const id = `${repoId}:${p.fileName}`;
     if (plans.some(plan => plan.id === id)) continue;
-    plans.push({ id, repoId, fileName: p.fileName, frontmatter: fm, sections,
+    const documents = Array.isArray(p.documents) ? p.documents.flatMap(d => {
+      const document = record(d);
+      return typeof document.fileName === 'string' && typeof document.text === 'string'
+        ? [{ fileName: document.fileName, text: document.text }] : [];
+    }) : [];
+    plans.push({ id, repoId, fileName: p.fileName, frontmatter: fm, sections, documents,
       dependencies: extractDependencies(body), phaseRefs: extractPhaseRefs(body),
       parseErrors: errors, searchText: buildSearchText({ frontmatter: fm, sections }) });
     if (errors.length) warnings.push({ repoId, fileName: p.fileName, errors });

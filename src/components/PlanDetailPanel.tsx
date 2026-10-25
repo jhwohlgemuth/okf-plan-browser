@@ -7,6 +7,8 @@ import { PriorityBadge } from './PriorityBadge';
 import { cn } from '@/lib/utils';
 import { Markdown } from './Markdown';
 import { resolvePlanLink } from '@/lib/planLinks';
+import { resolveWikiPath } from '@/lib/wikiAssets';
+import { AssetViewer, type AssetTarget } from './AssetViewer';
 
 const IMPACT_CLASSES: Record<string, string> = {
   critical: 'text-od-red',
@@ -23,17 +25,36 @@ export function PlanDetailPanel() {
   const repos          = usePlanStore(s => s.repos);
   const selectPlan     = usePlanStore(s => s.selectPlan);
   const plan = plans.find(p => p.id === selectedPlanId);
+  const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const relatedRef = useRef<HTMLElement>(null);
 
   const repo = repos.find(r => r.id === plan?.repoId);
   const fm   = plan?.frontmatter;
 
-  /** Resolve a relative .md link against the current plan's path, within the same wiki. */
-  const resolveLink = (href: string) => {
+  useEffect(() => { setSelectedDocument(null); setSelectedAsset(null); }, [selectedPlanId]);
+
+  /** Resolve links against the Markdown file containing them. */
+  const resolveLink = (href: string, source = plan?.fileName) => {
     if (!plan) return null;
-    const target = resolvePlanLink(plans, plan, href);
-    return { exists: !!target, open: () => target && selectPlan(target.id) };
+    const path = source ? resolveWikiPath(source, href) : null;
+    const target = resolvePlanLink(plans, { ...plan, fileName: source ?? plan.fileName }, href);
+    if (target) return { exists: true, open: () => selectPlan(target.id) };
+    const document = plan.documents?.find(d => d.fileName === path);
+    if (document) return { exists: true, open: () => {
+      setSelectedDocument(document.fileName);
+      requestAnimationFrame(() => relatedRef.current?.scrollIntoView({ block: 'start' }));
+    } };
+    if (path && repo?.assets?.includes(path)) return { exists: true, open: () => setSelectedAsset({ repoId: plan.repoId, path }) };
+    return { exists: false, open: () => undefined };
   };
+  const resolveImage = (src: string, source = plan?.fileName): AssetTarget | null => {
+    const path = source ? resolveWikiPath(source, src) : null;
+    return path && plan && repo?.assets?.includes(path) && !path.toLowerCase().endsWith('.pdf')
+      ? { repoId: plan.repoId, path } : null;
+  };
+  const selectedDoc = plan?.documents?.find(d => d.fileName === selectedDocument);
 
   // Close on Escape
   useEffect(() => {
@@ -246,10 +267,23 @@ export function PlanDetailPanel() {
                       </div>
                     )}
 
-                    {section.body.trim() && <Markdown resolveLink={resolveLink}>{section.body.trim()}</Markdown>}
+                    {section.body.trim() && <Markdown resolveLink={href => resolveLink(href)} resolveImage={src => resolveImage(src)} openAsset={setSelectedAsset}>{section.body.trim()}</Markdown>}
                   </div>
                 </section>
               ))}
+
+              {(plan.documents?.length ?? 0) > 0 && (
+                <section ref={relatedRef} className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1.5">Related Markdown</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {plan.documents?.map(doc => <button key={doc.fileName} type="button" onClick={() => setSelectedDocument(doc.fileName)} className={cn('rounded px-2.5 py-1 text-xs font-mono', selectedDocument === doc.fileName ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-accent')}>{doc.fileName.split('/').pop()}</button>)}
+                  </div>
+                  {selectedDoc && <div className="rounded-lg border border-border p-4">
+                    <p className="mb-3 text-xs font-mono text-muted-foreground">{selectedDoc.fileName}</p>
+                    <Markdown resolveLink={href => resolveLink(href, selectedDoc.fileName)} resolveImage={src => resolveImage(src, selectedDoc.fileName)} openAsset={setSelectedAsset}>{selectedDoc.text.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '')}</Markdown>
+                  </div>}
+                </section>
+              )}
 
               {/* File path */}
               <p className="text-xs text-muted-foreground font-mono border-t border-border pt-3">
@@ -257,6 +291,7 @@ export function PlanDetailPanel() {
               </p>
             </div>
           </div>
+          {selectedAsset && <AssetViewer target={selectedAsset} onClose={() => setSelectedAsset(null)} />}
         </>
   );
 }

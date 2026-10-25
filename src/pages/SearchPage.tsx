@@ -1,12 +1,13 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
 import { useState, useMemo } from 'react';
-import { Search } from 'lucide-react';
+import { FileText, Image as ImageIcon, Search } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { PriorityBadge } from '@/components/PriorityBadge';
 import { truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
+import { AssetViewer, type AssetTarget } from '@/components/AssetViewer';
 
 interface Hit {
   plan:    ParsedPlan;
@@ -76,19 +77,27 @@ export function SearchPage() {
   const repos      = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
   const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<'plans' | 'assets'>('plans');
+  const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
 
   const hits = useMemo(() => searchPlans(plans, query), [plans, query]);
+  const assets = useMemo(() => repos.flatMap(repo => (repo.assets ?? []).map(path => ({ repo, path })))
+    .filter(item => !query.trim() || `${item.repo.label} ${item.path}`.toLowerCase().includes(query.toLowerCase())), [repos, query]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Search bar */}
       <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
         <h1 className="text-base font-semibold text-foreground mb-3">Search</h1>
+        <div className="flex gap-1 mb-3" role="tablist" aria-label="Search category">
+          <button type="button" role="tab" aria-selected={mode === 'plans'} onClick={() => setMode('plans')} className={`rounded px-3 py-1.5 text-xs ${mode === 'plans' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Plans</button>
+          <button type="button" role="tab" aria-selected={mode === 'assets'} onClick={() => setMode('assets')} className={`rounded px-3 py-1.5 text-xs ${mode === 'assets' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Images &amp; PDFs</button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-10 h-10"
-            placeholder="Search titles, descriptions, sections, phases, tags…"
+            placeholder={mode === 'plans' ? 'Search titles, descriptions, sections, phases, tags…' : 'Search image and PDF paths…'}
             value={query}
             onChange={e => setQuery(e.target.value)}
             autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- search is the page's primary action
@@ -96,15 +105,15 @@ export function SearchPage() {
         </div>
         {query && (
           <p className="text-xs text-muted-foreground mt-2">
-            {hits.length} result{hits.length !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
-            {' · '}<TimeRemaining plans={hits.map(hit => hit.plan)} />
+            {mode === 'plans' ? hits.length : assets.length} result{(mode === 'plans' ? hits.length : assets.length) !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
+            {mode === 'plans' && <> {' · '}<TimeRemaining plans={hits.map(hit => hit.plan)} /></>}
           </p>
         )}
       </div>
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto divide-y divide-border/50">
-        {!query && (
+        {mode === 'plans' && !query && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Search className="h-8 w-8 mb-3 opacity-30" />
             <p className="text-sm">Start typing to search across all plans</p>
@@ -112,13 +121,24 @@ export function SearchPage() {
           </div>
         )}
 
-        {query && hits.length === 0 && (
+        {mode === 'plans' && query && hits.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <p className="text-sm">No results for &ldquo;{query}&rdquo;</p>
           </div>
         )}
 
-        {hits.map(({ plan, matches }) => {
+        {mode === 'assets' && assets.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <p className="text-sm">No images or PDFs found{query ? ` for “${query}”` : ''}</p>
+          </div>
+        )}
+        {mode === 'assets' && assets.map(({ repo, path }) => (
+          <button key={`${repo.id}:${path}`} type="button" onClick={() => setSelectedAsset({ repoId: repo.id, path })} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
+            {path.toLowerCase().endsWith('.pdf') ? <FileText className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ImageIcon className="h-5 w-5 shrink-0 text-muted-foreground" />}
+            <span className="min-w-0"><span className="block truncate text-sm text-foreground">{highlight(path, query)}</span><span className="block truncate text-xs text-muted-foreground">{repo.label}</span></span>
+          </button>
+        ))}
+        {mode === 'plans' && hits.map(({ plan, matches }) => {
           const fm   = plan.frontmatter;
           const repo = repos.find(r => r.id === plan.repoId);
           return (
@@ -176,6 +196,7 @@ export function SearchPage() {
           );
         })}
       </div>
+      {selectedAsset && <AssetViewer target={selectedAsset} onClose={() => setSelectedAsset(null)} />}
     </div>
   );
 }

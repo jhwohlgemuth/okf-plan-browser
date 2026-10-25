@@ -82,7 +82,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
     if (!('showDirectoryPicker' in window)) {
       toast({
         title: 'Choose a folder or Markdown files',
-        description: 'Pick the project or .wiki folder. If this browser does not offer folder selection, select the .md plan files instead.',
+        description: 'Pick the project or .wiki folder. The browser reads plans, related Markdown, images, and PDFs.',
       });
       awaitingDialog.current = true;
       cancelled.current = false;
@@ -142,7 +142,6 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
         className="sr-only"
         tabIndex={-1}
         multiple
-        accept=".md,text/markdown"
         onChange={async e => {
           const input = e.target;
           // Safari can dispatch change before restoring window focus. Prevent the
@@ -192,13 +191,13 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
             <FolderOpen className="h-5 w-5 text-od-blue" />
             <p className="text-xs font-semibold text-foreground">{loading ? 'Parsing files…' : 'Open Folder'}</p>
             <p className="text-[10px] leading-tight text-muted-foreground">
-              Uses File System Access API to read .md files
+              Reads plans, images, and PDFs from .wiki
             </p>
           </div>
           <div className={cardClass} role="button" tabIndex={0} onKeyDown={onActivateKey(handleOpen)} onClick={handleOpen} {...dropProps}>
             <Upload className="h-5 w-5 text-od-green" />
             <p className="text-xs font-semibold text-foreground">Drop Files</p>
-            <p className="text-[10px] leading-tight text-muted-foreground">Drag .md files onto this area</p>
+            <p className="text-[10px] leading-tight text-muted-foreground">Drag a project or .wiki folder here</p>
           </div>
         </div>
         {remoteForm}

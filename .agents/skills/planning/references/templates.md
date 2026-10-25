@@ -1,5 +1,20 @@
 # Templates
 
+## Plan layout
+
+```text
+.wiki/
+  index.md                 # portfolio index
+  _assets/                 # wiki-wide non-Markdown artifacts
+  some-plan.md             # single-file option
+  another-plan/
+    index.md               # folder-format Plan entrypoint
+    notes.md               # any number of adjacent Markdown documents
+    _assets/               # this plan's images and other non-Markdown artifacts
+```
+
+When moving `some-plan.md` to `some-plan/index.md`, update inbound links and index, network, and lane references. Link from `index.md` to `notes.md` or `_assets/image.png` with paths relative to `index.md`.
+
 ## Executable plan metadata
 
 ```yaml

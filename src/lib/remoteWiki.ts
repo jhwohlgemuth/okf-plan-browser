@@ -1,6 +1,6 @@
 import { boundedFetch, readBounded, REMOTE_LIMITS, RemoteLimitError } from './remoteLimits';
 import { newUuid } from './utils';
-import { isWikiFolderName, parseWikiTexts, type Progress } from '@/lib/wikiParser';
+import { isWikiFolderName, isViewableAsset, parseWikiTexts, type Progress } from '@/lib/wikiParser';
 
 export type ForgeKind = 'github' | 'gitlab';
 
@@ -27,6 +27,7 @@ export interface FetchRemoteOptions {
 export interface RemoteWiki {
   remote: RemoteWikiRef;
   files: RemoteFile[];
+  assets?: string[];
 }
 
 const SKIP = new Set(['node_modules', '.git']);
@@ -119,10 +120,10 @@ export function parseRemoteWiki(project: string, files: RemoteFile[], report?: P
   return parseWikiTexts(files, project, report);
 }
 
-function wikiEntries(absPaths: string[]): Array<{ abs: string; rel: string }> {
+function selectedEntries(absPaths: string[], accepts: (path: string) => boolean): Array<{ abs: string; rel: string }> {
   const md = absPaths.filter(p => {
     const parts = p.split('/');
-    return p.toLowerCase().endsWith('.md') && !parts.some(part => SKIP.has(part));
+    return accepts(p) && !parts.some(part => SKIP.has(part));
   });
   const wikiHits = md.filter(p => isWikiFolderName(p.split('/')[0] ?? ''));
   if ((wikiHits.length || md.length) > REMOTE_LIMITS.files) throw new RemoteLimitError('Too many Markdown files. Open a local clone instead.');
@@ -131,6 +132,9 @@ function wikiEntries(absPaths: string[]): Array<{ abs: string; rel: string }> {
   }
   return md.map(abs => ({ abs, rel: abs }));
 }
+
+const wikiEntries = (paths: string[]) => selectedEntries(paths, path => path.toLowerCase().endsWith('.md'));
+const assetEntries = (paths: string[]) => selectedEntries(paths, isViewableAsset);
 
 class GitlabIpRestrictedError extends Error {}
 class ForgeHttpError extends Error {
@@ -252,13 +256,14 @@ function decodeBase64(content: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-async function readWikiArchive(compressed: ArrayBuffer, report?: Progress, signal?: AbortSignal): Promise<RemoteFile[]> {
+async function readWikiArchive(compressed: ArrayBuffer, report?: Progress, signal?: AbortSignal): Promise<{ files: RemoteFile[]; assets: string[] }> {
   const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
   const tar = await readBounded(new Response(stream), REMOTE_LIMITS.archiveBytes, signal);
   const decoder = new TextDecoder();
   const field = (start: number, length: number) =>
     decoder.decode(tar.subarray(start, start + length)).replace(/\0.*$/s, '');
   const entries = new Map<string, Uint8Array>();
+  const assets: string[] = [];
   let offset = 0;
   let extendedPath: string | undefined;
   while (offset + 512 <= tar.length) {
@@ -293,18 +298,21 @@ async function readWikiArchive(compressed: ArrayBuffer, report?: Progress, signa
     const marker = '/.wiki/';
     const markerAt = path.indexOf(marker);
     const absolute = markerAt >= 0 ? path.slice(markerAt + 1) : path;
-    if (!absolute.startsWith('.wiki/') || !absolute.toLowerCase().endsWith('.md')) continue;
+    if (!absolute.startsWith('.wiki/')) continue;
     if (absolute.split('/').some(part => SKIP.has(part))) continue;
+    if (isViewableAsset(absolute)) { assets.push(absolute); continue; }
+    if (!absolute.toLowerCase().endsWith('.md')) continue;
     if (size > REMOTE_LIMITS.fileBytes || entries.size >= REMOTE_LIMITS.files) throw new RemoteLimitError('Wiki archive exceeds the file limits.');
     entries.set(absolute, content);
   }
   const selected = wikiEntries([...entries.keys()]);
   report?.(0, selected.length);
-  return selected.map((entry, i) => {
+  const files = selected.map((entry, i) => {
     const text = decoder.decode(entries.get(entry.abs));
     report?.(i + 1, selected.length);
     return { path: entry.rel, text };
   });
+  return { files, assets: assetEntries(assets).map(entry => entry.rel) };
 }
 
 async function fetchGithub(
@@ -336,13 +344,16 @@ async function fetchGithub(
   )).json() as { truncated?: boolean; tree?: Array<{ path?: string; type?: string; sha?: string }> };
 
   let pairs: Array<{ abs: string; rel: string; sha?: string }> = [];
+  let assets: string[] = [];
   if (tree.truncated) {
     const abs = await walkGithubContents(fetchImpl, remote.project, ref, headers);
     pairs = wikiEntries(abs).map(e => ({ ...e }));
+    assets = assetEntries(abs).map(e => e.rel);
   } else {
     const blobs = (tree.tree ?? []).filter(e => e.type === 'blob' && e.path);
     const byAbs = new Map(blobs.map(e => [e.path as string, e.sha]));
     pairs = wikiEntries([...byAbs.keys()]).map(e => ({ ...e, sha: byAbs.get(e.abs) }));
+    assets = assetEntries([...byAbs.keys()]).map(e => e.rel);
   }
 
   report?.(0, pairs.length);
@@ -369,7 +380,7 @@ async function fetchGithub(
     report?.(i + 1, pairs.length);
     return { path: entry.rel, text };
   });
-  return { remote: resolved, files };
+  return { remote: resolved, files, assets };
 }
 
 async function walkGithubContents(
@@ -398,7 +409,7 @@ async function walkGithubContents(
     if (e.type === 'dir') {
       if (SKIP.has(e.name)) continue;
       out.push(...await walkGithubContents(fetchImpl, project, ref, headers, e.path, depth + 1));
-    } else if (e.path.toLowerCase().endsWith('.md')) {
+    } else if (e.path.toLowerCase().endsWith('.md') || isViewableAsset(e.path)) {
       out.push(e.path);
     }
   }
@@ -430,8 +441,8 @@ async function fetchGitlab(
         'gitlab',
         headers,
       );
-      const files = await readWikiArchive(await archive.arrayBuffer(), report, signal);
-      return { remote: resolved, files };
+      const archiveFiles = await readWikiArchive(await archive.arrayBuffer(), report, signal);
+      return { remote: resolved, ...archiveFiles };
     } catch (error) {
       signal?.throwIfAborted();
       if (error instanceof GitlabIpRestrictedError || error instanceof RemoteLimitError || (error instanceof DOMException && error.name === 'TimeoutError')) throw error;
@@ -442,6 +453,7 @@ async function fetchGitlab(
 
   const listed = await gitlabTree(fetchImpl, base, ref, headers);
   const pairs = wikiEntries(listed);
+  const assets = assetEntries(listed).map(entry => entry.rel);
 
   report?.(0, pairs.length);
   const files = await mapPool(pairs, 2, async (entry, i) => {
@@ -458,7 +470,31 @@ async function fetchGitlab(
     report?.(i + 1, pairs.length);
     return { path: entry.rel, text: decodeBase64(file.content) };
   });
-  return { remote: resolved, files };
+  return { remote: resolved, files, assets };
+}
+
+export async function fetchRemoteAsset(remote: RemoteWikiRef, path: string, token?: string, fetchOverride?: typeof fetch): Promise<Blob> {
+  if (!isViewableAsset(path) || path.split('/').some(part => part === '..' || part === '.')) throw new Error('Invalid asset path.');
+  const headers: Record<string, string> = remote.forge === 'github'
+    ? { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+    : {};
+  if (token) headers[remote.forge === 'github' ? 'Authorization' : 'PRIVATE-TOKEN'] = remote.forge === 'github' ? `Bearer ${token}` : token;
+  const absolute = `.wiki/${path}`;
+  const url = remote.forge === 'github'
+    ? `https://api.github.com/repos/${remote.project}/contents/${absolute.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(remote.ref ?? '')}`
+    : `https://${remote.host}/api/v4/projects/${encodeURIComponent(remote.project)}/repository/files/${encodeURIComponent(absolute)}?ref=${encodeURIComponent(remote.ref ?? '')}`;
+  const transport: typeof fetch = (target, init) => fetchOverride ? fetchOverride(target, init) : typeof window !== 'undefined' && '__TAURI__' in window
+    ? nativeRequest(String(target), init?.headers as Record<string, string> ?? {})
+    : fetch(forgeProxyUrl(String(target), remote.forge), init);
+  const response = await req(transport, url, remote.forge, headers);
+  const payload = JSON.parse(new TextDecoder().decode(await readBounded(response, 28 * 1024 * 1024))) as { content?: string; encoding?: string };
+  if (payload.encoding !== 'base64' || !payload.content) throw new Error(`Unreadable asset: ${path}`);
+  const binary = atob(payload.content.replace(/\s/g, ''));
+  if (binary.length > 20 * 1024 * 1024) throw new RemoteLimitError('Asset exceeds 20 MB.');
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  const ext = path.split('.').pop()?.toLowerCase();
+  const mime: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp', svg: 'image/svg+xml', ico: 'image/x-icon', pdf: 'application/pdf' };
+  return new Blob([bytes], { type: mime[ext ?? ''] ?? 'application/octet-stream' });
 }
 
 async function gitlabTree(

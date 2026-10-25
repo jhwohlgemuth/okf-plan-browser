@@ -58,6 +58,7 @@ export interface ParsedPlan {
   dependencies: PlanDependency[];
   phaseRefs:    string[];   // all PA-XX ids found anywhere in body
   parseErrors:  string[];
+  documents?:   Array<{ fileName: string; text: string }>;
 }
 
 // ─── Repo ─────────────────────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ export interface WikiRepo {
   label:     string;
   color:     RepoColor;
   planCount: number;
+  assets?:   string[];     // image and PDF paths relative to .wiki
   remote?:   RemoteWikiRef;
 }
 

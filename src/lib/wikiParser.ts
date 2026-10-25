@@ -177,14 +177,18 @@ function ingestText(result: ParseResult, repoId: string, path: string, text: str
 const SKIP_DIRS = new Set(['node_modules', '.git']);
 const MAX_DEPTH = 6;
 
-type ParseResult = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }> };
+export const isViewableAsset = (path: string) => /\.(?:png|jpe?g|gif|webp|avif|bmp|svg|ico|pdf)$/i.test(path);
+export type WikiAsset = { path: string; file?: File };
+type ParseResult = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }>; assets?: WikiAsset[] };
 
 export async function parseWikiFolder(
   handle: FileSystemDirectoryHandle,
   repoId: string,
   report?: Progress,
 ): Promise<ParseResult> {
-  const result: ParseResult = { plans: [], errors: [] };
+  const errors: ParseResult['errors'] = [];
+  const texts: Array<{ path: string; text: string }> = [];
+  const assets: WikiAsset[] = [];
   let seen = 0;
   async function walk(dir: FileSystemDirectoryHandle, prefix: string, depth: number) {
     for await (const entry of (dir as unknown as { values(): AsyncIterable<FileSystemHandle> }).values()) {
@@ -195,20 +199,20 @@ export async function parseWikiFolder(
         }
         continue;
       }
-      if (!entry.name.toLowerCase().endsWith('.md')) continue;
+      if (!entry.name.toLowerCase().endsWith('.md') && !isViewableAsset(path)) continue;
       try {
         const file = await (entry as FileSystemFileHandle).getFile();
-        const text = await file.text();
-        report?.(++seen);
-        ingestText(result, repoId, path, text);
+        if (isViewableAsset(path)) assets.push({ path, file });
+        else { texts.push({ path, text: await file.text() }); report?.(++seen); }
       } catch (e) {
-        result.errors.push({ name: path, error: (e as Error).message });
+        errors.push({ name: path, error: (e as Error).message });
       }
     }
   }
 
   await walk(handle, '', 0);
-  return result;
+  const parsed = await parseWikiTexts(texts, repoId);
+  return { ...parsed, errors: [...errors, ...parsed.errors], assets };
 }
 
 /** Picked folder is the wiki itself (so its name says nothing about the project). */
@@ -233,8 +237,9 @@ export async function parseWikiTexts(
   files: Array<{ path: string; text: string }>,
   repoId: string,
   report?: Progress,
+  assetPaths: string[] = [],
 ): Promise<ParseResult> {
-  const result: ParseResult = { plans: [], errors: [] };
+  const result: ParseResult = { plans: [], errors: [], assets: assetPaths.map(path => ({ path })) };
   const md = files.filter(f => {
     const parts = f.path.split(/[/\\]/);
     return f.path.toLowerCase().endsWith('.md') && !parts.some(p => SKIP_DIRS.has(p));
@@ -250,6 +255,17 @@ export async function parseWikiTexts(
     report?.(++done, md.length);
     if (done % 10 === 0) await tick();
   }
+  const planFolders = new Set(result.plans.filter(plan => plan.fileName.endsWith('/index.md'))
+    .map(plan => plan.fileName.slice(0, -'index.md'.length)));
+  result.plans = result.plans.filter(plan => plan.fileName.endsWith('/index.md')
+    || !planFolders.has(plan.fileName.slice(0, plan.fileName.lastIndexOf('/') + 1)));
+  for (const plan of result.plans) {
+    if (!plan.fileName.endsWith('/index.md')) continue;
+    const folder = plan.fileName.slice(0, -'index.md'.length);
+    plan.documents = md.filter(f => f.path !== plan.fileName && f.path.startsWith(folder)
+      && !f.path.slice(folder.length).includes('/'))
+      .map(f => ({ fileName: f.path, text: f.text }));
+  }
   return result;
 }
 
@@ -258,6 +274,7 @@ export async function parseWikiFileList(files: File[], repoId: string, report?: 
   const rel = (f: File) => (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
   const hasWikiDir = files.some(f => rel(f).split('/')[1] === '.wiki');
   const candidates: Array<{ path: string; file: File }> = [];
+  const assets: WikiAsset[] = [];
   for (const file of files) {
     let parts = rel(file).split('/').slice(1);
     if (hasWikiDir) {
@@ -265,11 +282,12 @@ export async function parseWikiFileList(files: File[], repoId: string, report?: 
       parts = parts.slice(1);
     }
     if (parts.some(p => SKIP_DIRS.has(p))) continue;
-    if (!file.name.toLowerCase().endsWith('.md')) continue;
-    candidates.push({ path: parts.join('/') || file.name, file });
+    const path = parts.join('/') || file.name;
+    if (file.name.toLowerCase().endsWith('.md')) candidates.push({ path, file });
+    else if (isViewableAsset(path)) assets.push({ path, file });
   }
   const texts = await Promise.all(candidates.map(async ({ path, file }) => ({ path, text: await file.text() })));
-  return parseWikiTexts(texts, repoId, report);
+  return { ...await parseWikiTexts(texts, repoId, report), assets };
 }
 
 const readAll = (dir: FileSystemDirectoryEntry) => new Promise<FileSystemEntry[]>((resolve, reject) => {
@@ -293,7 +311,9 @@ export async function findWikiEntry(entry: FileSystemDirectoryEntry): Promise<Fi
 }
 
 export async function parseWikiEntry(root: FileSystemDirectoryEntry, repoId: string, report?: Progress): Promise<ParseResult> {
-  const result: ParseResult = { plans: [], errors: [] };
+  const errors: ParseResult['errors'] = [];
+  const texts: Array<{ path: string; text: string }> = [];
+  const assets: WikiAsset[] = [];
   let seen = 0;
   async function walk(dir: FileSystemDirectoryEntry, prefix: string, depth: number) {
     for (const entry of await readAll(dir)) {
@@ -304,17 +324,18 @@ export async function parseWikiEntry(root: FileSystemDirectoryEntry, repoId: str
         }
         continue;
       }
-      if (!entry.name.toLowerCase().endsWith('.md')) continue;
+      if (!entry.name.toLowerCase().endsWith('.md') && !isViewableAsset(path)) continue;
       try {
-        const text = await (await entryFile(entry as FileSystemFileEntry)).text();
-        report?.(++seen);
-        ingestText(result, repoId, path, text);
+        const file = await entryFile(entry as FileSystemFileEntry);
+        if (isViewableAsset(path)) assets.push({ path, file });
+        else { texts.push({ path, text: await file.text() }); report?.(++seen); }
       } catch (e) {
-        result.errors.push({ name: path, error: (e as Error).message });
+        errors.push({ name: path, error: (e as Error).message });
       }
     }
   }
 
   await walk(root, '', 0);
-  return result;
+  const parsed = await parseWikiTexts(texts, repoId);
+  return { ...parsed, errors: [...errors, ...parsed.errors], assets };
 }

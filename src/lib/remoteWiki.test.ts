@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { gzipSync } from 'node:zlib';
 import {
-  parseRemoteSpec, remoteProjectId, fetchRemoteWiki, parseRemoteWiki,
+  parseRemoteSpec, remoteProjectId, fetchRemoteWiki, fetchRemoteAsset, parseRemoteWiki,
 } from '@/lib/remoteWiki';
 import { TREE } from '@/test/handles';
 
@@ -117,6 +117,8 @@ describe('fetchRemoteWiki GitHub', () => {
           { path: '.wiki/plan-one.md', type: 'blob', sha: 's1' },
           { path: '.wiki/sub/plan-two.md', type: 'blob', sha: 's2' },
           { path: '.wiki/notes.md', type: 'blob', sha: 's3' },
+          { path: '.wiki/image-review/_assets/sample.png', type: 'blob', sha: 'image' },
+          { path: '.wiki/image-review/_assets/sample.pdf', type: 'blob', sha: 'pdf' },
           { path: '.wiki/node_modules/skip.md', type: 'blob', sha: 's4' },
           { path: 'README.md', type: 'blob', sha: 's5' },
         ],
@@ -133,6 +135,7 @@ describe('fetchRemoteWiki GitHub', () => {
       forge: 'github', host: 'github.com', project: 'acme/widgets', ref: 'main',
     });
     expect(wiki.files.map(f => f.path).sort()).toEqual(['notes.md', 'plan-one.md', 'sub/plan-two.md']);
+    expect(wiki.assets).toEqual(['image-review/_assets/sample.png', 'image-review/_assets/sample.pdf']);
     const parsed = await parseRemoteWiki('acme/widgets', wiki.files);
     expect(parsed.plans.map(p => p.id).sort()).toEqual(['acme/widgets:plan-one.md', 'acme/widgets:sub/plan-two.md']);
   });
@@ -154,6 +157,18 @@ describe('fetchRemoteWiki GitHub', () => {
     };
     await fetchRemoteWiki('acme/widgets', { fetch: fetchImpl, githubToken: 'ghp_secret' });
     expect(auth).toBe('Bearer ghp_secret');
+  });
+
+  it('fetches an image through the authenticated contents API', async () => {
+    let authorization = '';
+    const remote = { forge: 'github' as const, host: 'github.com', project: 'acme/widgets', ref: 'main' };
+    const asset = await fetchRemoteAsset(remote, 'image-review/_assets/sample.png', 'ghp_secret', async (_input, init) => {
+      authorization = (init?.headers as Record<string, string>)?.Authorization ?? '';
+      return Response.json({ encoding: 'base64', content: b64('image bytes') });
+    });
+    expect(authorization).toBe('Bearer ghp_secret');
+    expect(asset.type).toBe('image/png');
+    expect(await asset.text()).toBe('image bytes');
   });
 
   it('walks contents when the tree is truncated', async () => {
@@ -199,6 +214,8 @@ describe('fetchRemoteWiki GitLab', () => {
     const archive = wikiArchive({
       'plan-one.md': planOne,
       'sub/plan-two.md': planTwo,
+      'image-review/_assets/sample.webp': 'test webp',
+      'image-review/_assets/sample.pdf': 'test pdf',
     });
     const requested: string[] = [];
     const tokens: string[] = [];
@@ -219,6 +236,7 @@ describe('fetchRemoteWiki GitLab', () => {
       { path: 'plan-one.md', text: planOne },
       { path: 'sub/plan-two.md', text: planTwo },
     ]);
+    expect(wiki.assets).toEqual(['image-review/_assets/sample.webp', 'image-review/_assets/sample.pdf']);
   });
 
   it('loads a custom-host public project', async () => {

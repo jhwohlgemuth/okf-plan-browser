@@ -2,7 +2,7 @@
 
 ## Add
 
-Create one Markdown concept for one atomic outcome. Add the required Plan frontmatter, current evidence, boundaries, dependencies, decisions, validation, acceptance criteria, and five-hour execution phases. Link it from the root and nearest indexes plus any existing dependency-network or parallel-scheduling guide.
+Create one Markdown concept for one atomic outcome. Use either `some-plan.md` or `some-plan/index.md` as the Plan entrypoint. A folder-format plan may contain any number of adjacent Markdown files for supporting material. Keep non-Markdown plan assets in `some-plan/_assets/` and wiki-wide assets in `.wiki/_assets/`; use relative links from the file that contains them. Add the required Plan frontmatter, current evidence, boundaries, dependencies, decisions, validation, acceptance criteria, and five-hour execution phases. Link the entrypoint from the root and nearest indexes plus any existing dependency-network or parallel-scheduling guide.
 
 ## Review and maintain
 
@@ -26,4 +26,4 @@ If work stops incomplete, keep the phase and record a concise handoff with the v
 
 ## Retire
 
-When no work remains, move durable material to code, tests, documentation, architecture records, or release history. Delete the plan and remove every index, dependency-network, and parallel-lane reference in the same change. Recalculate any maintained portfolio count and ranking rather than retaining a completed stub.
+When no work remains, move durable material to code, tests, documentation, architecture records, or release history. Delete the plan entrypoint and its plan-specific sibling documents and `_assets` when no longer needed, and remove every index, dependency-network, and parallel-lane reference in the same change. Recalculate any maintained portfolio count and ranking rather than retaining a completed stub.

@@ -3,11 +3,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { Check, Clipboard } from 'lucide-react';
+import { InlineWikiImage, type AssetTarget } from './AssetViewer';
 
 interface Props {
   children: string;
   /** Resolve a relative link; return a handler if it points to something navigable. */
   resolveLink?: (href: string) => { exists: boolean; open: () => void } | null;
+  resolveImage?: (src: string) => AssetTarget | null;
+  openAsset?: (target: AssetTarget) => void;
 }
 
 const EXTERNAL_RE = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
@@ -39,7 +42,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
   );
 }
 
-export function Markdown({ children, resolveLink }: Props) {
+export function Markdown({ children, resolveLink, resolveImage, openAsset }: Props) {
   return (
     <div className="md-body">
       <ReactMarkdown
@@ -47,6 +50,12 @@ export function Markdown({ children, resolveLink }: Props) {
         rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
         components={{
           pre: ({ children: c }) => <CodeBlock>{c}</CodeBlock>,
+          img: ({ src, alt }) => {
+            const target = src ? resolveImage?.(src) : null;
+            if (target) return <InlineWikiImage target={target} alt={alt ?? ''} onOpen={() => openAsset?.(target)} />;
+            return src && EXTERNAL_RE.test(src) ? <img src={src} alt={alt ?? ''} className="max-h-96 max-w-full object-contain" />
+              : <span className="md-broken-link" title={`Image not found: ${src ?? ''}`}>{alt || src}</span>;
+          },
           a: ({ href, children: c }) => {
             if (!href || EXTERNAL_RE.test(href)) {
               return <a href={href} target="_blank" rel="noreferrer noopener">{c}</a>;

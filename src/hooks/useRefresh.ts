@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useRef } from 'react';
 import { usePlanStore } from '@/store/planStore';
 import { parseWikiFolder, parseWikiFileList, parseWikiTexts, findWikiDir } from '@/lib/wikiParser';
 import { commitWiki } from '@/lib/commitWiki';
-import { getHandle, ensureReadAccess } from '@/lib/handleStore';
+import { getHandle, ensureReadAccess, cacheAssetFiles } from '@/lib/handleStore';
 import { fetchRemoteWiki, type RemoteWikiRef } from '@/lib/remoteWiki';
 import { getGithubToken, getGitlabToken } from '@/lib/githubToken';
 import { useToast } from '@/components/ui/use-toast';
@@ -60,7 +60,7 @@ export function useRefresh() {
           githubToken: remote.forge === 'github' ? await getGithubToken() : undefined,
           gitlabToken: remote.forge === 'gitlab' ? await getGitlabToken(remote.host) : undefined,
         });
-        const parsed = await parseWikiTexts(wiki.files, id);
+        const parsed = await parseWikiTexts(wiki.files, id, undefined, wiki.assets);
         operation.signal.throwIfAborted();
         plans += commitWiki(id, parsed, { remote: wiki.remote, refresh: true }).plans;
       } catch (error) {
@@ -105,7 +105,9 @@ export function useRefresh() {
     if (!files) return;
     setBusy(new Set([id]));
     try {
-      const result = commitWiki(id, await parseWikiFileList(files, id), { refresh: true });
+      const parsed = await parseWikiFileList(files, id);
+      const result = commitWiki(id, parsed, { refresh: true });
+      await cacheAssetFiles(id, parsed.assets ?? []);
       toast({ title: `Refreshed ${id}`, description: `${result.plans} plans` });
     } catch (e) {
       toast({ title: `Could not refresh ${id}`, description: (e as Error).message });

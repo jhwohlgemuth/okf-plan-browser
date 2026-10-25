@@ -4,6 +4,7 @@ import type { ParsedPlan, WikiRepo, PlanFilters, ParseWarning } from '@/types/wi
 import { DEMO_PLANS, DEMO_REPOS } from '@/lib/demoData';
 import { buildSearchText } from '@/lib/wikiParser';
 import { restorePortfolio } from '@/lib/restorePortfolio';
+import { forgetAllAssets, forgetAssets } from '@/lib/wikiAssets';
 
 interface PlanStore {
   plans:          ParsedPlan[];
@@ -74,12 +75,14 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       isDemoData: false,
     })),
 
-  removeRepo: (repoId) =>
+  removeRepo: (repoId) => {
+    forgetAssets(repoId);
     set(s => ({
       plans:    s.plans.filter(p => p.repoId !== repoId),
       repos:    s.repos.filter(r => r.id !== repoId),
       warnings: s.warnings.filter(w => w.repoId !== repoId),
-    })),
+    }));
+  },
 
   selectPlan: (id) => set({ selectedPlanId: id, detailOpen: true }),
   closeDetail: () => set({ detailOpen: false }),
@@ -89,16 +92,19 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
 
   clearFilters: () => set({ filters: { ...EMPTY_FILTERS } }),
 
-  loadDemoData: () =>
+  loadDemoData: () => {
+    usePlanStore.getState().repos.forEach(repo => forgetAssets(repo.id));
     set({
       plans:      DEMO_PLANS,
       repos:      DEMO_REPOS,
       warnings:   [],
       isDemoData: true,
       filters:    { ...EMPTY_FILTERS },
-    }),
+    });
+  },
 
-  clearAll: () =>
+  clearAll: () => {
+    usePlanStore.getState().repos.forEach(repo => forgetAssets(repo.id));
     set({
       plans:          [],
       repos:          [],
@@ -107,9 +113,11 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       detailOpen:     false,
       isDemoData:     false,
       filters:        { ...EMPTY_FILTERS },
-    }),
+    });
+  },
 
   clearSavedData: () => {
+    forgetAllAssets();
     set({
       plans: [], repos: [], warnings: [], selectedPlanId: null, detailOpen: false,
       isDemoData: false, storageError: false, filters: { ...EMPTY_FILTERS },

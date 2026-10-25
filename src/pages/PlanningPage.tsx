@@ -22,7 +22,7 @@ const PROMPTS = [
   {
     title: 'Implement a long plan',
     description: 'Continue through ready phases, validate each outcome, and save checkpoints across sessions.',
-    command: 'Use $planning to implement .wiki/<plan-file>.md through eligible phases within its scope. Validate each outcome and save a compact handoff in progress.md.',
+    command: 'Use $planning to implement .wiki/<plan>.md or .wiki/<plan>/index.md through eligible phases within its scope. Validate each outcome and save a compact handoff in progress.md.',
   },
   {
     title: 'Resume implementation',
@@ -52,7 +52,7 @@ const PROMPTS = [
   {
     title: 'Execute one phase',
     description: 'Implement one bounded phase, validate it, and reconcile the plan with the resulting evidence.',
-    command: 'Use $planning to execute phase <PHASE-ID> in .wiki/<plan-file>.md.',
+    command: 'Use $planning to execute phase <PHASE-ID> in .wiki/<plan>.md or .wiki/<plan>/index.md.',
   },
   {
     title: 'Review the portfolio',

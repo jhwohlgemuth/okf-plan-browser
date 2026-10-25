@@ -4,7 +4,7 @@ import { usePlanStore } from '@/store/planStore';
 import { randomProjectName } from '@/lib/names';
 import { newUuid } from '@/lib/utils';
 import { commitWiki, type LoadResult, type Parsed } from '@/lib/commitWiki';
-import { getHandle, saveHandle } from '@/lib/handleStore';
+import { cacheAssetFiles, getHandle, saveHandle } from '@/lib/handleStore';
 import { fetchRemoteWiki, parseRemoteSpec, remoteProjectId, type RemoteWikiRef } from '@/lib/remoteWiki';
 import { getGithubToken, getGitlabToken } from '@/lib/githubToken';
 
@@ -13,6 +13,7 @@ export type { LoadResult };
 export interface PendingWiki {
   folderName: string;
   parse:      (project: string, report?: Progress) => Promise<Parsed>;
+  cacheFiles?: boolean;
 }
 
 export interface LoadProgress { done: number; total?: number }
@@ -44,13 +45,17 @@ export function useFileSystem() {
   const ingest = useCallback(async (
     folderName: string,
     parse: (project: string, report?: Progress) => Promise<Parsed>,
+    cacheFiles = false,
   ): Promise<LoadResult | null> => {
     if (isWikiFolderName(folderName)) {
-      setPending(q => [...q, { folderName, parse }]);
+      setPending(q => [...q, { folderName, parse, cacheFiles }]);
       return null;
     }
     const id = `local:${newUuid()}`;
-    return commit(id, await parse(id, report), { label: folderName });
+    const parsed = await parse(id, report);
+    const result = commit(id, parsed, { label: folderName });
+    if (result && cacheFiles) await cacheAssetFiles(id, parsed.assets ?? []);
+    return result;
   }, [commit, report]);
 
   const confirmPending = useCallback(async (project: string): Promise<LoadResult | null> => {
@@ -64,7 +69,10 @@ export function useFileSystem() {
     setLoading(true);
     try {
       const id = `local:${newUuid()}`;
-      return commit(id, await next.parse(id, report), { label: name });
+      const parsed = await next.parse(id, report);
+      const result = commit(id, parsed, { label: name });
+      if (result && next.cacheFiles) await cacheAssetFiles(id, parsed.assets ?? []);
+      return result;
     } catch (e) {
       setError((e as Error).message);
       return null;
@@ -113,7 +121,7 @@ export function useFileSystem() {
         report,
       });
       const project = remoteProjectId(wiki.remote);
-      const parsed = await parseWikiTexts(wiki.files, project, report);
+      const parsed = await parseWikiTexts(wiki.files, project, report, wiki.assets);
       controller.signal.throwIfAborted();
       return commit(project, parsed, { remote: wiki.remote, label: `${wiki.remote.host}/${wiki.remote.project} (${wiki.remote.ref})` });
     } catch (e) {
@@ -154,7 +162,7 @@ export function useFileSystem() {
     setLoading(true);
     try {
       const rel = (files[0] as File & { webkitRelativePath?: string }).webkitRelativePath;
-      return await ingest(rel?.split('/')[0] || 'wiki', (project, r) => parseWikiFileList(files, project, r));
+      return await ingest(rel?.split('/')[0] || 'wiki', (project, r) => parseWikiFileList(files, project, r), true);
     } catch (e) {
       setError((e as Error).message);
       return null;
@@ -189,7 +197,7 @@ export function useFileSystem() {
     try {
       for (const entry of entries) {
         const r = await ingest(entry.name, async (project, rep) =>
-          parseWikiEntry(await findWikiEntry(entry), project, rep));
+          parseWikiEntry(await findWikiEntry(entry), project, rep), true);
         if (r) results.push(r);
       }
       const dirs = (await Promise.all(pendingHandles))
