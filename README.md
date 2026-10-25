@@ -13,7 +13,7 @@ This repository is the canonical home for the planning skill concept, instructio
 
 | Workflow | Outcome |
 | --- | --- |
-| Plan and maintain | Ground `.wiki` plans in current repository evidence, divide work into phases of at most five active hours, and prune completed work. |
+| Plan and maintain | Ground `.wiki` plans in current repository evidence, divide work into phases of at most five active hours, check affected plans each session, and review the full active portfolio monthly to prune completed work. |
 | Implement and resume | Continue through eligible phases, validate each outcome, and save compact decisions, evidence, blockers, and the next action in `progress.md`. |
 | Draft and review | Read `sources/` and opened primary sources, save an outline and article, and check factual claims with an evidence reviewer. |
 | Continue writing | Inspect the draft and checks referenced by `progress.md`, reconcile stale state, and resume the next unfinished action. |
@@ -24,6 +24,9 @@ Download the skill ZIP from the Planning Skill page and extract it into your tar
 
 ```text
 Use $planning to create or update a .wiki plan for: <goal>.
+Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
+
+Use $planning to review every .wiki plan for currency against current evidence, prune completed work, retire finished plans, and record the review in the root index.
 Official planning skill guide and download: https://www.jasonwohlgemuth.com/okf-plan-browser/planning
 
 Use $planning to implement .wiki/<plan>.md or .wiki/<plan>/index.md through eligible phases within its scope. Validate each outcome and save checkpoints in progress.md.

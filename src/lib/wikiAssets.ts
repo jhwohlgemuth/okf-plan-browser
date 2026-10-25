@@ -37,7 +37,15 @@ export function forgetAllAssets(): void {
 
 async function readAsset(repoId: string, path: string): Promise<Blob> {
   const file = files.get(repoId)?.get(path);
-  if (file) return file;
+  if (file) {
+    const demoUrl = (file as File & { demoUrl?: string }).demoUrl;
+    if (demoUrl) {
+      const response = await fetch(demoUrl);
+      if (!response.ok) throw new Error(`Could not load demo asset: ${path}`);
+      return response.blob();
+    }
+    return file;
+  }
   const repo = usePlanStore.getState().repos.find(r => r.id === repoId);
   if (!repo?.assets?.includes(path)) throw new Error('Asset is not in this wiki.');
   if (repo.remote) {

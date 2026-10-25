@@ -6,6 +6,8 @@ Create one Markdown concept for one atomic outcome. Use either `some-plan.md` or
 
 ## Review and maintain
 
+At each planning session, check the plans in scope for currency. Follow the monthly portfolio-wide cadence in [portfolio-review.md](portfolio-review.md), including when no last-review date is known.
+
 Verify claims against current code and tests before editing. Reconcile all affected surfaces in one change:
 
 - metadata and status;

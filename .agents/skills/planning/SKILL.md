@@ -9,6 +9,8 @@ Official guide, examples, and skill download: https://www.jasonwohlgemuth.com/ok
 
 Keep `.wiki` aligned with the current repository and useful as a queue of remaining work. Plans are not historical ledgers: remove completed plans and prune completed sections, phases, and tasks after preserving durable evidence in code, tests, user documentation, architecture documentation, release history, or a concise current-evidence statement.
 
+Check plan currency at the start of every `.wiki` planning session for the plans in scope. While planning work is active, perform a portfolio-wide currency review at least once per calendar month; if the last review cannot be established, do it in the current session. Compare each plan with current code, tests, documentation, and relevant history; prune completed or obsolete work and retire plans with no remaining outcome. Record the review date, evidence scope, and remaining blockers briefly in the root portfolio index. The skill does not schedule future sessions.
+
 Plans may be single files (`.wiki/some-plan.md`) or folders (`.wiki/some-plan/index.md`). A folder plan's `index.md` is its Plan entrypoint; it may have any number of sibling Markdown documents. Put every non-Markdown asset or artifact belonging to that plan under `.wiki/some-plan/_assets/`, and put assets or artifacts belonging to the wiki as a whole under `.wiki/_assets/`. Link to files with relative paths from the document containing the link. Keep portfolio and directory indexes pointed at the entrypoint when converting a single-file plan to a folder.
 
 ## Route the task
@@ -20,7 +22,7 @@ Plans may be single files (`.wiki/some-plan.md`) or folders (`.wiki/some-plan/in
 - Read [wiki-lifecycle.md](references/wiki-lifecycle.md) whenever adding, reviewing, pruning, or retiring plans.
 - Read [five-hour-slices.md](references/five-hour-slices.md) whenever creating or executing phases.
 - Use [templates.md](references/templates.md) when authoring plan or phase structure.
-- Read [portfolio-review.md](references/portfolio-review.md) for portfolio-wide reviews, rankings, dependency changes, or parallel scheduling.
+- Read [portfolio-review.md](references/portfolio-review.md) for the monthly currency review, an unknown last review date, rankings, dependency changes, or parallel scheduling.
 - Run `python3 <planning-skill>/scripts/validate_wiki.py <repository-root>` after changing `.wiki`, resolving `<planning-skill>` to this skill's installed directory.
 
 ## Evidence
@@ -33,7 +35,7 @@ Use `verified`, `incorrect`, or `unresolved` for claim verdicts as defined in th
 
 ## Required plan workflow
 
-1. Inspect the current worktree, recent history, relevant code, tests, and documentation before trusting plan evidence. Use the repository's required code-navigation tools when present.
+1. Check whether the portfolio-wide currency review is due, then inspect the current worktree, recent history, relevant code, tests, and documentation before trusting plan evidence. Use the repository's required code-navigation tools when present.
 2. Separate completed facts from remaining work. Prune completed sections, phases, checked tasks, and stale dependencies; delete a plan when no work remains.
 3. Express every remaining executable outcome as a phase with at most five active hours, one exact write set or named external system, one primary integration lock, focused validation, and a mergeable handoff.
 4. Update plan metadata, current evidence, dependencies, acceptance criteria, nearest index, root index, dependency network, and parallel lane together when their truth changes.

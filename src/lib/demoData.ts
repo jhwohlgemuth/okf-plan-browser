@@ -1,5 +1,12 @@
 import { parseWikiFile } from './wikiParser';
 import type { ParsedPlan } from '@/types/wiki';
+import { registerAssetFiles } from './wikiAssets';
+
+const DEMO_ASSET_FILES = import.meta.glob('../../e2e/fixtures/gallery-project/.wiki/**/*.{png,jpg,jpeg,webp,svg,pdf}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
 
 // ─── Raw demo markdown strings ────────────────────────────────────────────────
 
@@ -269,8 +276,50 @@ export const DEMO_PLANS: ParsedPlan[] = DEMO_RAW.map(({ repo, name, md }) =>
   parseWikiFile(repo, name, md),
 );
 
+const DEMO_GALLERY_ID = 'demo-gallery';
+const DEMO_GALLERY_PATHS = Object.keys(DEMO_ASSET_FILES).map(path => path.replace(/^.*?\.wiki\//, ''));
+const DEMO_GALLERY_ASSETS = Object.entries(DEMO_ASSET_FILES).map(([source, url]) => {
+  const path = source.replace(/^.*?\.wiki\//, '');
+  const name = path.split('/').at(-1) ?? path;
+  const assetUrl = new URL(url, import.meta.url);
+  const file = new File([assetUrl.href], name);
+  Object.defineProperty(file, 'demoUrl', { value: assetUrl.href });
+  return { path, file };
+});
+
+const galleryPlan = parseWikiFile(DEMO_GALLERY_ID, 'image-review/index.md', `---
+type: Plan
+title: Image review gallery
+description: Demo image and PDF assets in the embedded sample wiki.
+difficulty: low
+impact: low
+package: [demo-gallery]
+tags: [gallery, images, pdf]
+status: planned
+execution: coordination
+---
+
+# Goal
+
+Browse the sample [image notes](notes.md), [PDF](_assets/sample.pdf), and images.
+
+![PNG sample](_assets/sample.png)
+
+![WebP sample](_assets/sample.webp)
+
+![JPEG sample](_assets/sample.jpg)
+
+![SVG sample](_assets/sample.svg)
+
+![Shared SVG](../_assets/overview.svg)
+`);
+galleryPlan.documents = [{ fileName: 'image-review/notes.md', text: 'This adjacent demo document links to its [plan](index.md) and [sample PDF](_assets/sample.pdf).' }];
+DEMO_PLANS.push(galleryPlan);
+registerAssetFiles(DEMO_GALLERY_ID, DEMO_GALLERY_ASSETS);
+
 export const DEMO_REPOS = [
   { id: 'acorn-core', label: 'acorn-core', color: '#61afef' as const, planCount: 3 },
   { id: 'acorn-cli',  label: 'acorn-cli',  color: '#98c379' as const, planCount: 1 },
   { id: 'acorn-ui',  label: 'acorn-ui',   color: '#e5c07b' as const, planCount: 2 },
+  { id: DEMO_GALLERY_ID, label: 'demo-gallery', color: '#56b6c2' as const, planCount: 1, assets: DEMO_GALLERY_PATHS },
 ];

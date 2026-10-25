@@ -60,9 +60,9 @@ const PROMPTS = [
     command: 'Use $planning to review the .wiki portfolio and recommend the next independently mergeable phases.',
   },
   {
-    title: 'Prune completed work',
-    description: 'Remove finished phases and retire plans whose durable outcomes now live outside the active queue.',
-    command: 'Use $planning to prune completed work and retire finished plans in .wiki.',
+    title: 'Review plan currency',
+    description: 'Check every plan against current evidence each month while planning work is active, then prune finished work.',
+    command: 'Use $planning to review the currency of every .wiki plan against current code, tests, documentation, and history. Prune completed or obsolete work, retire finished plans, and record the review date, evidence scope, and blockers in the root index.',
   },
 ].map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
 
@@ -71,6 +71,7 @@ const RULES = [
   { icon: GitMerge, title: 'Mergeable handoffs', text: 'Each phase names one write set, one primary lock, focused validation, and a clean handoff.' },
   { icon: ListChecks, title: 'Traceable evidence', text: 'Inspect code and test results for repository claims; open primary sources for article claims. Record verified, incorrect, or unresolved verdicts.' },
   { icon: Scissors, title: 'Remaining work only', text: 'Completed wiki phases and plans are removed after preserving durable evidence. Articles and claim checks remain writing artifacts.' },
+  { icon: Clock3, title: 'Regular currency checks', text: 'Check affected plans at each planning session. Review the full active portfolio at least monthly and record the evidence in its root index.' },
   { icon: Clock3, title: 'Resume with context', text: 'Compact progress notes preserve decisions, validation, blockers, and the next action. Recheck affected evidence and stop unproductive retries.' },
   { icon: BookOpenCheck, title: 'Review before completion', text: 'Validate each outcome before advancing. Mark unresolved claims and state exactly what evidence is missing.' },
 ];
@@ -147,7 +148,8 @@ export function PlanningPage() {
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
           The official home of the <code>$planning</code> skill: maintain <code>.wiki</code> portfolios,
           implement long plans in bounded phases, and write articles with primary-source claim checks.
-          Durable progress notes let an agent resume across sessions while preserving decisions and validation evidence.
+          Check plan currency regularly and prune completed work. Durable progress notes let an agent resume
+          across sessions while preserving decisions and validation evidence.
         </p>
         <p className="text-xs text-muted-foreground mt-3">
           The <a className="underline underline-offset-4" href="https://github.com/jhwohlgemuth/okf-plan-browser/tree/main/.agents/skills/planning" target="_blank" rel="noreferrer">repository skill folder</a>{' '}
