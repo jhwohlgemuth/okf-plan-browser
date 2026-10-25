@@ -25,7 +25,7 @@ Implement only this outcome. Keep unrelated high-impact hardening intact. No ext
 
 # Dependencies
 
-No upstream plan blocker. Shared write sets are serialized in [parallel-execution.md](../parallel-execution.md).
+No upstream plan blocker. Shared write sets are serialized in [parallel-execution.md](parallel-execution.md).
 
 # Validation
 

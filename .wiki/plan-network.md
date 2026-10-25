@@ -4,15 +4,15 @@
 
 ## Plans
 
-- [Desktop ingest](plans/tauri-desktop-ingest.md): requires access to packaged installers on each target platform.
-- [Make dropped files match the import interface](plans/folder-drop-contract.md): no upstream plan blocker.
-- [Forget folder access when removing saved data](plans/forget-folder-handles.md): no upstream plan blocker.
-- [Persist portfolio changes without rewriting on navigation](plans/persistence-write-scope.md): no upstream plan blocker.
-- [Track refresh work independently for each repository](plans/refresh-concurrency.md): no upstream plan blocker.
-- [Load branches containing slashes unambiguously](plans/remote-branch-selection.md): no upstream plan blocker.
-- [Make navigation and graph usable without a pointer](plans/accessible-navigation.md): no upstream plan blocker.
-- [Restore and share selected plans and phases](plans/plan-deep-links.md): no upstream plan blocker.
-- [Reduce initial loading and graph layout work](plans/rendering-performance.md): no upstream plan blocker.
+- [Desktop ingest](tauri-desktop-ingest.md): requires access to packaged installers on each target platform.
+- [Make dropped files match the import interface](folder-drop-contract.md): no upstream plan blocker.
+- [Forget folder access when removing saved data](forget-folder-handles.md): no upstream plan blocker.
+- [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md): no upstream plan blocker.
+- [Track refresh work independently for each repository](refresh-concurrency.md): no upstream plan blocker.
+- [Load branches containing slashes unambiguously](remote-branch-selection.md): no upstream plan blocker.
+- [Make navigation and graph usable without a pointer](accessible-navigation.md): no upstream plan blocker.
+- [Restore and share selected plans and phases](plan-deep-links.md): no upstream plan blocker.
+- [Reduce initial loading and graph layout work](rendering-performance.md): no upstream plan blocker.
 
 ## Phase edges
 

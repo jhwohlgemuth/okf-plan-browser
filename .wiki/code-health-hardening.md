@@ -23,15 +23,15 @@ unit tests are release gates, but do not substitute for installer interaction te
 
 # Remaining outcomes
 
-- [Make dropped files match the import interface](plans/folder-drop-contract.md)
-- [Forget folder access when removing saved data](plans/forget-folder-handles.md)
-- [Persist portfolio changes without rewriting on navigation](plans/persistence-write-scope.md)
-- [Track refresh work independently for each repository](plans/refresh-concurrency.md)
-- [Load branches containing slashes unambiguously](plans/remote-branch-selection.md)
-- [Make navigation and graph usable without a pointer](plans/accessible-navigation.md)
-- [Restore and share selected plans and phases](plans/plan-deep-links.md)
-- [Reduce initial loading and graph layout work](plans/rendering-performance.md)
-- [Verify packaged desktop ingest](plans/tauri-desktop-ingest.md)
+- [Make dropped files match the import interface](folder-drop-contract.md)
+- [Forget folder access when removing saved data](forget-folder-handles.md)
+- [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md)
+- [Track refresh work independently for each repository](refresh-concurrency.md)
+- [Load branches containing slashes unambiguously](remote-branch-selection.md)
+- [Make navigation and graph usable without a pointer](accessible-navigation.md)
+- [Restore and share selected plans and phases](plan-deep-links.md)
+- [Reduce initial loading and graph layout work](rendering-performance.md)
+- [Verify packaged desktop ingest](tauri-desktop-ingest.md)
 
 # Dependencies
 
