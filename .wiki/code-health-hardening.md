@@ -1,7 +1,7 @@
 ---
 type: Plan
 title: Remaining app improvements
-description: Route the eight medium-impact recommendations and existing desktop verification to bounded executable plans.
+description: Route the seven medium-impact recommendations and existing desktop verification to bounded executable plans.
 difficulty: mixed
 impact: high
 package: [okf-plan-browser]
@@ -28,7 +28,6 @@ unit tests are release gates, but do not substitute for installer interaction te
 - [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md)
 - [Track refresh work independently for each repository](refresh-concurrency.md)
 - [Load branches containing slashes unambiguously](remote-branch-selection.md)
-- [Make navigation and graph usable without a pointer](accessible-navigation.md)
 - [Restore and share selected plans and phases](plan-deep-links.md)
 - [Reduce initial loading and graph layout work](rendering-performance.md)
 - [Verify packaged desktop ingest](tauri-desktop-ingest.md)

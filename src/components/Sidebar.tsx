@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import type { Ref } from 'react';
 import {
   Home, LayoutGrid, Layers, Share2, Search, Settings, AlertTriangle, Info, RefreshCw,
   PanelLeftClose, PanelLeftOpen, BookOpenCheck,
@@ -19,7 +20,13 @@ const NAV = [
   { to: '/about',     icon: Info,        label: 'About' },
 ];
 
-export function Sidebar({ open = false }: { open?: boolean }) {
+interface SidebarProps {
+  variant?: 'desktop' | 'mobile';
+  homeRef?: Ref<HTMLAnchorElement>;
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarProps) {
   const location   = useLocation();
   const plans      = usePlanStore(s => s.plans);
   const repos      = usePlanStore(s => s.repos);
@@ -28,26 +35,35 @@ export function Sidebar({ open = false }: { open?: boolean }) {
   const { busy, refreshable, refreshOne, refreshAll, cancelRefresh } = useRefresh();
   const collapsed = useUiStore(s => s.sidebarCollapsed);
   const toggleSidebar = useUiStore(s => s.toggleSidebar);
-  // The mobile drawer is always expanded; collapsing only applies from md up.
-  const hideLabel = collapsed ? 'md:hidden' : '';
+  const isDesktop = variant === 'desktop';
+  const hideLabel = isDesktop && collapsed ? 'md:hidden' : '';
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
-    <aside className={cn('w-[220px] shrink-0 flex flex-col h-dvh bg-card border-r border-border transition-[width] duration-200', collapsed && 'md:w-14', 'max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:transition-transform', !open && 'max-md:-translate-x-full')}>
+    <aside
+      aria-label="Primary navigation"
+      className={cn(
+        'w-[220px] shrink-0 flex-col h-dvh bg-card border-r border-border',
+        isDesktop ? 'hidden md:flex transition-[width] duration-200' : 'flex w-full',
+        isDesktop && collapsed && 'md:w-14',
+      )}
+    >
       {/* Brand */}
       <div className={cn('px-4 pt-5 pb-4 border-b border-border', collapsed && 'md:px-2')}>
         <div className={cn('flex items-center gap-2', collapsed && 'md:flex-col md:gap-3')}>
           <span className="text-od-blue font-mono text-lg font-semibold">OKF</span>
           <span className={cn('text-foreground font-semibold text-sm', hideLabel)}>Plan Browser</span>
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-expanded={!collapsed}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className={cn('ml-auto max-md:hidden rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors', collapsed && 'md:ml-0')}
-          >
-            <ToggleIcon className="h-4 w-4" />
-          </button>
+          {isDesktop && (
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={!collapsed}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className={cn('ml-auto rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors', collapsed && 'md:ml-0')}
+            >
+              <ToggleIcon className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <p className={cn('text-muted-foreground text-xs mt-0.5', hideLabel)}>
           {plans.length} plan{plans.length !== 1 ? 's' : ''} · {repos.length} repo{repos.length !== 1 ? 's' : ''}
@@ -62,8 +78,10 @@ export function Sidebar({ open = false }: { open?: boolean }) {
           return (
             <NavLink
               key={to}
+              ref={label === 'Home' ? homeRef : undefined}
               to={to}
-              title={collapsed ? label : undefined}
+              onClick={onNavigate}
+              title={isDesktop && collapsed ? label : undefined}
               aria-label={label}
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',

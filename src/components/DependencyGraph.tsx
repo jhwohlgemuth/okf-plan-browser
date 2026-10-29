@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { buildPlanEdges } from '@/lib/planLinks';
 import { usePlanStore } from '@/store/planStore';
 import type { ParsedPlan } from '@/types/wiki';
@@ -25,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function DependencyGraph() {
   const svgRef    = useRef<SVGSVGElement>(null);
+  const zoomRef   = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const plans     = usePlanStore(s => s.plans);
   const repos     = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
@@ -59,11 +61,12 @@ export function DependencyGraph() {
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 3])
       .on('zoom', e => g.attr('transform', e.transform));
+    zoomRef.current = zoom;
     sel.call(zoom);
 
     // Arrow markers
     const defs = sel.append('defs');
-    for (const [id, color] of [['dep', '#61afef'], ['ref', '#5c6370']] as const) {
+    for (const [id, color] of [['dep', '#61afef'], ['ref', 'hsl(var(--muted-foreground))']] as const) {
       defs.append('marker')
         .attr('id', `arrow-${id}`)
         .attr('viewBox', '0 -5 10 10')
@@ -87,7 +90,7 @@ export function DependencyGraph() {
       .selectAll('line')
       .data(links)
       .join('line')
-      .attr('stroke', d => d.type === 'dep' ? '#61afef' : '#3e4451')
+      .attr('stroke', d => d.type === 'dep' ? '#61afef' : 'hsl(var(--muted-foreground))')
       .attr('stroke-width', d => d.type === 'dep' ? 1.5 : 1)
       .attr('stroke-dasharray', d => d.type === 'ref' ? '4,3' : null)
       .attr('stroke-opacity', 0.7)
@@ -110,7 +113,22 @@ export function DependencyGraph() {
       .data(nodes)
       .join('g')
       .attr('cursor', 'pointer')
+      .attr('role', 'button')
+      .attr('tabindex', 0)
+      .attr('aria-label', d => {
+        const repo = repos.find(r => r.id === d.plan.repoId);
+        return `Open plan: ${d.title} — ${repo?.label ?? d.plan.fileName}`;
+      })
       .call(drag);
+
+    node.append('circle')
+      .attr('class', 'focus-ring')
+      .attr('r', 25)
+      .attr('fill', 'none')
+      .attr('stroke', 'hsl(var(--ring))')
+      .attr('stroke-width', 3)
+      .attr('opacity', 0)
+      .attr('pointer-events', 'none');
 
     node.append('circle')
       .attr('r', 16)
@@ -135,11 +153,24 @@ export function DependencyGraph() {
       .attr('dy', 32)
       .attr('text-anchor', 'middle')
       .attr('font-size', '10px')
-      .attr('fill', '#abb2bf')
+      .attr('fill', 'hsl(var(--foreground))')
       .attr('font-family', 'Inter, sans-serif')
       .text(d => d.title.length > 26 ? d.title.slice(0, 24) + '…' : d.title);
 
-    node.on('click', (_event, d) => selectPlan(d.plan.id));
+    const activate = (d: Node) => selectPlan(d.plan.id);
+    node
+      .on('click', (_event, d) => activate(d))
+      .on('keydown', (event: KeyboardEvent, d) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        activate(d);
+      })
+      .on('focus', function () {
+        d3.select(this).select<SVGCircleElement>('.focus-ring').attr('opacity', 1);
+      })
+      .on('blur', function () {
+        d3.select(this).select<SVGCircleElement>('.focus-ring').attr('opacity', 0);
+      });
     node.append('title').text(d => d.plan.frontmatter.title);
 
     const draw = () => {
@@ -156,18 +187,60 @@ export function DependencyGraph() {
     sim.tick(300);
     draw();
 
-    return () => { sim.stop(); };
+    return () => {
+      sim.stop();
+      if (zoomRef.current === zoom) zoomRef.current = null;
+    };
   }, [plans, repos, selectPlan]);
 
+  const zoomBy = (factor: number) => {
+    if (!svgRef.current || !zoomRef.current) return;
+    d3.select(svgRef.current).call(zoomRef.current.scaleBy, factor);
+  };
+
+  const resetZoom = () => {
+    if (!svgRef.current || !zoomRef.current) return;
+    d3.select(svgRef.current).call(zoomRef.current.transform, d3.zoomIdentity);
+  };
+
   return (
-    <div className="relative w-full h-full min-h-[500px]">
+    <div role="group" aria-label="Plan dependency graph" className="relative w-full h-full min-h-[500px]">
       {plans.length === 0 ? (
         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
           Load plans to see the dependency graph.
         </div>
       ) : (
         <>
-          <svg ref={svgRef} className="w-full h-full" />
+          <svg id="dependency-graph" ref={svgRef} className="w-full h-full" />
+          <div aria-label="Graph controls" className="absolute left-4 top-4 flex gap-1 rounded-lg border border-border bg-card/90 p-1 shadow-sm">
+            <button
+              type="button"
+              aria-label="Zoom in"
+              aria-controls="dependency-graph"
+              onClick={() => zoomBy(1.25)}
+              className="rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Zoom out"
+              aria-controls="dependency-graph"
+              onClick={() => zoomBy(0.8)}
+              className="rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Reset zoom"
+              aria-controls="dependency-graph"
+              onClick={resetZoom}
+              className="rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          </div>
           <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 bg-card border border-border rounded-lg p-3 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
               <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#61afef" strokeWidth="1.5" /></svg>
