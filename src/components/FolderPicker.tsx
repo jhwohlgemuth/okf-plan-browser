@@ -102,6 +102,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
               const lower = item.toLowerCase();
               const Icon = lower.includes('gitlab') ? Gitlab : lower.includes('github') || !lower.startsWith('http') ? Github : Globe;
               return (
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
                 <li
                   key={item}
                   className="flex items-center gap-2 cursor-pointer px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"

@@ -125,7 +125,6 @@ export function SearchPage() {
             placeholder={mode === 'plans' ? 'Search titles, descriptions, sections, phases, tags… (use + for multiple, e.g. foo+bar)' : 'Search image and PDF paths…'}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            autoFocus
           />
         </div>
         {query && (
