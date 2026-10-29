@@ -11,6 +11,7 @@ interface PlanStore {
   repos:          WikiRepo[];
   warnings:       ParseWarning[];
   selectedPlanId: string | null;
+  selectedAnchor: string | null;
   detailOpen:     boolean;
   filters:        PlanFilters;
   isDemoData:     boolean;
@@ -19,7 +20,8 @@ interface PlanStore {
   // Actions
   addPlans:      (plans: ParsedPlan[], repo: WikiRepo, warns: ParseWarning[]) => void;
   removeRepo:    (repoId: string) => void;
-  selectPlan:    (id: string) => void;
+  selectPlan:    (id: string, anchor?: string) => void;
+  syncPlanSelection: (id: string | null, anchor?: string | null) => void;
   closeDetail:   () => void;
   setFilter:     <K extends keyof PlanFilters>(key: K, value: PlanFilters[K]) => void;
   clearFilters:  () => void;
@@ -60,6 +62,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
   repos:          [],
   warnings:       [],
   selectedPlanId: null,
+  selectedAnchor: null,
   detailOpen:     false,
   filters:        { ...EMPTY_FILTERS },
   isDemoData:     false,
@@ -84,8 +87,13 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
     }));
   },
 
-  selectPlan: (id) => set({ selectedPlanId: id, detailOpen: true }),
-  closeDetail: () => set({ detailOpen: false }),
+  selectPlan: (id, anchor) => set({ selectedPlanId: id, selectedAnchor: anchor ?? null, detailOpen: true }),
+  syncPlanSelection: (id, anchor) => set({
+    selectedPlanId: id,
+    selectedAnchor: id ? anchor ?? null : null,
+    detailOpen: !!id,
+  }),
+  closeDetail: () => set({ selectedPlanId: null, selectedAnchor: null, detailOpen: false }),
 
   setFilter: (key, value) =>
     set(s => ({ filters: { ...s.filters, [key]: value } })),
@@ -110,6 +118,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       repos:          [],
       warnings:       [],
       selectedPlanId: null,
+      selectedAnchor: null,
       detailOpen:     false,
       isDemoData:     false,
       filters:        { ...EMPTY_FILTERS },
@@ -119,7 +128,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
   clearSavedData: () => {
     forgetAllAssets();
     set({
-      plans: [], repos: [], warnings: [], selectedPlanId: null, detailOpen: false,
+      plans: [], repos: [], warnings: [], selectedPlanId: null, selectedAnchor: null, detailOpen: false,
       isDemoData: false, storageError: false, filters: { ...EMPTY_FILTERS },
     });
     usePlanStore.persist.clearStorage();

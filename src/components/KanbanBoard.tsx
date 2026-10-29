@@ -6,6 +6,7 @@ import { cn, truncate } from '@/lib/utils';
 import type { PhaseStatus, Phase, ParsedPlan } from '@/types/wiki';
 import { AgentCommandButton } from './AgentCommandButton';
 import { phaseAgentCommand, planAgentCommand } from '@/lib/agentCommand';
+import { planAnchor } from '@/lib/planLinks';
 
 interface PhaseCard { plan: ParsedPlan; phase: Phase }
 
@@ -83,9 +84,12 @@ export function KanbanBoard() {
                     role="button"
                     tabIndex={0}
                     aria-label={`Open plan ${plan.id} phase ${phase.id}`}
-                    onClick={() => selectPlan(plan.id)}
+                    onClick={() => selectPlan(plan.id, phase.id === 'Plan' ? undefined : planAnchor(phase.id))}
                     onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); }
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectPlan(plan.id, phase.id === 'Plan' ? undefined : planAnchor(phase.id));
+                      }
                     }}
                     className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >

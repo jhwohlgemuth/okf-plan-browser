@@ -1,6 +1,7 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
 import { useState, useMemo, useEffect } from 'react';
-import { FileText, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ChevronDown, ChevronUp, FileText, Search, Tags, X } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -12,6 +13,10 @@ import { AssetThumbnail, AssetViewer, type AssetTarget } from '@/components/Asse
 interface Hit {
   plan:    ParsedPlan;
   matches: string[];
+}
+
+function fileExtension(path: string): string | undefined {
+  return /\.([^./]+)$/.exec(path.split(/[?#]/, 1)[0] ?? '')?.[1]?.toUpperCase();
 }
 
 function planMatchesTerm(plan: ParsedPlan, term: string, matches: string[]) {
@@ -87,10 +92,31 @@ export function SearchPage() {
   const plans      = usePlanStore(s => s.plans);
   const repos      = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [mode, setMode] = useState<'plans' | 'assets'>('plans');
   const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
   const [tagsOpen, setTagsOpen] = useState(true);
+  const selectedTags = useMemo(() => [...new Set(searchParams.getAll('tag').map(tag => tag.trim()).filter(Boolean))]
+    .sort(), [searchParams]);
+  const selectedExtensions = useMemo(() => [...new Set(searchParams.getAll('ext')
+    .map(extension => extension.trim().replace(/^\./, '').toUpperCase()).filter(Boolean))].sort(), [searchParams]);
+  const routeMode = searchParams.get('mode');
+  const mode: 'plans' | 'assets' = routeMode === 'assets'
+    || (routeMode !== 'plans' && selectedExtensions.some(extension => extension !== 'MD'))
+    ? 'assets' : 'plans';
+
+  useEffect(() => {
+    const canonical = new URLSearchParams(searchParams);
+    canonical.delete('tag');
+    canonical.delete('ext');
+    canonical.delete('mode');
+    selectedTags.forEach(tag => canonical.append('tag', tag));
+    selectedExtensions.forEach(extension => canonical.append('ext', extension));
+    if (mode === 'assets') canonical.append('mode', 'assets');
+    if (canonical.toString() === searchParams.toString()) return;
+    setSearchParams(canonical, { replace: true });
+  }, [mode, searchParams, selectedExtensions, selectedTags, setSearchParams]);
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)');
     setTagsOpen(!mq.matches);
@@ -99,15 +125,86 @@ export function SearchPage() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const hits = useMemo(() => searchPlans(plans, query), [plans, query]);
+  const effectiveQuery = useMemo(() => {
+    const terms = query.split('+').map(term => term.trim()).filter(Boolean);
+    const seen = new Set(terms.map(term => term.toLowerCase()));
+    for (const tag of selectedTags) {
+      if (!seen.has(tag.toLowerCase())) terms.push(tag);
+    }
+    return terms.join('+');
+  }, [query, selectedTags]);
+  const matchingPlans = useMemo(() => selectedExtensions.length === 0 ? plans : plans.filter(plan => {
+    const paths = [plan.fileName, ...(plan.documents?.map(document => document.fileName) ?? [])];
+    return paths.some(path => selectedExtensions.includes(fileExtension(path) ?? ''));
+  }), [plans, selectedExtensions]);
+  const hits = useMemo(() => effectiveQuery
+    ? searchPlans(matchingPlans, effectiveQuery)
+    : selectedExtensions.length > 0
+      ? matchingPlans.map(plan => ({ plan, matches: [`File type: ${selectedExtensions.join(', ')}`] }))
+      : [], [effectiveQuery, matchingPlans, selectedExtensions]);
   const assets = useMemo(() => repos.flatMap(repo => (repo.assets ?? []).map(path => ({ repo, path })))
-    .filter(item => !query.trim() || `${item.repo.label} ${item.path}`.toLowerCase().includes(query.toLowerCase())), [repos, query]);
+    .filter(item => selectedExtensions.length === 0 || selectedExtensions.includes(fileExtension(item.path) ?? ''))
+    .filter(item => !query.trim() || `${item.repo.label} ${item.path}`.toLowerCase().includes(query.toLowerCase())),
+  [repos, query, selectedExtensions]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
     for (const plan of plans) for (const t of plan.frontmatter.tags ?? []) set.add(t);
     return [...set].sort();
   }, [plans]);
+  const extensionTags = useMemo(() => {
+    const paths = [
+      ...plans.flatMap(plan => [plan.fileName, ...(plan.documents?.map(document => document.fileName) ?? [])]),
+      ...repos.flatMap(repo => repo.assets ?? []),
+    ];
+    return [...new Set(paths.flatMap(path => fileExtension(path) ?? []))].sort();
+  }, [plans, repos]);
+
+  const changeMode = (nextMode: 'plans' | 'assets') => {
+    const next = new URLSearchParams(searchParams);
+    const compatibleExtensions = selectedExtensions.filter(extension => nextMode === 'plans'
+      ? extension === 'MD' : extension !== 'MD');
+    next.delete('ext');
+    next.delete('mode');
+    compatibleExtensions.forEach(extension => next.append('ext', extension));
+    if (nextMode === 'assets') next.append('mode', 'assets');
+    setSearchParams(next);
+  };
+
+  const toggleTag = (tag: string) => {
+    const nextTags = selectedTags.includes(tag)
+      ? selectedTags.filter(selected => selected !== tag)
+      : [...selectedTags, tag].sort();
+    const next = new URLSearchParams(searchParams);
+    next.delete('tag');
+    nextTags.forEach(selected => next.append('tag', selected));
+    setSearchParams(next);
+  };
+
+  const toggleExtension = (extension: string) => {
+    const nextExtensions = extension === 'MD'
+      ? selectedExtensions.includes('MD') ? [] : ['MD']
+      : selectedExtensions.includes(extension)
+        ? selectedExtensions.filter(selected => selected !== extension && selected !== 'MD')
+        : [...selectedExtensions.filter(selected => selected !== 'MD'), extension].sort();
+    const next = new URLSearchParams(searchParams);
+    next.delete('ext');
+    next.delete('mode');
+    nextExtensions.forEach(selected => next.append('ext', selected));
+    if (extension !== 'MD') next.append('mode', 'assets');
+    setSearchParams(next);
+  };
+
+  const clearTags = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('tag');
+    next.delete('ext');
+    setSearchParams(next);
+  };
+
+  const activeSearch = mode === 'plans'
+    ? [effectiveQuery, selectedExtensions.join('+')].filter(Boolean).join(' · ')
+    : [query, selectedExtensions.join('+')].filter(Boolean).join(' · ');
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -115,8 +212,8 @@ export function SearchPage() {
       <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
         <h1 className="text-base font-semibold text-foreground mb-3">Search</h1>
         <div className="flex gap-1 mb-3" role="tablist" aria-label="Search category">
-          <button type="button" role="tab" aria-selected={mode === 'plans'} onClick={() => setMode('plans')} className={`rounded px-3 py-1.5 text-xs ${mode === 'plans' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Plans</button>
-          <button type="button" role="tab" aria-selected={mode === 'assets'} onClick={() => setMode('assets')} className={`rounded px-3 py-1.5 text-xs ${mode === 'assets' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Images &amp; PDFs</button>
+          <button type="button" role="tab" aria-selected={mode === 'plans'} onClick={() => changeMode('plans')} className={`rounded px-3 py-1.5 text-xs ${mode === 'plans' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Plans</button>
+          <button type="button" role="tab" aria-selected={mode === 'assets'} onClick={() => changeMode('assets')} className={`rounded px-3 py-1.5 text-xs ${mode === 'assets' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Images &amp; PDFs</button>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -127,35 +224,76 @@ export function SearchPage() {
             onChange={e => setQuery(e.target.value)}
           />
         </div>
-        {query && (
+        {(query || (mode === 'plans' && selectedTags.length > 0) || selectedExtensions.length > 0) && (
           <p className="text-xs text-muted-foreground mt-2">
-            {mode === 'plans' ? hits.length : assets.length} result{(mode === 'plans' ? hits.length : assets.length) !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
+            {mode === 'plans' ? hits.length : assets.length} result{(mode === 'plans' ? hits.length : assets.length) !== 1 ? 's' : ''} for &ldquo;{activeSearch}&rdquo;
             {mode === 'plans' && <> {' · '}<TimeRemaining plans={hits.map(hit => hit.plan)} /></>}
           </p>
         )}
-        {allTags.length > 0 && (
+        {(allTags.length > 0 || extensionTags.length > 0) && (
           <div className="mt-3">
-            <button type="button" className="text-xs text-muted-foreground hover:text-foreground mb-1.5" onClick={() => setTagsOpen(o => !o)}>
-              {tagsOpen ? 'Hide tags' : 'Show tags'}
-            </button>
-            {tagsOpen && (
-              <div className="flex flex-wrap gap-1.5">
-                {allTags.map(tag => (
+            <div className="mb-2 flex items-center gap-2">
               <button
-                key={tag}
                 type="button"
-                onClick={() => setQuery(prev => {
-                  const parts = prev.split('+').map(t => t.trim()).filter(Boolean);
-                  if (parts.includes(tag)) {
-                    return parts.filter(t => t !== tag).join('+');
-                  }
-                  return [...parts, tag].join('+');
-                })}
-                className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${query.split('+').map(t=>t.trim()).includes(tag) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:text-foreground'}`}
+                aria-expanded={tagsOpen}
+                aria-controls="search-tag-groups"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary/60 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => setTagsOpen(o => !o)}
               >
-                {tag}
+                {tagsOpen ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />}
+                {tagsOpen ? 'Hide tags' : 'Show tags'}
               </button>
-            ))}
+              <button
+                type="button"
+                disabled={selectedTags.length === 0 && selectedExtensions.length === 0}
+                onClick={clearTags}
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden />
+                Clear tags
+              </button>
+            </div>
+            {tagsOpen && (
+              <div id="search-tag-groups" className="space-y-3 rounded-lg border border-border/70 bg-card/40 p-3">
+                {allTags.length > 0 && (
+                  <div role="group" aria-label="Plan tags">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                      <Tags className="h-3 w-3" aria-hidden />
+                      Plan tags
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {allTags.map(tag => (
+                        <button
+                          key={tag}
+                          type="button"
+                          aria-pressed={selectedTags.includes(tag)}
+                          onClick={() => toggleTag(tag)}
+                          className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${selectedTags.includes(tag) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:text-foreground'}`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {extensionTags.length > 0 && (
+                  <div className={allTags.length > 0 ? 'border-t border-border/60 pt-3' : ''}>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">File types</p>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="File types">
+                      {extensionTags.map(extension => (
+                        <button
+                          key={extension}
+                          type="button"
+                          aria-pressed={selectedExtensions.includes(extension)}
+                          onClick={() => toggleExtension(extension)}
+                          className={`rounded-full border px-2.5 py-0.5 font-mono text-xs transition-colors ${selectedExtensions.includes(extension) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:text-foreground'}`}
+                        >
+                          {extension}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -164,7 +302,7 @@ export function SearchPage() {
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto divide-y divide-border/50">
-        {mode === 'plans' && !query && (
+        {mode === 'plans' && !effectiveQuery && selectedExtensions.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Search className="h-8 w-8 mb-3 opacity-30" />
             <p className="text-sm">Start typing to search across all plans</p>
@@ -172,15 +310,15 @@ export function SearchPage() {
           </div>
         )}
 
-        {mode === 'plans' && query && hits.length === 0 && (
+        {mode === 'plans' && (effectiveQuery || selectedExtensions.length > 0) && hits.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <p className="text-sm">No results for &ldquo;{query}&rdquo;</p>
+            <p className="text-sm">No results for &ldquo;{activeSearch}&rdquo;</p>
           </div>
         )}
 
         {mode === 'assets' && assets.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <p className="text-sm">No images or PDFs found{query ? ` for “${query}”` : ''}</p>
+            <p className="text-sm">No images or PDFs found{activeSearch ? ` for “${activeSearch}”` : ''}</p>
           </div>
         )}
         {mode === 'assets' && assets.map(({ repo, path }) => (
@@ -208,11 +346,11 @@ export function SearchPage() {
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-foreground leading-snug">
-                    {highlight(fm.title, query)}
+                    {highlight(fm.title, effectiveQuery)}
                   </p>
                   {fm.description && (
                     <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      {highlight(truncate(fm.description, 120), query)}
+                      {highlight(truncate(fm.description, 120), effectiveQuery)}
                     </p>
                   )}
                 </div>
@@ -236,7 +374,7 @@ export function SearchPage() {
               <div className="space-y-1">
                 {matches.slice(0, 4).map((m, i) => (
                   <p key={i} className="text-xs text-muted-foreground bg-secondary/50 rounded px-2 py-1 font-mono leading-relaxed">
-                    {highlight(m, query)}
+                    {highlight(m, effectiveQuery)}
                   </p>
                 ))}
                 {matches.length > 4 && (

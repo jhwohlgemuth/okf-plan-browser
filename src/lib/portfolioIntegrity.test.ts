@@ -3,7 +3,9 @@ import { parseWikiFile, parseWikiTexts } from './wikiParser';
 import { commitWiki } from './commitWiki';
 import { restorePortfolio } from './restorePortfolio';
 import { usePlanStore } from '@/store/planStore';
-import { buildPlanEdges, resolvePlanLink } from './planLinks';
+import {
+  buildPlanEdges, headingAnchorForPlan, planAnchor, resolvePlanAnchor, resolvePlanLink, resolvePlanTarget,
+} from './planLinks';
 import { remoteProjectId } from './remoteWiki';
 
 const plan = (repo: string, path: string, body = '', metadata = '') =>
@@ -83,5 +85,19 @@ describe('plan links', () => {
     expect(buildPlanEdges([a, owner('b', 'other.md')])).toEqual([]);
     expect(buildPlanEdges([a, owner('a', 'one.md'), owner('a', 'two.md')])).toEqual([]);
     expect(buildPlanEdges([a, owner('a', 'one.md')])).toHaveLength(1);
+  });
+
+  it('canonicalizes section and phase fragments through the repository-aware resolver', () => {
+    const source = plan('a', 'sub/source.md', '# Reading\n[target](../target.md#TP-02--Ship-It)');
+    const target = plan('a', 'target.md', '# Review & QA\n\n## Background Notes\nText\n\n# Execution phases\n\n## TP-02 — Ship It\n- Status: ready');
+    expect(planAnchor('Review & QA')).toBe('review-qa');
+    expect(headingAnchorForPlan(target, 'TP-02 — Ship It')).toBe('tp-02');
+    expect(resolvePlanAnchor(target, '#TP-02--Ship-It')).toBe('tp-02');
+    expect(resolvePlanAnchor(target, '#background-notes')).toBe('background-notes');
+    expect(resolvePlanTarget([source, target], source, '../target.md#TP-02--Ship-It')).toEqual({
+      plan: target,
+      anchor: 'tp-02',
+    });
+    expect(resolvePlanTarget([source, target], source, '../target.md#missing')).toBeUndefined();
   });
 });

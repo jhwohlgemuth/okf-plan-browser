@@ -8,3 +8,14 @@
 - Budget: Both phases completed within their five-hour budgets.
 - Blockers / failed approaches: The repository-wide visual run found 25 stale comparisons across unrelated planning/demo pages and the intentionally changed graph. Snapshots were not overwritten because the current baselines already contain broad unrelated drift. Focused AX tests and the complete non-snapshot browser suite pass.
 - Next action: Review and commit the implementation when desired.
+
+## Implementation — Plan and phase deep links
+
+- Plan: retired after completion; active phase: none; state: complete.
+- Authorized scope and decisions: Implement DL-01 then DL-02 under the selection-routing lock. Use `?plan=<stable plan id>` plus a canonical hash anchor; preserve repository identity and the existing AX work.
+- Baseline and local work: `9dc909d` with the uncommitted completed AX implementation already in the worktree. No CodeGraph index is present. At phase start, typecheck, lint, resolver tests (7/7), and desktop integrity browser tests (5/5) passed.
+- Verified state: DL-01 represents selection as `?plan=<ParsedPlan.id>`, restores it after reload, follows close/Back/Forward history, preserves unrelated query state, and renders a graceful missing-plan panel. DL-02 gives plan sections, Markdown headings, and phases canonical anchors; phase cards and repository-aware Markdown links open those anchors; reload and history navigation restore scroll and keyboard focus. Typecheck and lint pass, all 99 unit tests pass, production build passes, all seven desktop integrity tests pass, and the complete non-visual browser suite passes (26 passed, 19 expected project skips).
+- Remaining work: None for DL-01/02.
+- Budget: Both phases completed within their five-hour budgets.
+- Blockers / failed approaches: The first reciprocal-effect implementation raced on history navigation; a guarded store subscription plus native popstate reconciliation resolved it. Cross-plan focus initially ran before the final router location commit; keying focus restoration to the committed hash resolved it. No current blocker.
+- Next action: Review and commit the implementation when desired.

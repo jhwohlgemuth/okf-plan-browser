@@ -1,12 +1,13 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn } from '@/lib/utils';
 import { Markdown } from './Markdown';
-import { resolvePlanLink } from '@/lib/planLinks';
+import { headingAnchorForPlan, planAnchor, resolvePlanTarget } from '@/lib/planLinks';
 import { resolveWikiPath } from '@/lib/wikiAssets';
 import { AssetViewer, type AssetTarget } from './AssetViewer';
 
@@ -20,6 +21,7 @@ const IMPACT_CLASSES: Record<string, string> = {
 export function PlanDetailPanel() {
   const plans          = usePlanStore(s => s.plans);
   const selectedPlanId = usePlanStore(s => s.selectedPlanId);
+  const selectedAnchor = usePlanStore(s => s.selectedAnchor);
   const detailOpen     = usePlanStore(s => s.detailOpen);
   const closeDetail    = usePlanStore(s => s.closeDetail);
   const repos          = usePlanStore(s => s.repos);
@@ -29,6 +31,7 @@ export function PlanDetailPanel() {
   const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const relatedRef = useRef<HTMLElement>(null);
+  const location = useLocation();
 
   const repo = repos.find(r => r.id === plan?.repoId);
   const fm   = plan?.frontmatter;
@@ -39,8 +42,8 @@ export function PlanDetailPanel() {
   const resolveLink = (href: string, source = plan?.fileName) => {
     if (!plan) return null;
     const path = source ? resolveWikiPath(source, href) : null;
-    const target = resolvePlanLink(plans, { ...plan, fileName: source ?? plan.fileName }, href);
-    if (target) return { exists: true, open: () => selectPlan(target.id) };
+    const target = resolvePlanTarget(plans, { ...plan, fileName: source ?? plan.fileName }, href);
+    if (target) return { exists: true, open: () => selectPlan(target.plan.id, target.anchor) };
     const document = plan.documents?.find(d => d.fileName === path);
     if (document) return { exists: true, open: () => {
       setSelectedDocument(document.fileName);
@@ -63,7 +66,7 @@ export function PlanDetailPanel() {
     return () => window.removeEventListener('keydown', handler);
   }, [closeDetail]);
 
-  const open = detailOpen && !!plan;
+  const open = detailOpen && !!selectedPlanId;
   const [mounted, setMounted] = useState(open);
   const trigger = useRef<HTMLElement | null>(null);
 
@@ -83,8 +86,26 @@ export function PlanDetailPanel() {
   }, [open, mounted]);
 
   useEffect(() => {
-    if (open && mounted) panelRef.current?.focus();
-  }, [open, mounted]);
+    if (open && mounted && !selectedAnchor) panelRef.current?.focus();
+  }, [open, mounted, selectedAnchor]);
+
+  useEffect(() => {
+    if (!open || !mounted || !selectedAnchor) return;
+    let frame = 0;
+    let attempts = 0;
+    const focusTarget = () => {
+      const target = panelRef.current?.querySelector<HTMLElement>(`#${CSS.escape(selectedAnchor)}`);
+      if (target) {
+        target.scrollIntoView({ block: 'start' });
+        target.focus({ preventScroll: true });
+        return;
+      }
+      if (++attempts < 4) frame = requestAnimationFrame(focusTarget);
+      else panelRef.current?.focus();
+    };
+    frame = requestAnimationFrame(focusTarget);
+    return () => cancelAnimationFrame(frame);
+  }, [location.hash, mounted, open, plan?.id, selectedAnchor, selectedPlanId]);
 
   const trapFocus = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Tab') return;
@@ -105,7 +126,7 @@ export function PlanDetailPanel() {
     }
   };
 
-  if (!mounted || !plan) return null;
+  if (!mounted || !selectedPlanId) return null;
   const closing = !open;
 
   return (
@@ -142,7 +163,9 @@ export function PlanDetailPanel() {
                     </span>
                   )}
                 </div>
-                <h2 id="plan-detail-title" className="text-base font-semibold text-foreground leading-tight">{fm?.title}</h2>
+                <h2 id="plan-detail-title" className="text-base font-semibold text-foreground leading-tight">
+                  {fm?.title ?? 'Plan not loaded'}
+                </h2>
               </div>
               <button
                 onClick={closeDetail}
@@ -155,6 +178,8 @@ export function PlanDetailPanel() {
 
             {/* Content */}
             <div className="px-6 sm:px-8 py-6 space-y-7">
+              {plan ? (
+                <>
               {/* Description */}
               {fm?.description && (
                 <blockquote className="relative rounded-lg border border-primary/20 border-l-4 border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-5 py-4 text-[15px] sm:text-base font-medium leading-relaxed text-foreground">
@@ -248,7 +273,11 @@ export function PlanDetailPanel() {
               {plan.sections.filter(s => s.heading || s.body.trim() || s.phases.length).map((section, si) => (
                 <section key={si} className="space-y-3">
                   {section.heading && (
-                    <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1.5 flex items-center gap-2">
+                    <h3
+                      id={planAnchor(section.heading)}
+                      tabIndex={-1}
+                      className="text-sm font-semibold text-foreground border-b border-border pb-1.5 flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       <span className="h-3.5 w-1 rounded-full bg-primary" />
                       {section.heading}
                     </h3>
@@ -267,7 +296,7 @@ export function PlanDetailPanel() {
                       </div>
                     )}
 
-                    {section.body.trim() && <Markdown resolveLink={href => resolveLink(href)} resolveImage={src => resolveImage(src)} openAsset={setSelectedAsset}>{section.body.trim()}</Markdown>}
+                    {section.body.trim() && <Markdown headingId={heading => headingAnchorForPlan(plan, heading)} resolveLink={href => resolveLink(href)} resolveImage={src => resolveImage(src)} openAsset={setSelectedAsset}>{section.body.trim()}</Markdown>}
                   </div>
                 </section>
               ))}
@@ -280,7 +309,7 @@ export function PlanDetailPanel() {
                   </div>
                   {selectedDoc && <div className="rounded-lg border border-border p-4">
                     <p className="mb-3 text-xs font-mono text-muted-foreground">{selectedDoc.fileName}</p>
-                    <Markdown resolveLink={href => resolveLink(href, selectedDoc.fileName)} resolveImage={src => resolveImage(src, selectedDoc.fileName)} openAsset={setSelectedAsset}>{selectedDoc.text.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '')}</Markdown>
+                    <Markdown headingId={heading => headingAnchorForPlan(plan, heading)} resolveLink={href => resolveLink(href, selectedDoc.fileName)} resolveImage={src => resolveImage(src, selectedDoc.fileName)} openAsset={setSelectedAsset}>{selectedDoc.text.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '')}</Markdown>
                   </div>}
                 </section>
               )}
@@ -289,6 +318,18 @@ export function PlanDetailPanel() {
               <p className="text-xs text-muted-foreground font-mono border-t border-border pt-3">
                 {plan.repoId}/{plan.fileName}
               </p>
+                </>
+              ) : (
+                <div role="status" className="rounded-xl border border-border bg-background/50 p-5">
+                  <p className="text-sm text-foreground">
+                    This shared link points to a plan that is not loaded on this device.
+                  </p>
+                  <p className="mt-2 break-all font-mono text-xs text-muted-foreground">{selectedPlanId}</p>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Load the matching local folder or remote repository to open it. The link will remain in the address bar.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           {selectedAsset && <AssetViewer target={selectedAsset} onClose={() => setSelectedAsset(null)} />}

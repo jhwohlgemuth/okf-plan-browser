@@ -1,9 +1,10 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { isValidElement, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { Check, Clipboard } from 'lucide-react';
 import { InlineWikiImage, type AssetTarget } from './AssetViewer';
+import { planAnchor } from '@/lib/planLinks';
 
 interface Props {
   children: string;
@@ -11,9 +12,27 @@ interface Props {
   resolveLink?: (href: string) => { exists: boolean; open: () => void } | null;
   resolveImage?: (src: string) => AssetTarget | null;
   openAsset?: (target: AssetTarget) => void;
+  headingId?: (text: string) => string;
 }
 
 const EXTERNAL_RE = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
+
+function nodeText(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join('');
+  if (isValidElement<{ children?: ReactNode }>(node)) return nodeText(node.props.children);
+  return '';
+}
+
+function MarkdownHeading({ level, children, headingId }: {
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  children: ReactNode;
+  headingId?: (text: string) => string;
+}) {
+  const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  const text = nodeText(children);
+  return <Tag id={headingId?.(text) ?? planAnchor(text)} tabIndex={-1}>{children}</Tag>;
+}
 
 function CodeBlock({ children }: { children?: ReactNode }) {
   const ref = useRef<HTMLPreElement>(null);
@@ -42,7 +61,7 @@ function CodeBlock({ children }: { children?: ReactNode }) {
   );
 }
 
-export function Markdown({ children, resolveLink, resolveImage, openAsset }: Props) {
+export function Markdown({ children, resolveLink, resolveImage, openAsset, headingId }: Props) {
   return (
     <div className="md-body">
       <ReactMarkdown
@@ -50,6 +69,12 @@ export function Markdown({ children, resolveLink, resolveImage, openAsset }: Pro
         rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
         components={{
           pre: ({ children: c }) => <CodeBlock>{c}</CodeBlock>,
+          h1: ({ children: c }) => <MarkdownHeading level={1} headingId={headingId}>{c}</MarkdownHeading>,
+          h2: ({ children: c }) => <MarkdownHeading level={2} headingId={headingId}>{c}</MarkdownHeading>,
+          h3: ({ children: c }) => <MarkdownHeading level={3} headingId={headingId}>{c}</MarkdownHeading>,
+          h4: ({ children: c }) => <MarkdownHeading level={4} headingId={headingId}>{c}</MarkdownHeading>,
+          h5: ({ children: c }) => <MarkdownHeading level={5} headingId={headingId}>{c}</MarkdownHeading>,
+          h6: ({ children: c }) => <MarkdownHeading level={6} headingId={headingId}>{c}</MarkdownHeading>,
           img: ({ src, alt }) => {
             const target = src ? resolveImage?.(src) : null;
             if (target) return <InlineWikiImage target={target} alt={alt ?? ''} onOpen={() => openAsset?.(target)} />;
@@ -60,7 +85,6 @@ export function Markdown({ children, resolveLink, resolveImage, openAsset }: Pro
             if (!href || EXTERNAL_RE.test(href)) {
               return <a href={href} target="_blank" rel="noreferrer noopener">{c}</a>;
             }
-            if (href.startsWith('#')) return <span>{c}</span>;
             const target = resolveLink?.(href);
             if (target?.exists) {
               return (

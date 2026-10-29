@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, Suspense } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Menu, X } from 'lucide-react';
 import { ErrorBoundary } from './ErrorFallback';
@@ -7,14 +7,62 @@ import { RouteFallback } from './RouteFallback';
 import { Sidebar } from './Sidebar';
 import { PlanDetailPanel } from './PlanDetailPanel';
 import { TooltipProvider } from './ui/tooltip';
+import { usePlanStore } from '@/store/planStore';
 
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
   const mobileHomeRef = useRef<HTMLAnchorElement>(null);
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const syncPlanSelection = usePlanStore(s => s.syncPlanSelection);
+  const syncingFromUrl = useRef(false);
+  const { pathname } = location;
+  const routePlanId = new URLSearchParams(location.search).get('plan');
+  const routeAnchor = (() => {
+    if (!routePlanId || !location.hash) return null;
+    try { return decodeURIComponent(location.hash.slice(1)); } catch { return location.hash.slice(1); }
+  })();
 
   useEffect(() => { setNavOpen(false); }, [pathname]);
+  useEffect(() => {
+    syncingFromUrl.current = true;
+    syncPlanSelection(routePlanId, routeAnchor);
+    syncingFromUrl.current = false;
+  }, [location.hash, location.search, routeAnchor, routePlanId, syncPlanSelection]);
+
+  useEffect(() => {
+    const syncFromHistory = () => {
+      const url = new URL(window.location.href);
+      const id = url.searchParams.get('plan');
+      let anchor: string | null = null;
+      if (id && url.hash) {
+        try { anchor = decodeURIComponent(url.hash.slice(1)); } catch { anchor = url.hash.slice(1); }
+      }
+      syncingFromUrl.current = true;
+      syncPlanSelection(id, anchor);
+      syncingFromUrl.current = false;
+    };
+    window.addEventListener('popstate', syncFromHistory);
+    return () => window.removeEventListener('popstate', syncFromHistory);
+  }, [syncPlanSelection]);
+
+  useEffect(() => {
+    return usePlanStore.subscribe((state, previous) => {
+      if (syncingFromUrl.current) return;
+      if (state.selectedPlanId === previous.selectedPlanId && state.selectedAnchor === previous.selectedAnchor) return;
+      const search = new URLSearchParams(location.search);
+      if (state.selectedPlanId) search.set('plan', state.selectedPlanId);
+      else search.delete('plan');
+      const query = search.toString();
+      navigate({
+        pathname: location.pathname,
+        search: query ? `?${query}` : '',
+        hash: state.selectedPlanId && state.selectedAnchor ? `#${encodeURIComponent(state.selectedAnchor)}` : '',
+      });
+    });
+  }, [location.pathname, location.search, navigate]);
+
   useEffect(() => {
     const desktop = window.matchMedia('(min-width: 768px)');
     const closeOnDesktop = (event: MediaQueryListEvent) => {
