@@ -1,5 +1,5 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FileText, Search } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { Input } from '@/components/ui/input';
@@ -14,46 +14,55 @@ interface Hit {
   matches: string[];
 }
 
+function planMatchesTerm(plan: ParsedPlan, term: string, matches: string[]) {
+  const fm = plan.frontmatter;
+  if (fm.title?.toLowerCase().includes(term))       matches.push(`Title: ${fm.title}`);
+  if (fm.description?.toLowerCase().includes(term)) matches.push(`Description: ${truncate(fm.description, 100)}`);
+  if (fm.tags?.some(t => t.toLowerCase().includes(term))) matches.push(`Tags: ${fm.tags!.filter(t => t.toLowerCase().includes(term)).join(', ')}`);
+  if (fm.package?.some(p => p.toLowerCase().includes(term))) matches.push(`Package: ${fm.package!.filter(p => p.toLowerCase().includes(term)).join(', ')}`);
+
+  for (const section of plan.sections) {
+    if (section.heading.toLowerCase().includes(term)) {
+      matches.push(`Section: ${section.heading}`);
+    }
+    for (const phase of section.phases) {
+      if (phase.title.toLowerCase().includes(term)) {
+        matches.push(`${/^phase\b/i.test(phase.id) ? '' : 'Phase '}${phase.id}: ${truncate(phase.title, 80)}`);
+      }
+      if (phase.rawBody.toLowerCase().includes(term)) {
+        const idx = phase.rawBody.toLowerCase().indexOf(term);
+        const snippet = phase.rawBody.slice(Math.max(0, idx - 30), idx + 80).trim();
+        if (!matches.some(m => m.includes(snippet.slice(0, 20)))) {
+          matches.push(`…${snippet}…`);
+        }
+      }
+    }
+    if (section.body.toLowerCase().includes(term)) {
+      const idx = section.body.toLowerCase().indexOf(term);
+      const snippet = section.body.slice(Math.max(0, idx - 30), idx + 80).trim();
+      if (!matches.some(m => m.includes(snippet.slice(0, 20)))) {
+        matches.push(`${section.heading}: …${snippet}…`);
+      }
+    }
+  }
+}
+
 function searchPlans(plans: ParsedPlan[], query: string): Hit[] {
   if (!query.trim()) return [];
-  const q = query.toLowerCase();
+  const terms = query.split('+').map(t => t.trim().toLowerCase()).filter(Boolean);
+  if (terms.length === 0) return [];
 
   return plans
     .map(plan => {
-      const matches: string[] = [];
-      const fm = plan.frontmatter;
-
-      if (fm.title?.toLowerCase().includes(q))       matches.push(`Title: ${fm.title}`);
-      if (fm.description?.toLowerCase().includes(q)) matches.push(`Description: ${truncate(fm.description, 100)}`);
-      if (fm.tags?.some(t => t.toLowerCase().includes(q))) matches.push(`Tags: ${fm.tags!.filter(t => t.toLowerCase().includes(q)).join(', ')}`);
-      if (fm.package?.some(p => p.toLowerCase().includes(q))) matches.push(`Package: ${fm.package!.filter(p => p.toLowerCase().includes(q)).join(', ')}`);
-
-      for (const section of plan.sections) {
-        if (section.heading.toLowerCase().includes(q)) {
-          matches.push(`Section: ${section.heading}`);
-        }
-        for (const phase of section.phases) {
-          if (phase.title.toLowerCase().includes(q)) {
-            matches.push(`${/^phase\b/i.test(phase.id) ? '' : 'Phase '}${phase.id}: ${truncate(phase.title, 80)}`);
-          }
-          if (phase.rawBody.toLowerCase().includes(q)) {
-            const idx = phase.rawBody.toLowerCase().indexOf(q);
-            const snippet = phase.rawBody.slice(Math.max(0, idx - 30), idx + 80).trim();
-            if (!matches.some(m => m.includes(snippet.slice(0, 20)))) {
-              matches.push(`…${snippet}…`);
-            }
-          }
-        }
-        if (section.body.toLowerCase().includes(q)) {
-          const idx = section.body.toLowerCase().indexOf(q);
-          const snippet = section.body.slice(Math.max(0, idx - 30), idx + 80).trim();
-          if (!matches.some(m => m.includes(snippet.slice(0, 20)))) {
-            matches.push(`${section.heading}: …${snippet}…`);
-          }
-        }
+      const allMatches: string[] = [];
+      let ok = true;
+      for (const term of terms) {
+        const termMatches: string[] = [];
+        planMatchesTerm(plan, term, termMatches);
+        if (termMatches.length === 0) { ok = false; break; }
+        for (const m of termMatches) if (!allMatches.includes(m)) allMatches.push(m);
       }
-
-      return { plan, matches };
+      return { plan, matches: ok ? allMatches : [] };
     })
     .filter(h => h.matches.length > 0)
     .sort((a, b) => b.matches.length - a.matches.length);
@@ -61,13 +70,15 @@ function searchPlans(plans: ParsedPlan[], query: string): Hit[] {
 
 function highlight(text: string, query: string) {
   if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  // highlight first term only for simplicity
+  const first = (query.split('+')[0] ?? '').trim();
+  const idx = text.toLowerCase().indexOf(first.toLowerCase());
   if (idx === -1) return text;
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-od-yellow/30 text-od-yellow rounded px-0.5">{text.slice(idx, idx + query.length)}</mark>
-      {text.slice(idx + query.length)}
+      <mark className="bg-od-yellow/30 text-od-yellow rounded px-0.5">{text.slice(idx, idx + first.length)}</mark>
+      {text.slice(idx + first.length)}
     </>
   );
 }
@@ -79,10 +90,24 @@ export function SearchPage() {
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'plans' | 'assets'>('plans');
   const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
+  const [tagsOpen, setTagsOpen] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    setTagsOpen(!mq.matches);
+    const handler = (e: MediaQueryListEvent) => setTagsOpen(!e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const hits = useMemo(() => searchPlans(plans, query), [plans, query]);
   const assets = useMemo(() => repos.flatMap(repo => (repo.assets ?? []).map(path => ({ repo, path })))
     .filter(item => !query.trim() || `${item.repo.label} ${item.path}`.toLowerCase().includes(query.toLowerCase())), [repos, query]);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const plan of plans) for (const t of plan.frontmatter.tags ?? []) set.add(t);
+    return [...set].sort();
+  }, [plans]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -97,10 +122,10 @@ export function SearchPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-10 h-10"
-            placeholder={mode === 'plans' ? 'Search titles, descriptions, sections, phases, tags…' : 'Search image and PDF paths…'}
+            placeholder={mode === 'plans' ? 'Search titles, descriptions, sections, phases, tags… (use + for multiple, e.g. foo+bar)' : 'Search image and PDF paths…'}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- search is the page's primary action
+            autoFocus
           />
         </div>
         {query && (
@@ -108,6 +133,33 @@ export function SearchPage() {
             {mode === 'plans' ? hits.length : assets.length} result{(mode === 'plans' ? hits.length : assets.length) !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
             {mode === 'plans' && <> {' · '}<TimeRemaining plans={hits.map(hit => hit.plan)} /></>}
           </p>
+        )}
+        {allTags.length > 0 && (
+          <div className="mt-3">
+            <button type="button" className="text-xs text-muted-foreground hover:text-foreground mb-1.5" onClick={() => setTagsOpen(o => !o)}>
+              {tagsOpen ? 'Hide tags' : 'Show tags'}
+            </button>
+            {tagsOpen && (
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map(tag => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setQuery(prev => {
+                  const parts = prev.split('+').map(t => t.trim()).filter(Boolean);
+                  if (parts.includes(tag)) {
+                    return parts.filter(t => t !== tag).join('+');
+                  }
+                  return [...parts, tag].join('+');
+                })}
+                className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${query.split('+').map(t=>t.trim()).includes(tag) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:text-foreground'}`}
+              >
+                {tag}
+              </button>
+            ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

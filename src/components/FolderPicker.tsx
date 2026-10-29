@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FolderOpen, Upload } from 'lucide-react';
+import { FolderOpen, Upload, Github, Gitlab, Globe } from 'lucide-react';
 import { useFileSystem } from '@/hooks/useFileSystem';
 import { Button } from './ui/button';
 import { cn, onActivateKey } from '@/lib/utils';
@@ -21,6 +21,14 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
   const [remoteSpec, setRemoteSpec] = useState('');
+  const [remoteHistory, setRemoteHistory] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('okf-remote-wiki-history');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
   useEffect(() => { if (pending) setProjectName(''); }, [pending]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -60,20 +68,56 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
   const handleRemote = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const spec = remoteSpec.trim();
     const result = await loadRemote(remoteSpec);
+    if (spec && !remoteHistory.includes(spec)) {
+      const next = [spec, ...remoteHistory].slice(0, 20);
+      setRemoteHistory(next);
+      try { localStorage.setItem('okf-remote-wiki-history', JSON.stringify(next)); } catch { /* ignore */ }
+    }
     if (result) setRemoteSpec('');
     announce(result);
   };
 
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestions = remoteHistory.filter(item =>
+    !remoteSpec || item.toLowerCase().includes(remoteSpec.toLowerCase()),
+  );
   const remoteForm = (
     <form className="flex gap-2" onSubmit={handleRemote}>
-      <Input
-        value={remoteSpec}
-        onChange={e => setRemoteSpec(e.target.value)}
-        placeholder="GitHub owner/repo or GitLab URL"
-        aria-label="GitHub owner/repo or GitLab project URL"
-        disabled={loading}
-      />
+      <div className="relative flex-1">
+        <Input
+          value={remoteSpec}
+          onChange={e => setRemoteSpec(e.target.value)}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+          placeholder="GitHub owner/repo or GitLab URL"
+          aria-label="GitHub owner/repo or GitLab project URL"
+          autoComplete="off"
+          disabled={loading}
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <ul className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-md border border-border bg-card text-sm shadow-md">
+            {suggestions.map(item => {
+              const lower = item.toLowerCase();
+              const Icon = lower.includes('gitlab') ? Gitlab : lower.includes('github') || !lower.startsWith('http') ? Github : Globe;
+              return (
+                <li
+                  key={item}
+                  className="flex items-center gap-2 cursor-pointer px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
+                  onMouseDown={() => {
+                    setRemoteSpec(item);
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{item}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
       <Button type="submit" size="sm" disabled={loading || !remoteSpec.trim()}>Load</Button>
     </form>
   );
