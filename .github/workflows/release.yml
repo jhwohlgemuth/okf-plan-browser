@@ -131,34 +131,29 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Verify uploaded release assets
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > release.json
-          jq -r '.assets[].name' release.json
-          if ! jq -e --arg version "${RELEASE_TAG#v}" '
-            [.assets[].name | select(contains($version))] as $names |
-            ([$names[] | select(endswith(".dmg"))] | length >= 2) and
-            any($names[]; endswith(".msi")) and
-            any($names[]; endswith(".deb")) and
-            any($names[]; endswith(".AppImage"))
-          ' release.json; then
-            echo "::error title=Missing release assets::$(jq -c '[.assets[].name]' release.json)"
-            exit 1
-          fi
-
-      - name: Attach checksums for every standalone installer
+      - name: Verify downloads and attach checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           mkdir release-assets
-          gh release download "$RELEASE_TAG" --dir release-assets --pattern '*.dmg' --pattern '*.msi' --pattern '*.deb' --pattern '*.AppImage'
+          gh release download "$RELEASE_TAG" --dir release-assets
           cd release-assets
+          version=${RELEASE_TAG#v}
+          for asset in \
+            "okf-plan-browser_${version}_macos-aarch64.dmg" \
+            "okf-plan-browser_${version}_macos-x64.dmg" \
+            "okf-plan-browser_${version}_windows-x64.msi" \
+            "okf-plan-browser_${version}_linux-x64.deb" \
+            "okf-plan-browser_${version}_linux-x64.AppImage"; do
+            if [ ! -s "$asset" ]; then
+              echo "::error title=Missing release asset::$asset"
+              ls -la
+              exit 1
+            fi
+          done
+          test "$(find . -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 5
           sha256sum -- *.dmg *.msi *.deb *.AppImage > SHA256SUMS
           gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
 

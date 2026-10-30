@@ -17,7 +17,7 @@ Every published release has a usable x86_64 `.deb` and `.AppImage` with predicta
 
 # Current evidence
 
-At `3a7bae0`, the third `v0.0.1` run passed CI and all four platform package builds, but its draft asset gate failed before publication. The current local workflow change prepares one draft and uploads each verified bundle with a deterministic platform filename, then checks the resulting release inventory and attaches checksums. It awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
+At `87f741a`, the fourth `v0.0.1` run passed CI, draft reset, and all four explicit platform upload jobs, but the publish job failed in its API asset-inventory step before checksums. The current local change verifies the draft by downloading and checking five exact filenames, then hashes those downloads before publication. It awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
 
 # Boundaries and decisions
 
@@ -47,7 +47,7 @@ Release asset checks must run before the draft is published. A tagged draft and 
 - Primary integration lock: release workflow
 - Outcome: Build explicit Debian and AppImage targets, require both expected assets for the Linux job before publishing, and attach a SHA-256 checksum file.
 - Focused validation: Inspect workflow syntax; run a draft release and verify both asset names and checksums against downloaded files.
-- Handoff: Package builds passed, but the implicit action upload did not satisfy the asset gate. Commit the explicit-upload workflow, move the unpublished tag with an exact lease, and verify all five deterministic assets and `SHA256SUMS` before making LX-02 eligible.
+- Handoff: All explicit upload jobs passed, but the publish API inventory gate failed. Commit the download-based gate, move the unpublished tag with an exact lease, and verify all five deterministic assets and `SHA256SUMS` before making LX-02 eligible.
 
 ## LX-02 — Verify Linux downloads
 
