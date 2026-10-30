@@ -1,6 +1,6 @@
 [package]
 name = "okf-plan-browser"
-version = "1.0.0"
+version = "0.0.1"
 description = "OKF Plan Browser — desktop app for .wiki markdown portfolios"
 authors = ["Jason Wohlgemuth"]
 license = "MIT"

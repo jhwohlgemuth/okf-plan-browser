@@ -71,7 +71,18 @@ npm run tauri:build   # production binary
 make release BUMP=patch   # or minor / major
 ```
 
-This runs the **Version Bump** workflow, which updates `package.json` and `tauri.conf.json`, commits, tags `vX.Y.Z`, and starts the **Release** workflow. That workflow builds installers for Windows, macOS (Apple Silicon and Intel) and Linux and attaches them to the GitHub release.
+For a specific version, prepare and commit the version files, then publish the tag:
+
+```bash
+make release-prepare VERSION=0.0.1
+git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+git commit -m "Release v0.0.1"
+make release-publish VERSION=0.0.1
+```
+
+`release-publish` requires a clean tree, pushes the commit, and then pushes the tag to start the Release workflow. Inspect it with `make release-watch` and `make release-view TAG=v0.0.1`.
+
+This runs the **Version Bump** workflow, which updates `package.json` and `tauri.conf.json`, commits, tags `vX.Y.Z`, and starts the **Release** workflow. That workflow attaches Apple Silicon and Intel macOS DMGs, a Windows MSI, and Linux Debian and AppImage packages to a draft GitHub release. It checks that all five assets are present, attaches `SHA256SUMS`, and only then publishes the release. Intel macOS builds are provided as artifacts but are not a supported desktop-ingest target.
 
 - Release builds are unsigned, so operating systems warn on first launch.
 - To release an existing tag, run `make release-run TAG=vX.Y.Z`. Pushing a `v*` tag also starts the workflow.

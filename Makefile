@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install dev lint typecheck test audit build ci visual visual-update visual-report tauri-dev tauri-build \
         pages-enable pages-deploy pages-url \
-        bump-patch bump-minor bump-major bump release release-run release-watch release-tag release-list release-view release-download release-delete \
+        bump-patch bump-minor bump-major bump release release-prepare release-publish release-run release-watch release-tag release-list release-view release-download release-delete \
         runs watch logs ci-status
 
 REPO    := $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
@@ -81,6 +81,20 @@ bump-major: ; $(MAKE) bump BUMP=major ## Bump major version via GitHub
 release: ## Bump (BUMP=patch|minor|major), then watch the desktop release build
 	$(MAKE) bump BUMP=$(BUMP)
 	$(MAKE) release-watch
+
+release-prepare: ## Set an exact version in npm and Tauri/Cargo (VERSION=X.Y.Z)
+	@test -n "$(VERSION)" || (echo 'Set VERSION=X.Y.Z' >&2; exit 1)
+	npm version "$(VERSION)" --no-git-tag-version --allow-same-version
+	node scripts/sync-version.mjs
+
+release-publish: ## Push a clean committed version and tag to start Release (VERSION=X.Y.Z)
+	@set -eu; \
+	  test "$(VERSION)" = "$$(node -p 'require("./package.json").version')"; \
+	  test -z "$$(git status --porcelain)" || { echo 'Commit all release changes before publishing' >&2; exit 1; }; \
+	  git push origin HEAD; \
+	  if ! git show-ref --verify --quiet "refs/tags/v$(VERSION)"; then git tag "v$(VERSION)"; fi; \
+	  test "$$(git rev-parse "v$(VERSION)")" = "$$(git rev-parse HEAD)" || { echo 'Tag points to a different commit' >&2; exit 1; }; \
+	  git push origin "v$(VERSION)"
 
 release-run: ## Start the Release workflow for an existing tag (TAG=vX.Y.Z)
 	gh workflow run release.yml --ref $(TAG)

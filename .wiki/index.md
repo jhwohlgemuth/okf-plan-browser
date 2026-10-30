@@ -3,6 +3,10 @@
 | Order | Plan | Difficulty | Impact | Outcome |
 |---|---|---|---|---|
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
+| 2 | [linux-release-exports.md](linux-release-exports.md) | medium | high | Verified Debian and AppImage release downloads |
+| 3 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
+| 4 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
+| 5 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
@@ -35,3 +39,12 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 - 2026-10-30 — RF-01 completed with per-repository controllers and generations, removal
   invalidation, and delayed-overlap browser coverage. Retired the plan and the no-longer-needed
   coordination record; TD-03 is the sole remaining executable outcome.
+- 2026-10-30 — Reviewed the full active portfolio at `8e9287a` against the current release
+  workflow, Tauri configuration, desktop-ingest record, recent history, and package-manager
+  submission rules. TD-03 remains blocked on Windows and Linux interactive hosts and draft
+  artifacts. Added four distribution plans: Linux export checks can start now; Scoop and WinGet
+  require Windows artifact smoke evidence; Homebrew requires signed, notarized Apple Silicon
+  assets and credentials. No existing active phase was completed by these additions.
+- 2026-10-30 — LX-01 workflow implementation now explicitly builds and checks the five desktop
+  release formats, checks uploaded release assets, and attaches checksums before publishing.
+  A tagged draft run remains required to validate actual uploads; LX-01 stays in progress.

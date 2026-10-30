@@ -15,6 +15,7 @@ jobs:
 
   build-tauri:
     needs: checks
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     strategy:
@@ -22,13 +23,17 @@ jobs:
       matrix:
         include:
           - platform: ubuntu-22.04
-            args: ''
+            args: '--bundles deb,appimage'
+            required_formats: 'deb AppImage'
           - platform: macos-15
-            args: '--target aarch64-apple-darwin'
+            args: '--target aarch64-apple-darwin --bundles dmg'
+            required_formats: 'dmg'
           - platform: macos-15-intel
-            args: '--target x86_64-apple-darwin'
+            args: '--target x86_64-apple-darwin --bundles dmg'
+            required_formats: 'dmg'
           - platform: windows-latest
-            args: ''
+            args: '--bundles msi'
+            required_formats: 'msi'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -75,9 +80,17 @@ jobs:
 
       - name: Verify packaged artifacts
         shell: bash
+        env:
+          REQUIRED_FORMATS: ${{ matrix.required_formats }}
         run: |
-          find src-tauri/target -type f \( -name '*.dmg' -o -name '*.msi' -o -name '*.AppImage' -o -name '*.deb' \) | tee artifacts.txt
-          test -s artifacts.txt
+          for format in $REQUIRED_FORMATS; do
+            files=$(find src-tauri/target -type f -path "*/bundle/*" -name "*.$format")
+            if [ -z "$files" ]; then
+              echo "Missing $format bundle" >&2
+              exit 1
+            fi
+            printf '%s\n' "$files"
+          done
 
   publish:
     needs: build-tauri
@@ -86,6 +99,34 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Verify uploaded release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > release.json
+          jq -e --arg version "${RELEASE_TAG#v}" '
+            [.assets[].name | select(contains($version))] as $names |
+            any($names[]; endswith("_aarch64.dmg")) and
+            any($names[]; endswith("_x64.dmg")) and
+            any($names[]; endswith(".msi") and contains("x64")) and
+            any($names[]; endswith("_amd64.deb")) and
+            any($names[]; endswith("_amd64.AppImage"))
+          ' release.json
+
+      - name: Attach checksums for every standalone installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          mkdir release-assets
+          gh release download "$RELEASE_TAG" --dir release-assets --pattern '*.dmg' --pattern '*.msi' --pattern '*.deb' --pattern '*.AppImage'
+          cd release-assets
+          sha256sum -- *.dmg *.msi *.deb *.AppImage > SHA256SUMS
+          gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
+
       - name: Publish only after every platform succeeds
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

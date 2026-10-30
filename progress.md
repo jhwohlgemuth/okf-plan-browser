@@ -85,3 +85,14 @@
 - Budget: Both phases completed within their five-hour active-time budgets.
 - Blockers / failed approaches: The first all-project browser run could not bind the sandboxed preview port; the approved local-server run passed. No implementation blocker remains.
 - Next action: Review and commit the implementation when desired.
+
+## Implementation — Standalone release artifacts
+
+- Plan: `.wiki/linux-release-exports.md`; active phase: LX-01; state: in progress pending tagged draft validation.
+- Authorized scope and decisions: Require both Linux exports and every existing desktop installer on GitHub Releases before publication; generate release checksums. Preserve the existing release targets, including the legacy Intel DMG.
+- Baseline and local work: `8e9287a`; the four distribution plans and portfolio index edits were pre-existing uncommitted work from the planning request. This implementation changed `.github/workflows/release.yml`, `CONTRIBUTING.md`, this progress section, and LX-01 evidence.
+- Verified state: Release matrix explicitly requests Debian, AppImage, MSI, and both DMGs. Each build checks its expected local format. The publish job checks five version-matched uploaded assets, downloads them, uploads `SHA256SUMS`, then publishes. `yq` parsed the workflow, both extracted shell blocks passed `bash -n`, the asset check passed a representative five-file `jq` inventory, and `git diff --check` passed.
+- Remaining work: Run a tagged draft release from this workflow and verify actual upload names and checksums; then complete Linux host smoke phase LX-02.
+- Budget: LX-01 implementation is within its five-hour active-time budget; external CI waiting does not count as active work.
+- Blockers / failed approaches: The workflow changes are local and have no tagged CI run yet. Local syntax checks cannot establish remote upload behavior.
+- Next action: After the workflow is available on a tag, run `release.yml`, inspect the draft's five assets and `SHA256SUMS`, and reconcile LX-01.
