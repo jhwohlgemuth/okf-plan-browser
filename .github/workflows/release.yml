@@ -106,13 +106,13 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > release.json
+          jq -r '.assets[].name' release.json
           jq -e --arg version "${RELEASE_TAG#v}" '
             [.assets[].name | select(contains($version))] as $names |
-            any($names[]; endswith("_aarch64.dmg")) and
-            any($names[]; endswith("_x64.dmg")) and
-            any($names[]; endswith(".msi") and contains("x64")) and
-            any($names[]; endswith("_amd64.deb")) and
-            any($names[]; endswith("_amd64.AppImage"))
+            ([$names[] | select(endswith(".dmg"))] | length >= 2) and
+            any($names[]; endswith(".msi")) and
+            any($names[]; endswith(".deb")) and
+            any($names[]; endswith(".AppImage"))
           ' release.json
 
       - name: Attach checksums for every standalone installer

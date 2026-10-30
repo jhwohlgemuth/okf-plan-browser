@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install dev lint typecheck test audit build ci visual visual-update visual-report tauri-dev tauri-build \
         pages-enable pages-deploy pages-url \
-        bump-patch bump-minor bump-major bump release release-prepare release-publish release-run release-watch release-tag release-list release-view release-download release-delete \
+        bump-patch bump-minor bump-major bump release release-prepare release-publish release-retry-draft release-run release-watch release-tag release-list release-view release-download release-delete \
         runs watch logs ci-status
 
 REPO    := $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
@@ -9,6 +9,7 @@ VERSION := $(shell node -p "require('./package.json').version" 2>/dev/null)
 BUMP    ?= patch
 TAG     ?= v$(VERSION)
 RUN     ?=
+EXPECTED_TAG_SHA ?=
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "} {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -95,6 +96,15 @@ release-publish: ## Push a clean committed version and tag to start Release (VER
 	  if ! git show-ref --verify --quiet "refs/tags/v$(VERSION)"; then git tag "v$(VERSION)"; fi; \
 	  test "$$(git rev-parse "v$(VERSION)")" = "$$(git rev-parse HEAD)" || { echo 'Tag points to a different commit' >&2; exit 1; }; \
 	  git push origin "v$(VERSION)"
+
+release-retry-draft: ## Retry an unpublished tag at HEAD with a lease (VERSION=X.Y.Z EXPECTED_TAG_SHA=...)
+	@set -eu; \
+	  test -n "$(EXPECTED_TAG_SHA)" || { echo 'Set EXPECTED_TAG_SHA to the remote tag commit' >&2; exit 1; }; \
+	  test "$(VERSION)" = "$$(node -p 'require("./package.json").version')"; \
+	  test -z "$$(git status --porcelain)" || { echo 'Commit all release changes before retrying' >&2; exit 1; }; \
+	  git push origin HEAD; \
+	  git tag -f "v$(VERSION)" HEAD; \
+	  git push --force-with-lease="refs/tags/v$(VERSION):$(EXPECTED_TAG_SHA)" origin "refs/tags/v$(VERSION)"
 
 release-run: ## Start the Release workflow for an existing tag (TAG=vX.Y.Z)
 	gh workflow run release.yml --ref $(TAG)
