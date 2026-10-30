@@ -17,7 +17,7 @@ Every published release has a usable x86_64 `.deb` and `.AppImage` with predicta
 
 # Current evidence
 
-At `63e5738`, the `v0.0.1` tagged run passed CI and all four platform packaging jobs. Its publish job failed in the uploaded-asset assertion before checksums or publication. A local repair now checks two version-matched DMGs plus MSI, Debian, and AppImage by extension and prints the asset names for diagnosis; it awaits a tagged rerun. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
+At `63e5738`, the first `v0.0.1` run passed CI and all four platform packaging jobs, but its asset-name assertion failed before publication. The repaired gate at `b8ce41f` requires two version-matched DMGs plus MSI, Debian, and AppImage; that rerun stopped earlier at a browser focus test. A local timing repair now awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
 
 # Boundaries and decisions
 
@@ -47,7 +47,7 @@ Release asset checks must run before the draft is published. A tagged draft and 
 - Primary integration lock: release workflow
 - Outcome: Build explicit Debian and AppImage targets, require both expected assets for the Linux job before publishing, and attach a SHA-256 checksum file.
 - Focused validation: Inspect workflow syntax; run a draft release and verify both asset names and checksums against downloaded files.
-- Handoff: The first tagged run passed package builds but failed the asset-name gate. Commit the repaired gate, move the unpublished tag with an exact lease, and verify the rerun uploads all formats and `SHA256SUMS` before making LX-02 eligible.
+- Handoff: The second tagged run stopped in CI on a late heading-focus assertion. Commit the locally verified focus repair, move the unpublished tag with an exact lease, and verify all formats and `SHA256SUMS` before making LX-02 eligible.
 
 ## LX-02 — Verify Linux downloads
 

@@ -98,20 +98,31 @@ export function PlanDetailPanel() {
 
   useEffect(() => {
     if (!open || !mounted || !selectedAnchor) return;
+    const panel = panelRef.current;
+    if (!panel) return;
     let frame = 0;
-    let attempts = 0;
+    let timeout = 0;
     const focusTarget = () => {
-      const target = panelRef.current?.querySelector<HTMLElement>(`#${CSS.escape(selectedAnchor)}`);
+      const target = panel.querySelector<HTMLElement>(`#${CSS.escape(selectedAnchor)}`);
       if (target) {
         target.scrollIntoView({ block: 'start' });
         target.focus({ preventScroll: true });
-        return;
+        observer.disconnect();
+        window.clearTimeout(timeout);
       }
-      if (++attempts < 4) frame = requestAnimationFrame(focusTarget);
-      else panelRef.current?.focus();
     };
+    const observer = new MutationObserver(focusTarget);
+    observer.observe(panel, { childList: true, subtree: true });
     frame = requestAnimationFrame(focusTarget);
-    return () => cancelAnimationFrame(frame);
+    timeout = window.setTimeout(() => {
+      observer.disconnect();
+      panel.focus();
+    }, 5000);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.clearTimeout(timeout);
+    };
   }, [location.hash, mounted, open, plan?.id, selectedAnchor, selectedPlanId]);
 
   const trapFocus = (e: ReactKeyboardEvent<HTMLDivElement>) => {
