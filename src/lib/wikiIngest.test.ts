@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { File as NodeFile } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import {
   parseWikiFileList, parseWikiFolder, parseWikiEntry, parseWikiTexts, findWikiDir, findWikiEntry, isWikiFolderName,
 } from '@/lib/wikiParser';
+import { collectDroppedSources } from '@/hooks/useFileSystem';
 import { fileList, projectRoot, dirEntry } from '@/test/handles';
 
 const ids = (r: { plans: { id: string }[] }) => r.plans.map(p => p.id).sort();
@@ -28,6 +29,46 @@ describe('ingest paths', () => {
 
     expect(ids(r)).toEqual(['r:plan-one.md', 'r:plan-two.md']);
     expect(r.errors).toEqual([]);
+  });
+
+  it('captures modern file and directory handles before awaiting them', async () => {
+    const FileCtor = NodeFile as unknown as typeof File;
+    const file = new FileCtor(['---\ntitle: Dropped\n---\n'], 'dropped.md');
+    const fileHandle = { kind: 'file', name: file.name, getFile: vi.fn().mockResolvedValue(file) } as unknown as FileSystemFileHandle;
+    const directoryHandle = { kind: 'directory', name: 'project' } as FileSystemDirectoryHandle;
+    const getFileHandle = vi.fn(() => Promise.resolve(fileHandle));
+    const getDirectoryHandle = vi.fn(() => Promise.resolve(directoryHandle));
+    const items = {
+      0: { kind: 'file', getAsFile: () => file, getAsFileSystemHandle: getFileHandle },
+      1: { kind: 'file', getAsFile: () => null, getAsFileSystemHandle: getDirectoryHandle },
+      length: 2,
+    } as unknown as DataTransferItemList;
+
+    const pending = collectDroppedSources(items);
+
+    expect(getFileHandle).toHaveBeenCalledOnce();
+    expect(getDirectoryHandle).toHaveBeenCalledOnce();
+    const sources = await pending;
+    expect(sources.files).toEqual([file]);
+    expect(sources.directoryHandles).toEqual([directoryHandle]);
+    expect(sources.legacyDirectories).toEqual([]);
+  });
+
+  it('collects legacy directory entries and standalone files', async () => {
+    const FileCtor = NodeFile as unknown as typeof File;
+    const file = new FileCtor(['---\ntitle: Legacy\n---\n'], 'legacy.md');
+    const directory = { name: 'legacy-project', isDirectory: true, isFile: false } as FileSystemDirectoryEntry;
+    const items = {
+      0: { kind: 'file', getAsFile: () => null, webkitGetAsEntry: () => directory },
+      1: { kind: 'file', getAsFile: () => file, webkitGetAsEntry: () => null },
+      length: 2,
+    } as unknown as DataTransferItemList;
+
+    const sources = await collectDroppedSources(items);
+
+    expect(sources.legacyDirectories).toEqual([directory]);
+    expect(sources.files).toEqual([file]);
+    expect(sources.directoryHandles).toEqual([]);
   });
 
   it('parseWikiFolder reads via directory handles', async () => {

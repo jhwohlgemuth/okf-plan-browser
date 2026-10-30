@@ -20,6 +20,17 @@
 - Blockers / failed approaches: The first failure-path browser assertion matched the warning text as well as the removed row; targeting the removed control resolved the test-only ambiguity.
 - Next action: Review and commit the implementation when desired.
 
+## Implementation — Make dropped files match the import interface
+
+- Plan: retired after completion; active phase: none; state: complete.
+- Authorized scope and decisions: Accept standalone Markdown files and project/.wiki folders through the drop zone, group standalone files into one named import, and preserve modern and legacy directory behavior without false post-success errors.
+- Baseline and local work: `ac89dfe`; clean worktree at phase start; no CodeGraph index is present.
+- Verified state: The drop zone synchronously captures modern handles and legacy fallbacks, groups standalone Markdown files into one named import, preserves project/.wiki folder imports, and no longer emits a false file error after legacy directory success. `npm test` passed 110 tests; typecheck, lint, and the production build passed; the full integrity spec passed 23 tests with 10 expected viewport skips; planning wiki validation passed.
+- Remaining work: None for FD-01.
+- Budget: FD-01 completed within its five-hour active-time budget.
+- Blockers / failed approaches: Initial browser assertions matched duplicate sidebar/main labels, and the first synthetic legacy reader recursed by marking its batch consumed after callback. Scoped locators and consuming the batch before callback corrected these test-fixture issues.
+- Next action: Review and commit the implementation when desired.
+
 ## Implementation — Plan and phase deep links
 
 - Plan: retired after completion; active phase: none; state: complete.

@@ -26,6 +26,78 @@ const importFiles = async (page: Page, title: string, text = markdown(title)) =>
   await expect(labels).toHaveCount(previousCount + 1);
 };
 
+test('drop zone imports standalone Markdown file handles', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'drop-contract coverage only needs one browser viewport');
+  await page.goto('/home');
+  const dropZone = page.getByText('Drop Files', { exact: true }).locator('..');
+  await dropZone.evaluate((element, text) => {
+    const file = new File([text], 'standalone.md', { type: 'text/markdown' });
+    const item = {
+      kind: 'file',
+      getAsFile: () => file,
+      getAsFileSystemHandle: () => Promise.resolve({
+        kind: 'file',
+        name: file.name,
+        getFile: () => Promise.resolve(file),
+      }),
+    };
+    const event = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'dataTransfer', { value: { items: { 0: item, length: 1 } } });
+    element.dispatchEvent(event);
+  }, markdown('Standalone drop plan'));
+
+  const dialog = page.getByRole('dialog', { name: 'Name this project' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox').fill('Standalone drop');
+  await dialog.getByRole('button', { name: 'Load', exact: true }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('main').getByText('Standalone drop', { exact: true })).toBeVisible();
+  await expect(page.locator('p.text-od-red')).toHaveCount(0);
+});
+
+test('legacy directory drops succeed without a false file error', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'drop-contract coverage only needs one browser viewport');
+  await page.goto('/home');
+  const dropZone = page.getByText('Drop Files', { exact: true }).locator('..');
+  await dropZone.evaluate((element, text) => {
+    const file = new File([text], 'legacy.md', { type: 'text/markdown' });
+    const fileEntry = {
+      name: file.name,
+      isFile: true,
+      isDirectory: false,
+      file: (success: (value: File) => void) => success(file),
+    };
+    const directory = (name: string, entries: object[]) => ({
+      name,
+      isFile: false,
+      isDirectory: true,
+      createReader: () => {
+        let read = false;
+        return { readEntries: (success: (value: object[]) => void) => {
+          const batch = read ? [] : entries;
+          read = true;
+          success(batch);
+        } };
+      },
+    });
+    const wiki = directory('.wiki', [fileEntry]);
+    const project = directory('legacy-project', [wiki]);
+    const item = {
+      kind: 'file',
+      getAsFile: () => null,
+      webkitGetAsEntry: () => project,
+    };
+    const event = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'dataTransfer', { value: { items: { 0: item, length: 1 } } });
+    element.dispatchEvent(event);
+  }, markdown('Legacy directory plan'));
+
+  await expect(page.getByRole('main').getByText('legacy-project', { exact: true })).toBeVisible();
+  await expect(page.getByText('Loaded 1 plan', { exact: true })).toBeVisible();
+  await expect(page.locator('p.text-od-red')).toHaveCount(0);
+});
+
 test('remaining time survives reload and follows portfolio filters', async ({ page }) => {
   await page.goto('/home');
   await importFiles(page, 'Estimated', `${markdown('Estimated', 'phase_budget_hours: 5')}\n# Execution phases\n\n## TM-01 First\n- Budget: 2 hours maximum\n\n## TM-02 Second\n- Remaining: 30 minutes\n`);

@@ -16,7 +16,7 @@ interface Props {
 
 export function FolderPicker({ label = 'Open .wiki Folder', compact = false, cards = false }: Props) {
   const {
-    openFolder, loadFileList, dropFolder, loadRemote, cancelRemote, pending, confirmPending, cancelPending,
+    openFolder, loadFileList, dropItems, loadRemote, cancelRemote, pending, confirmPending, cancelPending,
     existingProjects, loading, remoteLoading, error, scanning, setScanning, progress,
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
@@ -140,8 +140,8 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    (await dropFolder(e.dataTransfer.items)).forEach(announce);
-  }, [dropFolder]); // eslint-disable-line react-hooks/exhaustive-deps
+    (await dropItems(e.dataTransfer.items)).forEach(announce);
+  }, [dropItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nameDialog = (
     <Dialog open={!!pending} onOpenChange={open => { if (!open) cancelPending(); }}>
@@ -149,8 +149,8 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
         <DialogHeader>
           <DialogTitle>Name this project</DialogTitle>
           <DialogDescription>
-            Browsers don&apos;t expose the parent folder of <span className="font-mono">{pending?.folderName}</span>.
-            Enter a project name, or leave it blank for a random name like persian-diamond. Picking the project folder itself (the one containing .wiki) names it automatically.
+            Browsers don&apos;t expose a project name for dropped Markdown files or a selected <span className="font-mono">{pending?.folderName}</span> folder.
+            Enter a project name, or leave it blank for a random name like persian-diamond. Dropping the project folder itself (the one containing .wiki) names it automatically.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -242,7 +242,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
           <div className={cardClass} role="button" tabIndex={0} onKeyDown={onActivateKey(handleOpen)} onClick={handleOpen} {...dropProps}>
             <Upload className="h-5 w-5 text-od-green" />
             <p className="text-xs font-semibold text-foreground">Drop Files</p>
-            <p className="text-[10px] leading-tight text-muted-foreground">Drag a project or .wiki folder here</p>
+            <p className="text-[10px] leading-tight text-muted-foreground">Markdown files or a project/.wiki folder</p>
           </div>
         </div>
         {remoteForm}
@@ -271,7 +271,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
       >
         <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
         <p className="text-sm font-medium text-foreground">
-          {loading ? 'Parsing files…' : 'Drop a project or .wiki folder here'}
+          {loading ? 'Parsing files…' : 'Drop Markdown files or a project/.wiki folder here'}
         </p>
         <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
       </div>

@@ -5,11 +5,10 @@ The coordination record for these outcomes is [code-health-hardening.md](code-he
 | Order | Plan | Difficulty | Impact | Outcome |
 |---|---|---|---|---|
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
-| 2 | [Make dropped files match the import interface](folder-drop-contract.md) | low | medium | Make dropped files match the import interface |
-| 3 | [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md) | medium | medium | Persist portfolio changes without rewriting on navigation |
-| 4 | [Track refresh work independently for each repository](refresh-concurrency.md) | medium | medium | Track refresh work independently for each repository |
-| 5 | [Load branches containing slashes unambiguously](remote-branch-selection.md) | medium | medium | Load branches containing slashes unambiguously |
-| 6 | [Reduce initial loading and graph layout work](rendering-performance.md) | medium | medium | Reduce initial loading and graph layout work |
+| 2 | [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md) | medium | medium | Persist portfolio changes without rewriting on navigation |
+| 3 | [Track refresh work independently for each repository](refresh-concurrency.md) | medium | medium | Track refresh work independently for each repository |
+| 4 | [Load branches containing slashes unambiguously](remote-branch-selection.md) | medium | medium | Load branches containing slashes unambiguously |
+| 5 | [Reduce initial loading and graph layout work](rendering-performance.md) | medium | medium | Reduce initial loading and graph layout work |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
@@ -23,3 +22,5 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 - 2026-10-30 — Reconciled FH-01 against the working tree after transactional handle cleanup,
   cleanup-failure reporting, and focused browser coverage passed. Retired the completed plan;
   the 2026-10-29 evidence review remains current for the six remaining executable outcomes.
+- 2026-10-30 — Reconciled FD-01 against the working tree after modern file-handle and legacy
+  directory-drop coverage passed. Retired the completed plan; five executable outcomes remain.

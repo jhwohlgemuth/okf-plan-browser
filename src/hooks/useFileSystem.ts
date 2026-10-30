@@ -18,6 +18,56 @@ export interface PendingWiki {
 
 export interface LoadProgress { done: number; total?: number }
 
+export interface DroppedSources {
+  directoryHandles: FileSystemDirectoryHandle[];
+  legacyDirectories: FileSystemDirectoryEntry[];
+  files: File[];
+}
+
+/** Capture every browser-specific drop source synchronously before the drag data store closes. */
+export async function collectDroppedSources(items: DataTransferItemList): Promise<DroppedSources> {
+  const pending: Array<{
+    handle: Promise<FileSystemHandle | null>;
+    fallbackEntry: FileSystemEntry | null;
+    fallbackFile: File | null;
+  }> = [];
+  const legacyDirectories: FileSystemDirectoryEntry[] = [];
+  const files: File[] = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i] as DataTransferItem & {
+      getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>;
+    };
+    if (item.kind !== 'file') continue;
+    const fallbackEntry = item.webkitGetAsEntry?.() ?? null;
+    const fallbackFile = item.getAsFile();
+    if (item.getAsFileSystemHandle) {
+      pending.push({ handle: item.getAsFileSystemHandle(), fallbackEntry, fallbackFile });
+    } else if (fallbackEntry?.isDirectory) {
+      legacyDirectories.push(fallbackEntry as FileSystemDirectoryEntry);
+    } else if (fallbackFile) {
+      files.push(fallbackFile);
+    }
+  }
+
+  const directoryHandles: FileSystemDirectoryHandle[] = [];
+  for (const source of pending) {
+    const handle = await source.handle.catch(() => null);
+    if (handle?.kind === 'directory') {
+      directoryHandles.push(handle as FileSystemDirectoryHandle);
+    } else if (handle?.kind === 'file') {
+      const file = await (handle as FileSystemFileHandle).getFile().catch(() => source.fallbackFile);
+      if (file) files.push(file);
+    } else if (source.fallbackEntry?.isDirectory) {
+      legacyDirectories.push(source.fallbackEntry as FileSystemDirectoryEntry);
+    } else if (source.fallbackFile) {
+      files.push(source.fallbackFile);
+    }
+  }
+
+  return { directoryHandles, legacyDirectories, files };
+}
+
 export function useFileSystem() {
   const remoteController = useRef<AbortController | null>(null);
   useEffect(() => () => remoteController.current?.abort(), []);
@@ -171,40 +221,29 @@ export function useFileSystem() {
     }
   }, [ingest]);
 
-  /** Drag-and-drop — handles must be grabbed synchronously, before any await. Accepts several folders. */
-  const dropFolder = async (items: DataTransferItemList): Promise<LoadResult[]> => {
+  /** Accept several folders plus one grouped import of standalone Markdown files. */
+  const dropItems = async (items: DataTransferItemList): Promise<LoadResult[]> => {
     setError(null);
-    const pendingHandles: Promise<FileSystemHandle | null>[] = [];
-    const entries: FileSystemDirectoryEntry[] = [];
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i] as DataTransferItem & {
-        getAsFileSystemHandle?: () => Promise<FileSystemHandle | null>;
-      };
-      if (item.kind !== 'file') continue;
-      if (item.getAsFileSystemHandle) {
-        pendingHandles.push(item.getAsFileSystemHandle());
-      } else {
-        const entry = item.webkitGetAsEntry?.();
-        if (entry?.isDirectory) entries.push(entry as FileSystemDirectoryEntry);
-      }
-    }
-    if (!pendingHandles.length && !entries.length) {
-      setError('Dropping folders is not supported here. Click to browse instead.');
+    const { directoryHandles, legacyDirectories, files } = await collectDroppedSources(items);
+    const markdownFiles = files.filter(file => file.name.toLowerCase().endsWith('.md'));
+    if (!directoryHandles.length && !legacyDirectories.length && !markdownFiles.length) {
+      setError('Drop Markdown files or a project/.wiki folder, or click to browse.');
       return [];
     }
     setLoading(true);
     const results: LoadResult[] = [];
     try {
-      for (const entry of entries) {
+      for (const entry of legacyDirectories) {
         const r = await ingest(entry.name, async (project, rep) =>
           parseWikiEntry(await findWikiEntry(entry), project, rep), true);
         if (r) results.push(r);
       }
-      const dirs = (await Promise.all(pendingHandles))
-        .filter((h): h is FileSystemDirectoryHandle => !!h && h.kind === 'directory');
-      if (!dirs.length) setError('Please drop a folder, not a file.');
-      for (const dir of dirs) {
+      for (const dir of directoryHandles) {
         const r = await ingestDir(dir);
+        if (r) results.push(r);
+      }
+      if (markdownFiles.length) {
+        const r = await ingest('wiki', (project, rep) => parseWikiFileList(markdownFiles, project, rep), true);
         if (r) results.push(r);
       }
     } catch (e) {
@@ -216,7 +255,7 @@ export function useFileSystem() {
   };
 
   return {
-    openFolder, loadFileList, dropFolder, loadRemote, cancelRemote,
+    openFolder, loadFileList, dropItems, loadRemote, cancelRemote,
     pending: pending[0] ?? null, confirmPending, cancelPending,
     existingProjects: repos.map(r => r.label),
     loading, remoteLoading, error, scanning, setScanning, progress,
