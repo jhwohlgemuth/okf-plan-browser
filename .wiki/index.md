@@ -48,3 +48,7 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 - 2026-10-30 — LX-01 workflow implementation now explicitly builds and checks the five desktop
   release formats, checks uploaded release assets, and attaches checksums before publishing.
   A tagged draft run remains required to validate actual uploads; LX-01 stays in progress.
+- 2026-10-30 — LX-01 completed in published `v0.0.1` (run 41144436883): five canonical
+  installers and matching checksum sidecars are public. Pruned LX-01; LX-02 and TD-03 now wait
+  on interactive Linux and Windows hosts. The release-workflow lock is free for the remaining
+  distribution phases.

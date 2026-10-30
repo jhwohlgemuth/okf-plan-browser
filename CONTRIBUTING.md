@@ -86,6 +86,8 @@ Use `make version` to print the npm version and `make check-version` to check np
 
 This runs the **Version Bump** workflow, which updates npm, Tauri, and Cargo version metadata, commits, tags `vX.Y.Z`, and starts the **Release** workflow. That workflow creates a draft, uploads versioned Apple Silicon and Intel macOS DMGs, a Windows MSI, and Linux Debian and AppImage packages with distinct platform names, and uploads a `.sha256` checksum beside each file. It publishes only after every platform job succeeds. A retry resets assets on the still-unpublished draft before rebuilding. Intel macOS builds are provided as artifacts but are not a supported desktop-ingest target.
 
+The [v0.0.1 release](https://github.com/jhwohlgemuth/okf-plan-browser/releases/tag/v0.0.1) contains the canonical files `okf-plan-browser_0.0.1_macos-aarch64.dmg`, `okf-plan-browser_0.0.1_macos-x64.dmg`, `okf-plan-browser_0.0.1_windows-x64.msi`, `okf-plan-browser_0.0.1_linux-x64.deb`, and `okf-plan-browser_0.0.1_linux-x64.AppImage`, each with a matching `.sha256` sidecar. Download a file and its sidecar to the same directory, then run `sha256sum -c <filename>.sha256` on Linux or `shasum -a 256 -c <filename>.sha256` on macOS. The Linux packages were built on Ubuntu 22.04; interactive installation and launch on Linux remain to be verified. This first release also contains redundant files with Tauri's default names; use the canonical names above.
+
 - Release builds are unsigned, so operating systems warn on first launch.
 - To release an existing tag, run `make release-run TAG=vX.Y.Z`. Pushing a `v*` tag also starts the workflow.
 - Check the result with `make release-view TAG=vX.Y.Z`.

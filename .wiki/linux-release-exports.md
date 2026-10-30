@@ -6,7 +6,7 @@ difficulty: medium
 impact: high
 package: [okf-plan-browser, src-tauri]
 tags: [release, linux, debian, appimage]
-status: in-progress
+status: planned
 execution: phased
 phase_budget_hours: 5
 ---
@@ -17,7 +17,7 @@ Every published release has a usable x86_64 `.deb` and `.AppImage` with predicta
 
 # Current evidence
 
-At `ceb4f5c`, the fifth `v0.0.1` run passed CI, draft reset, and all four explicit platform upload jobs, but the publish job failed while downloading the draft assets. The current local change generates a SHA-256 sidecar beside each bundle in its platform job and publishes only after all uploads pass. It awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
+The [published `v0.0.1` release](https://github.com/jhwohlgemuth/okf-plan-browser/releases/tag/v0.0.1) from `346ce14` contains both canonical Linux exports, `okf-plan-browser_0.0.1_linux-x64.deb` and `okf-plan-browser_0.0.1_linux-x64.AppImage`, with a `.sha256` sidecar each. All four build/upload jobs and publish passed in [run 41144436883](https://github.com/jhwohlgemuth/okf-plan-browser/actions/runs/41144436883); public checksum contents match GitHub's asset digests. The Tauri action also uploaded redundant default-named assets, so the workflow on main now invokes the Tauri CLI directly for subsequent releases. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable launch.
 
 # Boundaries and decisions
 
@@ -28,7 +28,7 @@ At `ceb4f5c`, the fifth `v0.0.1` run passed CI, draft reset, and all four explic
 
 # Dependencies and validation
 
-Release asset checks must run before the draft is published. A tagged draft and interactive Linux host are prerequisites for the final smoke phase. Check actual release downloads, not only local build paths. Test `.deb` installation and removal plus AppImage launch and `.wiki` import on a supported Linux host. Tauri notes that Linux compatibility is limited by the build system's glibc version; document the supported floor observed from the Ubuntu 22.04 build.
+The published artifacts and an interactive Linux host are prerequisites for the final smoke phase. Check actual release downloads, not only local build paths. Test `.deb` installation and removal plus AppImage launch and `.wiki` import on a supported Linux host. Tauri notes that Linux compatibility is limited by the build system's glibc version; document the supported floor observed from the Ubuntu 22.04 build.
 
 # Acceptance criteria
 
@@ -38,22 +38,11 @@ Release asset checks must run before the draft is published. A tagged draft and 
 
 # Execution phases
 
-## LX-01 — Make Linux export checks specific
-
-- Status: in-progress
-- Budget: 5 active hours maximum
-- Prerequisites: none
-- Exact write set: `.github/workflows/release.yml`, `CONTRIBUTING.md`
-- Primary integration lock: release workflow
-- Outcome: Build explicit Debian and AppImage targets, require both expected assets for the Linux job before publishing, and attach a SHA-256 sidecar for each.
-- Focused validation: Inspect workflow syntax; run a draft release and verify both asset names and checksums against downloaded files.
-- Handoff: All explicit upload jobs passed, but the draft download gate failed. Commit the per-asset checksum workflow, move the unpublished tag with an exact lease, and verify all five deterministic assets and their `.sha256` sidecars before making LX-02 eligible.
-
 ## LX-02 — Verify Linux downloads
 
 - Status: blocked
 - Budget: 5 active hours maximum
-- Prerequisites: LX-01 draft release assets and an interactive supported Linux host
+- Prerequisites: an interactive supported Linux host; `v0.0.1` assets are published
 - Exact write set: `docs/desktop-ingest.md`, `CONTRIBUTING.md`
 - Primary integration lock: Linux installer validation
 - Outcome: Install and remove the `.deb`, execute the AppImage, and verify both open a project containing `.wiki`.

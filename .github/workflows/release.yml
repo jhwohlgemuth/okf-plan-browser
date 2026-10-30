@@ -94,9 +94,8 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
-        with:
-          args: ${{ matrix.args }}
+        shell: bash
+        run: npm run tauri:build -- ${{ matrix.args }}
 
       - name: Verify packaged artifacts
         shell: bash

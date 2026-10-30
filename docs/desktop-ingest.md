@@ -58,11 +58,9 @@ Focused validation:
 | Target | Artifact | Launch | Native folder import | Status |
 |---|---|---|---|---|
 | macOS, Apple Silicon | `OKF Plan Browser_1.0.0_aarch64.dmg` | Launched from the mounted DMG | Native `Open .wiki Folder` dialog loaded this repository as 3 plans and 1 Epic with 0 warnings | Verified |
-| Windows | Draft release artifact not available in this worktree | Not run | Not run | Blocked on artifact and Windows host |
-| Linux | Draft release artifact not available in this worktree | Not run | Not run | Blocked on artifact and Linux host |
+| Windows | Published `v0.0.1` `okf-plan-browser_0.0.1_windows-x64.msi` | Not run | Not run | Blocked on interactive Windows host |
+| Linux | Published `v0.0.1` `okf-plan-browser_0.0.1_linux-x64.deb` and `.AppImage` | Not run | Not run | Blocked on interactive Linux host |
 
 Intel macOS is not supported and is omitted from the validation matrix. The release workflow still
 contains a legacy `x86_64-apple-darwin` job, but that job does not make Intel a supported TD-03 target.
-The Windows, AppImage, and Debian release jobs run only from a tag or manual dispatch after repository
-changes are available remotely. A passing build job is not a substitute for launching each artifact
-and exercising its folder dialog.
+The Windows, AppImage, and Debian packages are available from the [v0.0.1 release](https://github.com/jhwohlgemuth/okf-plan-browser/releases/tag/v0.0.1). A passing build job is not a substitute for launching each artifact and exercising its folder dialog.

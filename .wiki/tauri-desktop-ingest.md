@@ -25,8 +25,8 @@ tree and lazy-load its assets. TypeScript, lint, focused ingest tests, native te
 
 The mounted Apple Silicon DMG launches and imports this repository as 3 plans plus 1 Epic with no
 warnings. [The durable platform record](../docs/desktop-ingest.md) names the artifact and distinguishes
-observed results from the Windows and Linux installer rows that still need release artifacts and
-hosts.
+observed results from the Windows and Linux installer rows that now have published `v0.0.1` artifacts
+but still need interactive hosts.
 
 # Boundaries
 
@@ -39,7 +39,7 @@ hosts.
 
 - TD-01 and TD-02 are complete and pruned after preserving their evidence in code, tests, and
   `docs/desktop-ingest.md`.
-- TD-03 is blocked on draft release artifacts and interactive hosts for Windows and Linux. Apple
+- TD-03 is blocked on interactive hosts for Windows and Linux. The `v0.0.1` release artifacts are published; Apple
   Silicon is complete.
 
 # Decisions
@@ -51,7 +51,7 @@ hosts.
 
 # Validation
 
-Launch the remaining draft release installers on Windows and Linux; load a real project folder
+Launch the published release installers on Windows and Linux; load a real project folder
 containing `.wiki`; and record the rendered counts in `docs/desktop-ingest.md`.
 
 # Acceptance criteria
@@ -67,12 +67,11 @@ containing `.wiki`; and record the rendered counts in `docs/desktop-ingest.md`.
 
 - Status: blocked
 - Budget: 3 hours maximum
-- Prerequisites: draft release artifacts built from the native-ingest change and interactive Windows
-  and Linux hosts
+- Prerequisites: interactive Windows and Linux hosts; `v0.0.1` artifacts are published
 - Exact write set: `docs/desktop-ingest.md`
 - Primary integration lock: desktop application packaging
 - Outcome: Complete the actual installer launch and native folder-import matrix for Windows and
   Linux; Apple Silicon is already verified.
-- Focused validation: Launch each remaining draft release installer, select a project folder that
+- Focused validation: Launch each remaining published release installer, select a project folder that
   contains `.wiki`, and confirm the expected plan and Epic counts render without warnings.
 - Handoff: Record the artifact names and the smoke result, then delete this plan once its criteria hold.
