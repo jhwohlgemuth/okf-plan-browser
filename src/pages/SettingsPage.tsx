@@ -292,7 +292,15 @@ export function SettingsPage() {
                     data-tour="remove-wiki"
                     className="p-1 text-muted-foreground hover:text-od-red transition-colors"
                     title="Remove this wiki"
-                    onClick={() => { removeRepo(r.id); toast({ title: `Removed ${r.label}` }); }}
+                    onClick={async () => {
+                      const outcome = await removeRepo(r.id);
+                      toast(outcome.ok
+                        ? { title: `Removed ${r.label}` }
+                        : {
+                            title: `Removed ${r.label}, but folder access may remain`,
+                            description: outcome.error.message,
+                          });
+                    }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -308,7 +316,15 @@ export function SettingsPage() {
               size="sm"
               className="flex-1"
               disabled={plans.length === 0}
-              onClick={() => { clearAll(); toast({ title: 'Cleared loaded wikis' }); }}
+              onClick={async () => {
+                const outcome = await clearAll();
+                toast(outcome.ok
+                  ? { title: 'Cleared loaded wikis' }
+                  : {
+                      title: 'Cleared loaded wikis, but folder access may remain',
+                      description: outcome.error.message,
+                    });
+              }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Clear loaded
@@ -320,19 +336,30 @@ export function SettingsPage() {
               className="flex-1 text-od-red border-od-red/30 hover:bg-od-red/10"
               onClick={async () => {
                 setCredentialBusy(true);
-                clearSavedData();
                 try {
-                  await clearForgeTokens();
-                  setGithubConfigured(false);
-                  setGitlabConfigured(false);
-                  setGithubTokenField('');
-                  setGitlabTokenField('');
-                  toast({ title: 'Cleared saved wikis and forgot all credentials' });
-                } catch (error) {
-                  toast({
-                    title: 'Cleared saved wikis, but some credentials remain',
-                    description: (error as Error).message,
-                  });
+                  const cleanup = await clearSavedData();
+                  let credentialError: Error | undefined;
+                  try {
+                    await clearForgeTokens();
+                    setGithubConfigured(false);
+                    setGitlabConfigured(false);
+                    setGithubTokenField('');
+                    setGitlabTokenField('');
+                  } catch (error) {
+                    credentialError = error as Error;
+                  }
+                  if (cleanup.ok && !credentialError) {
+                    toast({ title: 'Cleared saved wikis and forgot all credentials' });
+                  } else {
+                    const problems = [
+                      cleanup.ok ? undefined : `Folder access: ${cleanup.error.message}`,
+                      credentialError ? `Credentials: ${credentialError.message}` : undefined,
+                    ].filter((problem): problem is string => !!problem);
+                    toast({
+                      title: 'Cleared saved wikis, but some saved access may remain',
+                      description: problems.join(' '),
+                    });
+                  }
                 } finally {
                   setCredentialBusy(false);
                 }

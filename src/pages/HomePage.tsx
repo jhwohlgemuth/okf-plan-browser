@@ -153,7 +153,15 @@ export function HomePage() {
                 </span>
                 {!isDemoData && (
                   <button
-                    onClick={() => removeRepo(repo.id)}
+                    onClick={async () => {
+                      const outcome = await removeRepo(repo.id);
+                      toast(outcome.ok
+                        ? { title: `Removed ${repo.label}` }
+                        : {
+                            title: `Removed ${repo.label}, but folder access may remain`,
+                            description: outcome.error.message,
+                          });
+                    }}
                     className="text-muted-foreground hover:text-od-red transition-colors p-1"
                     title="Remove repo"
                   >
@@ -190,9 +198,14 @@ export function HomePage() {
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-od-red"
-            onClick={() => {
-              clearAll();
-              toast({ title: 'Cleared all plans' });
+            onClick={async () => {
+              const outcome = await clearAll();
+              toast(outcome.ok
+                ? { title: 'Cleared all plans' }
+                : {
+                    title: 'Cleared all plans, but folder access may remain',
+                    description: outcome.error.message,
+                  });
             }}
           >
             <Trash2 className="h-4 w-4 mr-2" />

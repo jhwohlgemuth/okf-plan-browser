@@ -1,7 +1,7 @@
 ---
 type: Plan
 title: Remaining app improvements
-description: Route the six medium-impact recommendations and existing desktop verification to bounded executable plans.
+description: Route the five medium-impact recommendations and existing desktop verification to bounded executable plans.
 difficulty: mixed
 impact: high
 package: [okf-plan-browser]
@@ -24,7 +24,6 @@ unit tests are release gates, but do not substitute for installer interaction te
 # Remaining outcomes
 
 - [Make dropped files match the import interface](folder-drop-contract.md)
-- [Forget folder access when removing saved data](forget-folder-handles.md)
 - [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md)
 - [Track refresh work independently for each repository](refresh-concurrency.md)
 - [Load branches containing slashes unambiguously](remote-branch-selection.md)

@@ -9,6 +9,17 @@
 - Blockers / failed approaches: The repository-wide visual run found 25 stale comparisons across unrelated planning/demo pages and the intentionally changed graph. Snapshots were not overwritten because the current baselines already contain broad unrelated drift. Focused AX tests and the complete non-snapshot browser suite pass.
 - Next action: Review and commit the implementation when desired.
 
+## Implementation — Forget folder access when removing saved data
+
+- Plan: retired after completion; active phase: none; state: complete.
+- Authorized scope and decisions: Remove portfolio state even when IndexedDB cleanup fails, return an explicit cleanup outcome, warn at user-facing removal controls, and forget handles for all user bulk-clear actions. Internal demo resets remain best-effort.
+- Baseline and local work: `260e2a1`; clean worktree at phase start; no CodeGraph index is present.
+- Verified state: IndexedDB helpers settle on transaction completion and close their connections; destructive store actions return cleanup outcomes while removing state; Home and Settings surface partial cleanup failures. `npm test` passed 108 tests, typecheck and lint passed, the production build passed, all three desktop refresh/cleanup browser tests passed, and planning wiki validation passed.
+- Remaining work: None for FH-01.
+- Budget: FH-01 completed within its five-hour active-time budget.
+- Blockers / failed approaches: The first failure-path browser assertion matched the warning text as well as the removed row; targeting the removed control resolved the test-only ambiguity.
+- Next action: Review and commit the implementation when desired.
+
 ## Implementation — Plan and phase deep links
 
 - Plan: retired after completion; active phase: none; state: complete.

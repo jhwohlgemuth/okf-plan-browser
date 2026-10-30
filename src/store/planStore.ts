@@ -6,6 +6,11 @@ import { buildSearchText } from '@/lib/wikiParser';
 import { restorePortfolio } from '@/lib/restorePortfolio';
 import { forgetAllAssets, forgetAssets } from '@/lib/wikiAssets';
 import { isEpic } from '@/lib/planKind';
+import { clearHandles, deleteHandle } from '@/lib/handleStore';
+
+export type CleanupOutcome =
+  | { ok: true }
+  | { ok: false; error: Error };
 
 interface PlanStore {
   plans:          ParsedPlan[];
@@ -20,15 +25,15 @@ interface PlanStore {
 
   // Actions
   addPlans:      (plans: ParsedPlan[], repo: WikiRepo, warns: ParseWarning[]) => void;
-  removeRepo:    (repoId: string) => void;
+  removeRepo:    (repoId: string) => Promise<CleanupOutcome>;
   selectPlan:    (id: string, anchor?: string) => void;
   syncPlanSelection: (id: string | null, anchor?: string | null) => void;
   closeDetail:   () => void;
   setFilter:     <K extends keyof PlanFilters>(key: K, value: PlanFilters[K]) => void;
   clearFilters:  () => void;
   loadDemoData:  () => void;
-  clearAll:      () => void;
-  clearSavedData: () => void;
+  clearAll:      () => Promise<CleanupOutcome>;
+  clearSavedData: () => Promise<CleanupOutcome>;
 }
 
 export const PLAN_STORAGE_KEY = 'okf-plan-browser:wikis';
@@ -59,6 +64,15 @@ const EMPTY_FILTERS: PlanFilters = {
   search:     '',
 };
 
+const cleanupOutcome = async (cleanup: Promise<unknown>): Promise<CleanupOutcome> => {
+  try {
+    await cleanup;
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error : new Error('Folder access cleanup failed.') };
+  }
+};
+
 export const usePlanStore = create<PlanStore>()(persist((set) => ({
   plans:          [],
   repos:          [],
@@ -81,12 +95,14 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
     })),
 
   removeRepo: (repoId) => {
+    const cleanup = deleteHandle(repoId);
     forgetAssets(repoId);
     set(s => ({
       plans:    s.plans.filter(p => p.repoId !== repoId),
       repos:    s.repos.filter(r => r.id !== repoId),
       warnings: s.warnings.filter(w => w.repoId !== repoId),
     }));
+    return cleanupOutcome(cleanup);
   },
 
   selectPlan: (id, anchor) => set({ selectedPlanId: id, selectedAnchor: anchor ?? null, detailOpen: true }),
@@ -104,6 +120,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
 
   loadDemoData: () => {
     usePlanStore.getState().repos.forEach(repo => forgetAssets(repo.id));
+    void clearHandles().catch(() => undefined);
     set({
       plans:      DEMO_PLANS,
       repos:      DEMO_REPOS,
@@ -114,6 +131,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
   },
 
   clearAll: () => {
+    const cleanup = clearHandles();
     usePlanStore.getState().repos.forEach(repo => forgetAssets(repo.id));
     set({
       plans:          [],
@@ -125,15 +143,18 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       isDemoData:     false,
       filters:        { ...EMPTY_FILTERS },
     });
+    return cleanupOutcome(cleanup);
   },
 
   clearSavedData: () => {
+    const cleanup = clearHandles();
     forgetAllAssets();
     set({
       plans: [], repos: [], warnings: [], selectedPlanId: null, selectedAnchor: null, detailOpen: false,
       isDemoData: false, storageError: false, filters: { ...EMPTY_FILTERS },
     });
     usePlanStore.persist.clearStorage();
+    return cleanupOutcome(cleanup);
   },
 }), {
   name:    PLAN_STORAGE_KEY,

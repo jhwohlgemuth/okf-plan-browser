@@ -6,7 +6,6 @@
 
 - [Desktop ingest](tauri-desktop-ingest.md): requires access to packaged installers on each target platform.
 - [Make dropped files match the import interface](folder-drop-contract.md): no upstream plan blocker.
-- [Forget folder access when removing saved data](forget-folder-handles.md): no upstream plan blocker.
 - [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md): no upstream plan blocker.
 - [Track refresh work independently for each repository](refresh-concurrency.md): no upstream plan blocker.
 - [Load branches containing slashes unambiguously](remote-branch-selection.md): no upstream plan blocker.
