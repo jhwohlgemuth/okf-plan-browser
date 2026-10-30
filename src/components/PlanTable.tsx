@@ -10,8 +10,10 @@ import { cn, truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
 import { AgentCommandButton } from './AgentCommandButton';
 import { planAgentCommand } from '@/lib/agentCommand';
+import { isEpic } from '@/lib/planKind';
+import { PlanKindBadge } from './PlanKindBadge';
 
-type SortKey = 'title' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining';
+type SortKey = 'title' | 'kind' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining';
 
 const PRIORITY_ORDER: Record<string, number> = { next: 0, high: 1, medium: 2, low: 3 };
 const IMPACT_ORDER:   Record<string, number>  = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -31,6 +33,7 @@ function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
     const afm = a.frontmatter, bfm = b.frontmatter;
     switch (key) {
       case 'title':      diff = (afm.title ?? '').localeCompare(bfm.title ?? ''); break;
+      case 'kind':       diff = Number(isEpic(a)) - Number(isEpic(b)); break;
       case 'status':     diff = (STATUS_ORDER[afm.status ?? ''] ?? 9) - (STATUS_ORDER[bfm.status ?? ''] ?? 9); break;
       case 'priority':   diff = (PRIORITY_ORDER[afm.priority ?? ''] ?? 9) - (PRIORITY_ORDER[bfm.priority ?? ''] ?? 9); break;
       case 'impact':     diff = (IMPACT_ORDER[afm.impact ?? ''] ?? 9) - (IMPACT_ORDER[bfm.impact ?? ''] ?? 9); break;
@@ -71,7 +74,7 @@ export function PlanTable() {
   if (sorted.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <p className="text-sm">No plans match the current filters.</p>
+        <p className="text-sm">No plans or Epics match the current filters.</p>
       </div>
     );
   }
@@ -99,6 +102,7 @@ export function PlanTable() {
         <thead className="bg-card border-b border-border sticky top-0">
           <tr>
             {col('title', 'Title', 'min-w-[240px]')}
+            {col('kind', 'Kind')}
             {col('status', 'Status')}
             {col('priority', 'Priority')}
             {col('impact', 'Impact')}
@@ -118,7 +122,7 @@ export function PlanTable() {
                 key={plan.id}
                 tabIndex={0}
                 role="button"
-                aria-label={`Open plan: ${fm.title ?? plan.fileName}`}
+                aria-label={`Open ${isEpic(plan) ? 'Epic' : 'plan'}: ${fm.title ?? plan.fileName}`}
                 onClick={() => selectPlan(plan.id)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); }
@@ -132,6 +136,8 @@ export function PlanTable() {
                     <div className="text-xs text-muted-foreground mt-0.5">{truncate(fm.description, 80)}</div>
                   )}
                 </td>
+
+                <td className="px-3 py-2.5 whitespace-nowrap"><PlanKindBadge plan={plan} compact /></td>
 
                 {/* Status */}
                 <td className="px-3 py-2.5 whitespace-nowrap">

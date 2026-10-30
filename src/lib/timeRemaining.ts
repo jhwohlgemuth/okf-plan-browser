@@ -1,13 +1,14 @@
 import type { ParsedPlan, Phase } from '@/types/wiki';
+import { isEpic } from './planKind';
 
 export interface TimeEstimate {
   hours: number;
   estimated: number;
   unknown: number;
-  coordination: number;
+  epics: number;
 }
 
-const empty = (): TimeEstimate => ({ hours: 0, estimated: 0, unknown: 0, coordination: 0 });
+const empty = (): TimeEstimate => ({ hours: 0, estimated: 0, unknown: 0, epics: 0 });
 
 /** Read explicit effort fields, not incidental numbers in prose or code examples. */
 function fieldHours(body: string, field: RegExp): number | undefined {
@@ -31,7 +32,7 @@ function fieldHours(body: string, field: RegExp): number | undefined {
 }
 
 export function phaseTime(plan: ParsedPlan, phase: Phase): TimeEstimate {
-  if (plan.frontmatter.execution === 'coordination') return { ...empty(), coordination: 1 };
+  if (isEpic(plan)) return { ...empty(), epics: 1 };
   const remaining = fieldHours(phase.rawBody, /^(?:time remaining|remaining|remaining hours)$/i);
   const budget = fieldHours(phase.rawBody, /^budget$/i);
   const fallback = plan.frontmatter.phase_budget_hours;
@@ -40,27 +41,25 @@ export function phaseTime(plan: ParsedPlan, phase: Phase): TimeEstimate {
 }
 
 export function planTime(plan: ParsedPlan): TimeEstimate {
-  if (plan.frontmatter.execution === 'coordination') return { ...empty(), coordination: 1 };
+  if (isEpic(plan)) return { ...empty(), epics: 1 };
   const phases = plan.sections.flatMap(s => s.phases);
-  // A per-phase cap is not an estimate for a plan with no executable phases.
-  if (!phases.length) return { ...empty(), unknown: 1 };
   return sum(phases.map(phase => phaseTime(plan, phase)));
 }
 
 function sum(estimates: TimeEstimate[]): TimeEstimate {
   return estimates.reduce((total, e) => ({ hours: total.hours + e.hours,
     estimated: total.estimated + e.estimated, unknown: total.unknown + e.unknown,
-    coordination: total.coordination + e.coordination }), empty());
+    epics: total.epics + e.epics }), empty());
 }
 
 export const totalTime = (plans: ParsedPlan[]) => sum(plans.map(planTime));
 
 export function formatTime(estimate: TimeEstimate): string {
   if (!estimate.estimated && estimate.unknown) return `Not estimated (${estimate.unknown})`;
-  if (!estimate.estimated && estimate.coordination) return 'N/A (coordination)';
+  if (!estimate.estimated && estimate.epics && !estimate.unknown) return 'N/A (Epic)';
   const minutes = Math.ceil(estimate.hours * 60 - 1e-9);
   const duration = minutes >= 60 ? `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${minutes % 60}m` : ''}` : `${minutes}m`;
   return `${estimate.hours ? '~' : ''}${duration}${estimate.unknown ? ` + ${estimate.unknown} unestimated` : ''}`;
 }
 
-export const TIME_EXPLANATION = 'Estimated active work remaining: explicit phase Remaining, then phase Budget, then phase_budget_hours. Ranges use the upper bound. In-progress and blocked phases retain their budget; elapsed time and external waiting are not tracked. Coordination plans are excluded. Unestimated work is not counted as zero.';
+export const TIME_EXPLANATION = 'Estimated active work remaining: explicit phase Remaining, then phase Budget, then phase_budget_hours. Ranges use the upper bound. In-progress and blocked phases retain their budget; elapsed time and external waiting are not tracked. Epics have no phase estimate; linked plans are counted separately. Unestimated work is not counted as zero.';

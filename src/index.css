@@ -88,7 +88,7 @@
 
 /* ── Status badge utilities ─────────────────────────────────────────────────── */
 @layer utilities {
-  .badge-planned     { @apply bg-od-surface3 text-od-muted border border-od-border; }
+  .badge-planned     { @apply bg-secondary text-foreground border border-border dark:bg-od-surface3/60 dark:text-od-muted dark:border-od-border; }
   .badge-in-progress { @apply bg-od-blue/20 text-od-blue border border-od-blue/30; }
   .badge-blocked     { @apply bg-od-red/20 text-od-red border border-od-red/30; }
   .badge-ready       { @apply bg-od-green/20 text-od-green border border-od-green/30; }

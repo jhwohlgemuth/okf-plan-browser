@@ -58,13 +58,14 @@ export function FilterBar() {
   const allPkgs = [...new Set(plans.flatMap(p => p.frontmatter.package ?? []))].sort();
 
   const hasFilters =
+    filters.kinds.length ||
     filters.status.length || filters.priority.length ||
     filters.impact.length || filters.difficulty.length ||
     filters.tags.length   || filters.packages.length  ||
     filters.repos.length;
 
   const activeFilterCount =
-    filters.status.length + filters.priority.length +
+    filters.kinds.length + filters.status.length + filters.priority.length +
     filters.impact.length + filters.difficulty.length +
     filters.tags.length + filters.packages.length +
     filters.repos.length;
@@ -89,6 +90,12 @@ export function FilterBar() {
       </button>
 
       <div id="plan-filters" hidden={!expanded} className="space-y-2.5 pt-2.5">
+          <ToggleGroup
+            label="Kind"
+            options={['plan', 'epic']}
+            selected={filters.kinds}
+            onChange={v => setFilter('kinds', v)}
+          />
           <ToggleGroup
             label="Status"
             options={STATUS_OPTIONS}

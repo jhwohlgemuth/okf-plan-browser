@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 import { validateFrontmatter } from './frontmatter';
+import { isEpic } from './planKind';
 import type {
   Frontmatter, Section, Phase, PhaseStatus,
   PlanDependency, ParsedPlan,
@@ -126,6 +127,7 @@ export function extractPhaseRefs(body: string): string[] {
 export function buildSearchText(p: Pick<ParsedPlan, 'frontmatter' | 'sections'>): string {
   const fm = p.frontmatter;
   return [
+    isEpic(p) ? 'epic' : 'phased plan',
     fm.title, fm.description,
     ...(fm.tags ?? []), ...(fm.package ?? []),
     ...p.sections.map(s => s.heading + ' ' + s.body),
@@ -140,6 +142,8 @@ export function parseWikiFile(
 ): ParsedPlan {
   const { fm, body, errors } = parseFrontmatter(raw);
   const sections     = extractSections(body, fm.status ?? 'planned');
+  // Coordination headings describe work across child plans, not executable phases.
+  if (fm.execution === 'coordination') sections.forEach(section => { section.phases = []; });
   const dependencies = extractDependencies(body);
   const phaseRefs    = extractPhaseRefs(body);
   return {

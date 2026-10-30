@@ -1,4 +1,4 @@
-import { BookOpenCheck, Clock3, Download, FileCode2, FileText, GitMerge, ListChecks, Scissors, TerminalSquare } from 'lucide-react';
+import { BookOpenCheck, Clock3, Download, FileCode2, FileText, GitMerge, Layers3, ListChecks, Scissors, TerminalSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import { AgentCommandButton } from '@/components/AgentCommandButton';
@@ -67,6 +67,7 @@ const PROMPTS = [
 ].map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
 
 const RULES = [
+  { icon: Layers3, title: 'Epics coordinate plans', text: 'Use execution: coordination and link executable child plans. Epics have no phases or independent effort estimate.' },
   { icon: Clock3, title: 'Five-hour slices', text: 'Every executable phase fits at most five active agent hours.' },
   { icon: GitMerge, title: 'Mergeable handoffs', text: 'Each phase names one write set, one primary lock, focused validation, and a clean handoff.' },
   { icon: ListChecks, title: 'Traceable evidence', text: 'Inspect code and test results for repository claims; open primary sources for article claims. Record verified, incorrect, or unresolved verdicts.' },

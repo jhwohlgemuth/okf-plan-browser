@@ -80,6 +80,7 @@ export interface WikiRepo {
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 export interface PlanFilters {
+  kinds:      Array<'plan' | 'epic'>;
   status:     PlanStatus[];
   priority:   PlanPriority[];
   impact:     PlanImpact[];

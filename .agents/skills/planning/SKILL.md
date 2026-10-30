@@ -44,7 +44,7 @@ Use `verified`, `incorrect`, or `unresolved` for claim verdicts as defined in th
 
 ## Plan invariants
 
-- Executable plans use `execution: phased` and `phase_budget_hours: 5`. Non-executable portfolio or coordination records use `execution: coordination` and contain no executable phases.
+- Executable plans use `execution: phased` and `phase_budget_hours: 5`. Non-executable portfolio or coordination records use `execution: coordination` and contain no executable phases. The browser calls these records **Epics** and displays any legacy plan with zero parsed phases as an Epic, even without `execution: coordination`. When authoring or updating an Epic, set `execution: coordination`, omit `phase_budget_hours`, explain the outcome and current coordination state, and link to its executable child plans. Never add a placeholder phase to make an Epic appear on the Phase Tracker.
 - Phase statuses are `planned`, `ready`, `blocked`, or `in-progress`. A completed phase is removed, not marked `done`.
 - External waiting is a prerequisite, not active phase time.
 - A validation defect becomes a new bounded repair phase; it does not silently expand the active phase.

@@ -26,6 +26,11 @@ describe('selectFilteredPlans', () => {
     expect(run({})).toEqual(['alpha', 'beta', 'gamma']);
   });
 
+  it('filters Epics separately from phased plans', () => {
+    expect(run({ kinds: ['epic'] })).toEqual(['alpha', 'gamma']);
+    expect(run({ kinds: ['plan'] })).toEqual(['beta']);
+  });
+
   it.each([
     ['status', { status: ['blocked'] }, ['beta']],
     ['priority', { priority: ['high'] }, ['alpha']],

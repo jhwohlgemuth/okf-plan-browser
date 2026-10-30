@@ -9,6 +9,8 @@ import { PriorityBadge } from '@/components/PriorityBadge';
 import { truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
 import { AssetThumbnail, AssetViewer, type AssetTarget } from '@/components/AssetViewer';
+import { PlanKindBadge } from '@/components/PlanKindBadge';
+import { formatPlanCounts, isEpic } from '@/lib/planKind';
 
 interface Hit {
   plan:    ParsedPlan;
@@ -21,6 +23,9 @@ function fileExtension(path: string): string | undefined {
 
 function planMatchesTerm(plan: ParsedPlan, term: string, matches: string[]) {
   const fm = plan.frontmatter;
+  if (isEpic(plan) ? term === 'epic' : term === 'plan' || term === 'phased') {
+    matches.push(`Kind: ${isEpic(plan) ? 'Epic' : 'Phased plan'}`);
+  }
   if (fm.title?.toLowerCase().includes(term))       matches.push(`Title: ${fm.title}`);
   if (fm.description?.toLowerCase().includes(term)) matches.push(`Description: ${truncate(fm.description, 100)}`);
   if (fm.tags?.some(t => t.toLowerCase().includes(term))) matches.push(`Tags: ${fm.tags!.filter(t => t.toLowerCase().includes(term)).join(', ')}`);
@@ -306,7 +311,7 @@ export function SearchPage() {
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Search className="h-8 w-8 mb-3 opacity-30" />
             <p className="text-sm">Start typing to search across all plans</p>
-            <p className="text-xs mt-1">{plans.length} plan{plans.length !== 1 ? 's' : ''} indexed</p>
+            <p className="text-xs mt-1">{formatPlanCounts(plans)} indexed</p>
           </div>
         )}
 
@@ -335,7 +340,7 @@ export function SearchPage() {
               key={plan.id}
               role="button"
               tabIndex={0}
-              aria-label={`Open plan: ${plan.frontmatter.title ?? plan.fileName}`}
+              aria-label={`Open ${isEpic(plan) ? 'Epic' : 'plan'}: ${plan.frontmatter.title ?? plan.fileName}`}
               onClick={() => selectPlan(plan.id)}
               onKeyDown={e => {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); }
@@ -355,6 +360,7 @@ export function SearchPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <PlanKindBadge plan={plan} compact />
                   {fm.status   && <StatusBadge status={fm.status} />}
                   {fm.priority && <PriorityBadge priority={fm.priority} />}
                 </div>

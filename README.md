@@ -65,8 +65,8 @@ The [draft workflow](.agents/skills/planning/references/write-draft.md) saves `d
 | View | What it does |
 |---|---|
 | **Portfolio** | Sortable, filterable table of all plans — by status, priority, impact, difficulty, tags, packages, repo |
-| **Phase Tracker** | Kanban board across `planned → ready → blocked → in-progress` |
-| **Dependency Graph** | D3 force-directed graph — nodes are plans, edges are `.md` links and `PA-XX` cross-references |
+| **Phase Tracker** | Kanban board for executable phases, with Epics in a separate overview |
+| **Dependency Graph** | D3 graph of plans and Epics; edges are `.md` links and phase cross-references |
 | **Search** | Full-text across titles, descriptions, section content, tags, packages, and phase titles |
 | **Planning Skill** | Official skill source and download, with prompts for portfolio maintenance, resumable implementation, drafting, and evidence review |
 
@@ -74,8 +74,9 @@ The [draft workflow](.agents/skills/planning/references/write-draft.md) saves `d
 - 📂 **File System Access API** (`showDirectoryPicker`) + drag-and-drop fallback
 - 🌐 **Remote repos** — paste a GitHub `owner/repo` (optional token in Settings for private repos) or a public GitLab project URL, including a custom host
 - 🗂️ **Multiple repos** — "Add another .wiki" merges data with distinct repo colour labels
+- 🟣 **Epics** — zero-phase plans appear as coordination overviews across the portfolio; their linked plans carry executable phases and estimates
 - 🔄 **One-click refresh** — re-read a single wiki or all wikis from the sidebar. Remote wikis re-fetch from the forge. Chromium browsers remember a local folder (and may ask to re-allow access after a restart); in Firefox/Safari a local wiki's refresh button re-opens the folder picker and re-uploads into the same project
-- 🖱️ **Slide-in detail panel** — click any plan for full frontmatter, sections, phases, dependencies
+- 🖱️ **Slide-in detail panel** — click a plan or Epic for its summary, sections, phases, and linked plans
 - 🎭 **Embedded demo data** — synthetic plans load instantly with no files required
 - 🧭 **Guided walkthrough** — select **Take a tour** on Home or About to explore the views with loaded plans or demo data
 - 🖥️ **Optional Tauri desktop app** — native window, no Electron overhead

@@ -11,6 +11,8 @@ import { headingAnchorForPlan, planAnchor, resolvePlanTarget } from '@/lib/planL
 import { resolveWikiPath } from '@/lib/wikiAssets';
 import { AssetViewer, type AssetTarget } from './AssetViewer';
 import { useWalkthrough } from './Walkthrough';
+import { PlanKindBadge } from './PlanKindBadge';
+import { isEpic, linkedPlans } from '@/lib/planKind';
 
 const IMPACT_CLASSES: Record<string, string> = {
   critical: 'text-od-red',
@@ -37,6 +39,7 @@ export function PlanDetailPanel() {
 
   const repo = repos.find(r => r.id === plan?.repoId);
   const fm   = plan?.frontmatter;
+  const linked = plan ? linkedPlans(plan, plans) : [];
 
   useEffect(() => { setSelectedDocument(null); setSelectedAsset(null); }, [selectedPlanId]);
 
@@ -160,6 +163,7 @@ export function PlanDetailPanel() {
             <div className="sticky top-0 bg-card border-b border-border px-6 sm:px-8 py-5 flex items-start justify-between gap-3 z-10">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
+                  {plan && <PlanKindBadge plan={plan} compact />}
                   {repo && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
                       <span className="inline-block w-2 h-2 rounded-full" style={{ background: repo.color }} />
@@ -193,6 +197,14 @@ export function PlanDetailPanel() {
                 </blockquote>
               )}
 
+              {isEpic(plan) && <div className="rounded-lg border border-od-purple/30 bg-od-purple/5 p-4">
+                <p className="text-sm font-semibold text-od-purple">Epic overview</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">This record has no executable phases. Follow its linked plans for executable work and time estimates.</p>
+                {linked.length > 0 ? <div className="mt-3 flex flex-wrap gap-2">
+                  {linked.map(child => <button key={child.id} type="button" onClick={() => selectPlan(child.id)} className="rounded-md border border-od-purple/30 bg-card px-2.5 py-1.5 text-left text-xs text-foreground hover:border-od-purple/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{child.frontmatter.title}</button>)}
+                </div> : <p className="mt-2 text-xs text-muted-foreground">No linked plans found in this portfolio.</p>}
+              </div>}
+
               <div className="rounded-lg border border-border bg-background/40 p-4 space-y-4">
               {/* Meta pills */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -206,15 +218,12 @@ export function PlanDetailPanel() {
                 {fm?.difficulty && (
                   <span className="text-xs text-muted-foreground capitalize">{fm.difficulty}</span>
                 )}
-                {fm?.execution && (
-                  <span className="text-xs text-muted-foreground capitalize">{fm.execution}</span>
-                )}
               </div>
 
               <div><TimeRemaining plans={[plan]} /></div>
 
               {/* phase_budget_hours */}
-              {fm?.phase_budget_hours != null && (
+              {!isEpic(plan) && fm?.phase_budget_hours != null && (
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   {fm.phase_budget_hours}h budget

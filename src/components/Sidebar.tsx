@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
 import { useRefresh } from '@/hooks/useRefresh';
+import { formatPlanCounts } from '@/lib/planKind';
 
 const NAV = [
   { to: '/home',      icon: Home,        label: 'Home' },
@@ -67,7 +68,7 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
           )}
         </div>
         <p className={cn('text-muted-foreground text-xs mt-0.5', hideLabel)}>
-          {plans.length} plan{plans.length !== 1 ? 's' : ''} · {repos.length} repo{repos.length !== 1 ? 's' : ''}
+          {formatPlanCounts(plans)} · {repos.length} repo{repos.length !== 1 ? 's' : ''}
           {isDemoData && <span className="ml-1 text-od-yellow">(demo)</span>}
         </p>
       </div>

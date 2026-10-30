@@ -7,6 +7,7 @@ import { FilterBar } from '@/components/FilterBar';
 import { PlanTable } from '@/components/PlanTable';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { formatPlanCounts } from '@/lib/planKind';
 
 export function PortfolioPage() {
   const filtered = usePlanStore(useShallow(selectFilteredPlans));
@@ -29,7 +30,7 @@ export function PortfolioPage() {
         <div>
           <h1 className="text-base font-semibold text-foreground">Portfolio</h1>
           <p className="text-xs text-muted-foreground">
-            {filtered.length} of {total} plan{total !== 1 ? 's' : ''}
+            {formatPlanCounts(filtered)} ({filtered.length} of {total} entries)
             {' · '}<TimeRemaining plans={filtered} />
           </p>
         </div>

@@ -31,12 +31,13 @@ test('remaining time survives reload and follows portfolio filters', async ({ pa
   await importFiles(page, 'Estimated', `${markdown('Estimated', 'phase_budget_hours: 5')}\n# Execution phases\n\n## TM-01 First\n- Budget: 2 hours maximum\n\n## TM-02 Second\n- Remaining: 30 minutes\n`);
   await importFiles(page, 'Unknown');
   await page.goto('/portfolio');
-  await expect(page.getByLabel('Estimated time remaining: ~2h 30m + 1 unestimated')).toBeVisible();
+  await expect(page.getByText('Time remaining: ~2h 30m', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open plan: Estimated', exact: true })).toContainText('~2h 30m');
+  await expect(page.getByRole('button', { name: 'Open Epic: Unknown', exact: true })).toContainText('N/A (Epic)');
   await page.reload();
-  await expect(page.getByLabel('Estimated time remaining: ~2h 30m + 1 unestimated')).toBeVisible();
+  await expect(page.getByText('Time remaining: ~2h 30m', { exact: true })).toBeVisible();
   await page.getByPlaceholder('Quick search…').fill('Estimated');
-  await expect(page.getByRole('button', { name: 'Open plan: Unknown', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open Epic: Unknown', exact: true })).toHaveCount(0);
   await expect(page.getByText('Time remaining: ~2h 30m', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Time remaining', exact: true }).click();
 });
@@ -46,14 +47,14 @@ test('imports same-name portfolios independently and safely searches malformed f
   await importFiles(page, 'Shared', markdown('First', 'description: 123\nstatus: unknown'));
   await importFiles(page, 'Shared', markdown('Second'));
   await page.goto('/portfolio');
-  await expect(page.getByRole('button', { name: 'Open plan: First' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open plan: Second' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: First' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Second' })).toBeVisible();
   await page.goto('/search');
   await page.getByRole('textbox').fill('First');
-  await expect(page.getByRole('button', { name: 'Open plan: First', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: First', exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('textbox').fill('First');
-  await expect(page.getByRole('button', { name: 'Open plan: First', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: First', exact: true })).toBeVisible();
 });
 
 test('selected search tags use a canonical URL and survive reload and history', async ({ page }) => {
@@ -74,8 +75,8 @@ test('selected search tags use a canonical URL and survive reload and history', 
   await revealTags();
   await expect(page.getByRole('button', { name: 'api', pressed: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'ui', pressed: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open plan: API and UI' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open plan: UI only' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open Epic: API and UI' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: UI only' })).toHaveCount(0);
 
   await page.reload();
   await revealTags();
@@ -132,7 +133,7 @@ test('wiki extensions become canonical file-type search tags', async ({ page }) 
   await expect.poll(() => new URL(page.url()).searchParams.getAll('ext')).toEqual(['MD']);
   expect(new URL(page.url()).searchParams.get('mode')).toBeNull();
   await expect(page.getByRole('tab', { name: 'Plans', selected: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open plan: Extension plan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Extension plan' })).toBeVisible();
   await page.getByRole('button', { name: 'Clear tags' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.getAll('ext')).toEqual([]);
   await expect(page.getByRole('button', { name: 'Clear tags' })).toBeDisabled();
@@ -143,7 +144,7 @@ test('selected plans survive reload and follow browser history', async ({ page }
   await page.goto('/home');
   await importFiles(page, 'Linked portfolio', markdown('Linked plan'));
   await page.goto('/portfolio?view=all');
-  await page.getByRole('button', { name: 'Open plan: Linked plan', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Epic: Linked plan', exact: true }).click();
 
   await expect.poll(() => new URL(page.url()).searchParams.get('plan')).not.toBeNull();
   expect(new URL(page.url()).searchParams.get('plan')).toContain(':plan.md');
@@ -216,7 +217,7 @@ status: ready
   await expect(phaseHeading).toBeFocused();
 
   await page.goto('/portfolio');
-  await page.getByRole('button', { name: 'Open plan: Source plan', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Epic: Source plan', exact: true }).click();
   const sourceDialog = page.getByRole('dialog', { name: 'Source plan' });
   await sourceDialog.getByRole('link', { name: 'Jump to overview' }).click();
   await expect.poll(() => new URL(page.url()).hash).toBe('#overview');
@@ -249,11 +250,11 @@ test('remote refresh preserves failed snapshots and removes a valid empty snapsh
   await page.getByRole('button', { name: 'Refresh all wikis' }).click();
   await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText(/Import failed; existing plans were kept/)).toBeVisible();
   await page.goto('/portfolio');
-  await expect(page.getByRole('button', { name: 'Open plan: Original' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Original' })).toBeVisible();
   empty = true;
   await page.getByRole('button', { name: 'Refresh all wikis' }).click();
   await expect(page.getByText('Refreshed 1 wiki (0 plans)', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open plan: Original' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open Epic: Original' })).toHaveCount(0);
 });
 
 test('tokens stay in session storage and are forgotten through keyboard controls', async ({ page }) => {

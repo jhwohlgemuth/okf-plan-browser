@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import type { PlanStatus, PhaseStatus } from '@/types/wiki';
 
 const STATUS_CLASSES: Record<string, string> = {
-  planned:     'bg-od-surface3/60 text-od-muted   border border-od-border',
+  planned:     'bg-secondary text-foreground border border-border dark:bg-od-surface3/60 dark:text-od-muted dark:border-od-border',
   'in-progress':'bg-od-blue/15   text-od-blue    border border-od-blue/30',
   'waiting-on-validation': 'bg-od-yellow/15 text-od-yellow border border-od-yellow/30',
   blocked:     'bg-od-red/15    text-od-red     border border-od-red/30',

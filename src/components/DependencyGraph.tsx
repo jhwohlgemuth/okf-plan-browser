@@ -4,6 +4,7 @@ import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { buildPlanEdges } from '@/lib/planLinks';
 import { usePlanStore } from '@/store/planStore';
 import type { ParsedPlan } from '@/types/wiki';
+import { isEpic } from '@/lib/planKind';
 
 interface Node extends d3.SimulationNodeDatum {
   id:    string;
@@ -117,7 +118,7 @@ export function DependencyGraph() {
       .attr('tabindex', 0)
       .attr('aria-label', d => {
         const repo = repos.find(r => r.id === d.plan.repoId);
-        return `Open plan: ${d.title} — ${repo?.label ?? d.plan.fileName}`;
+        return `Open ${isEpic(d.plan) ? 'Epic' : 'plan'}: ${d.title} — ${repo?.label ?? d.plan.fileName}`;
       })
       .call(drag);
 
@@ -130,11 +131,22 @@ export function DependencyGraph() {
       .attr('opacity', 0)
       .attr('pointer-events', 'none');
 
-    node.append('circle')
+    node.filter(d => !isEpic(d.plan)).append('circle')
       .attr('r', 16)
       .attr('fill', d => d.color + '22')
       .attr('stroke', d => d.color)
       .attr('stroke-width', 2);
+
+    node.filter(d => isEpic(d.plan)).append('rect')
+      .attr('x', -16).attr('y', -16).attr('width', 32).attr('height', 32)
+      .attr('rx', 5)
+      .attr('fill', '#c678dd22')
+      .attr('stroke', '#c678dd')
+      .attr('stroke-width', 2);
+    node.filter(d => isEpic(d.plan)).append('text')
+      .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+      .attr('font-size', '11px').attr('font-weight', '700')
+      .attr('fill', '#c678dd').text('E');
 
     // Repo colour ring
     node.append('circle')
@@ -241,7 +253,7 @@ export function DependencyGraph() {
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
-          <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 bg-card border border-border rounded-lg p-3 text-xs">
+          <div className="pointer-events-none absolute bottom-4 right-4 flex flex-col gap-1.5 bg-card border border-border rounded-lg p-3 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
               <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#61afef" strokeWidth="1.5" /></svg>
               Dependency link
@@ -249,6 +261,10 @@ export function DependencyGraph() {
             <div className="flex items-center gap-2 text-muted-foreground">
               <svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#5c6370" strokeWidth="1" strokeDasharray="4,3" /></svg>
               Plan / phase reference
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground mt-1">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded border border-od-purple text-[9px] font-bold text-od-purple">E</span>
+              Epic (no phases)
             </div>
             <div className="flex items-center gap-2 text-muted-foreground mt-1">
               <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#61afef22', borderColor: '#61afef' }} />

@@ -26,12 +26,12 @@ describe('remaining effort estimates', () => {
   it('preserves explicitly zero remaining work', () => {
     expect(formatTime(planTime(plan(phase('Remaining hours: 0\nBudget: 5h'))))).toBe('0m');
   });
-  it('reports unknown work and does not multiply coordination budgets', () => {
+  it('excludes zero-phase and coordination Epics from executable effort', () => {
     const values = [plan(phase('Budget: 1.1 hours')), plan('# Goal\nUnphased', { phase_budget_hours: 5 }),
       plan(phase('Budget: 5 hours'), { execution: 'coordination' })];
-    expect(formatTime(totalTime(values))).toBe('~1h 6m + 1 unestimated');
-    expect(formatTime(planTime(values[1]!))).toBe('Not estimated (1)');
-    expect(formatTime(planTime(values[2]!))).toBe('N/A (coordination)');
+    expect(formatTime(totalTime(values))).toBe('~1h 6m');
+    expect(formatTime(planTime(values[1]!))).toBe('N/A (Epic)');
+    expect(formatTime(planTime(values[2]!))).toBe('N/A (Epic)');
   });
   it('keeps missing phase estimates visible alongside known phases', () => {
     expect(formatTime(planTime(plan(phase('Budget: 2h\n\n## TM-02 Unknown'))))).toBe('~2h + 1 unestimated');

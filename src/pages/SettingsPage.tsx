@@ -5,6 +5,7 @@ import { usePlanStore, PLAN_STORAGE_KEY } from '@/store/planStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { isEpic } from '@/lib/planKind';
 import { useToast } from '@/components/ui/use-toast';
 import {
   canStoreForgeTokens, clearForgeTokens, hasGithubToken, hasGitlabToken,
@@ -252,7 +253,11 @@ export function SettingsPage() {
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Plans loaded</span>
-            <span className="font-mono text-foreground">{plans.length}</span>
+            <span className="font-mono text-foreground">{plans.filter(p => !isEpic(p)).length}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Epics loaded</span>
+            <span className="font-mono text-foreground">{plans.filter(isEpic).length}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Repos</span>

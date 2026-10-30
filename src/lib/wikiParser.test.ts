@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseFrontmatter, extractSections, isPlanFile } from '@/lib/wikiParser';
+import { parseFrontmatter, extractSections, isPlanFile, parseWikiFile } from '@/lib/wikiParser';
+import { isEpic } from '@/lib/planKind';
 
 describe('parseFrontmatter', () => {
   it('parses a basic block', () => {
@@ -87,5 +88,24 @@ describe('isPlanFile', () => {
   it('falls back to the presence of a title', () => {
     expect(isPlanFile('---\ntitle: A\n---\n')).toBe(true);
     expect(isPlanFile('---\ndescription: d\n---\n')).toBe(false);
+  });
+});
+
+describe('Epic classification', () => {
+  it('treats legacy zero-phase files as Epics', () => {
+    const plan = parseWikiFile('repo', 'overview.md', '---\ntitle: Overview\n---\n# Goal\nCoordinate work');
+    expect(isEpic(plan)).toBe(true);
+  });
+
+  it('keeps coordination headings as content rather than executable phases', () => {
+    const plan = parseWikiFile('repo', 'epic.md', '---\ntitle: Epic\nexecution: coordination\n---\n# Work\n## 1. Child plan\nSee [Child](./child.md).');
+    expect(isEpic(plan)).toBe(true);
+    expect(plan.sections[0]?.phases).toEqual([]);
+    expect(plan.dependencies).toHaveLength(1);
+  });
+
+  it('keeps phased work as a plan', () => {
+    const plan = parseWikiFile('repo', 'work.md', '---\ntitle: Work\nexecution: phased\n---\n# Execution phases\n## WK-01 Build\n- Budget: 2h');
+    expect(isEpic(plan)).toBe(false);
   });
 });

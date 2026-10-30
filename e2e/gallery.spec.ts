@@ -23,7 +23,7 @@ test('folder plan and wiki gallery open images and PDFs', async ({ page }, info)
   await page.getByRole('button', { name: 'Close asset viewer' }).click();
 
   await page.goto('/portfolio');
-  await page.getByRole('button', { name: 'Open plan: Image review fixture' }).click();
+  await page.getByRole('button', { name: 'Open Epic: Image review fixture' }).click();
   const plan = page.getByRole('dialog', { name: 'Image review fixture' });
   await expect(plan.getByText('Related Markdown')).toBeVisible();
   await plan.getByRole('button', { name: 'notes.md' }).click();

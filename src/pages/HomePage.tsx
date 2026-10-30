@@ -1,4 +1,5 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
+import { formatPlanCounts, isEpic } from '@/lib/planKind';
 import { Link } from 'react-router-dom';
 import { Layers, Sparkles, Trash2, AlertTriangle } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
@@ -114,9 +115,10 @@ export function HomePage() {
 
       <div className="space-y-4">
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4" data-tour="home-overview">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" data-tour="home-overview">
             {[
-              { label: 'Plans',    value: plans.length },
+              { label: 'Plans',    value: plans.filter(p => !isEpic(p)).length },
+              { label: 'Epics',    value: plans.filter(isEpic).length },
               { label: 'Repos',    value: repos.length },
               { label: 'Warnings', value: warnings.length },
             ].map(({ label, value }) => (
@@ -146,7 +148,7 @@ export function HomePage() {
                   )}
                 </span>
                 <span className="text-right text-xs text-muted-foreground">
-                  <span className="block">{repo.planCount} plan{repo.planCount !== 1 ? 's' : ''}</span>
+                  <span className="block">{formatPlanCounts(plans.filter(p => p.repoId === repo.id))}</span>
                   <TimeRemaining plans={plans.filter(p => p.repoId === repo.id)} />
                 </span>
                 {!isDemoData && (

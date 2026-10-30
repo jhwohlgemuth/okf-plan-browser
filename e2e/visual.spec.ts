@@ -33,6 +33,7 @@ test.describe('with demo data', () => {
 
   test('home-loaded', async ({ page }) => {
     await settle(page);
+    await expect(page.locator('[data-tour="home-overview"]')).toContainText('Epics');
     await expect(page).toHaveScreenshot('home-loaded.png', { fullPage: true });
   });
 

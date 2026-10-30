@@ -7,6 +7,9 @@ import type { PhaseStatus, Phase, ParsedPlan } from '@/types/wiki';
 import { AgentCommandButton } from './AgentCommandButton';
 import { phaseAgentCommand, planAgentCommand } from '@/lib/agentCommand';
 import { planAnchor } from '@/lib/planLinks';
+import { isEpic, linkedPlans } from '@/lib/planKind';
+import { PlanKindBadge } from './PlanKindBadge';
+import { StatusBadge } from './StatusBadge';
 
 interface PhaseCard { plan: ParsedPlan; phase: Phase }
 
@@ -38,23 +41,45 @@ export function KanbanBoard() {
   const repos      = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
 
-  // Collect all phases across all filtered plans
-  // Plans that define no phases still appear as a single card carrying the plan's status
-  const allPhaseCards: PhaseCard[] = plans.flatMap(plan => {
-    const phases = plan.sections.flatMap(section => section.phases);
-    if (phases.length) return phases.map(phase => ({ plan, phase }));
-    const whole: Phase = {
-      id: 'Plan', title: 'No phases defined', rawBody: '', refs: [],
-      status: plan.frontmatter.status ?? 'planned',
-    };
-    return [{ plan, phase: whole }];
-  });
+  const epics = plans.filter(isEpic);
+  const allPhaseCards: PhaseCard[] = plans.filter(plan => !isEpic(plan)).flatMap(plan =>
+    plan.sections.flatMap(section => section.phases.map(phase => ({ plan, phase }))));
 
   const byStatus = (status: PhaseStatus) =>
     allPhaseCards.filter(c => c.phase.status === status);
 
   return (
-    <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] xl:grid-flow-row xl:grid-cols-5 gap-4 h-full min-h-0 overflow-x-auto xl:overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto">
+      {epics.length > 0 && <section aria-label="Epics" className="shrink-0 rounded-xl border border-od-purple/30 bg-od-purple/5 p-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-semibold text-od-purple">Epics · {epics.length}</h2>
+          <p className="text-xs text-muted-foreground">Coordination and overview records have no executable phases. Open one to follow its linked plans.</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {epics.map(plan => {
+            const linked = linkedPlans(plan, plans);
+            const repo = repos.find(r => r.id === plan.repoId);
+            return <div key={plan.id} role="button" tabIndex={0}
+              aria-label={`Open Epic: ${plan.frontmatter.title}`}
+              onClick={() => selectPlan(plan.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPlan(plan.id); } }}
+              className="cursor-pointer rounded-lg border border-od-purple/25 bg-card p-3 hover:border-od-purple/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <PlanKindBadge plan={plan} compact />
+                <AgentCommandButton command={planAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId })} label={`Copy agent command for ${plan.frontmatter.title}`} />
+              </div>
+              <p className="text-xs font-semibold text-foreground">{truncate(plan.frontmatter.title, 80)}</p>
+              {plan.frontmatter.description && <p className="mt-1 text-xs text-muted-foreground">{truncate(plan.frontmatter.description, 120)}</p>}
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                {plan.frontmatter.status && <StatusBadge status={plan.frontmatter.status} />}
+                <span>{linked.length} linked plan{linked.length !== 1 ? 's' : ''}</span>
+                {repo && <span className="ml-auto font-mono">{repo.label}</span>}
+              </div>
+            </div>;
+          })}
+        </div>
+      </section>}
+      <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] xl:grid-flow-row xl:grid-cols-5 gap-4 flex-1 min-h-[360px] overflow-x-auto xl:overflow-hidden">
       {COLUMNS.map(col => {
         const cards = byStatus(col.status);
         return (
@@ -84,11 +109,11 @@ export function KanbanBoard() {
                     role="button"
                     tabIndex={0}
                     aria-label={`Open plan ${plan.id} phase ${phase.id}`}
-                    onClick={() => selectPlan(plan.id, phase.id === 'Plan' ? undefined : planAnchor(phase.id))}
+                    onClick={() => selectPlan(plan.id, planAnchor(phase.id))}
                     onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        selectPlan(plan.id, phase.id === 'Plan' ? undefined : planAnchor(phase.id));
+                        selectPlan(plan.id, planAnchor(phase.id));
                       }
                     }}
                     className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -104,10 +129,8 @@ export function KanbanBoard() {
                           />
                         )}
                         <AgentCommandButton
-                          command={phase.id === 'Plan' ? planAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId }) : phaseAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId }, phase)}
-                          label={phase.id === 'Plan'
-                            ? `Copy agent command for ${fm.title ?? plan.fileName}`
-                            : `Copy agent command for phase ${phase.id}`}
+                          command={phaseAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId }, phase)}
+                          label={`Copy agent command for phase ${phase.id}`}
                         />
                       </span>
                     </div>
@@ -117,7 +140,7 @@ export function KanbanBoard() {
                       {truncate(phase.title, 80)}
                     </p>
 
-                    <div className="mb-2"><TimeRemaining plans={[plan]} phase={phase.id === 'Plan' ? undefined : phase} /></div>
+                    <div className="mb-2"><TimeRemaining plans={[plan]} phase={phase} /></div>
 
                     {/* Plan title */}
                     <p className="text-xs text-muted-foreground leading-tight mb-2">
@@ -149,6 +172,7 @@ export function KanbanBoard() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

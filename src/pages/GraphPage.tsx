@@ -2,6 +2,7 @@ import { TimeRemaining } from '@/components/TimeRemaining';
 import { usePlanStore } from '@/store/planStore';
 import { DependencyGraph } from '@/components/DependencyGraph';
 import { buildPlanEdges } from '@/lib/planLinks';
+import { formatPlanCounts } from '@/lib/planKind';
 
 export function GraphPage() {
   const plans = usePlanStore(s => s.plans);
@@ -17,7 +18,7 @@ export function GraphPage() {
       <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
         <h1 className="text-base font-semibold text-foreground">Dependency Graph</h1>
         <p className="text-xs text-muted-foreground">
-          {plans.length} nodes · {deps} .md links · {refs} PA-XX cross-references
+          {formatPlanCounts(plans)} · {deps} .md links · {refs} phase references
           {' · '}<TimeRemaining plans={plans} />
           · Use controls or scroll to zoom · Drag nodes · Select to open detail
         </p>
