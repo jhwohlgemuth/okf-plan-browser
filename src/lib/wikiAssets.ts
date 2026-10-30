@@ -5,13 +5,16 @@ import { getGithubToken, getGitlabToken } from './githubToken';
 import { usePlanStore } from '@/store/planStore';
 
 const files = new Map<string, Map<string, File>>();
+const nativeRoots = new Map<string, string>();
 const urls = new Map<string, string>();
 const pending = new Map<string, Promise<string>>();
 const keyOf = (repoId: string, path: string) => `${repoId}\n${path}`;
 
-export function registerAssetFiles(repoId: string, assets: WikiAsset[]): void {
+export function registerAssetFiles(repoId: string, assets: WikiAsset[], nativeRoot?: string): void {
   clearAssetUrls(repoId);
   files.set(repoId, new Map(assets.flatMap(asset => asset.file ? [[asset.path, asset.file]] : [])));
+  if (nativeRoot) nativeRoots.set(repoId, nativeRoot);
+  else nativeRoots.delete(repoId);
 }
 
 export function clearAssetUrls(repoId: string): void {
@@ -24,6 +27,7 @@ export function clearAssetUrls(repoId: string): void {
 export function forgetAssets(repoId: string): void {
   clearAssetUrls(repoId);
   files.delete(repoId);
+  nativeRoots.delete(repoId);
   void deleteCachedAssets(repoId);
 }
 
@@ -32,6 +36,7 @@ export function forgetAllAssets(): void {
   urls.clear();
   pending.clear();
   files.clear();
+  nativeRoots.clear();
   void clearCachedAssets();
 }
 
@@ -45,6 +50,12 @@ async function readAsset(repoId: string, path: string): Promise<Blob> {
       return response.blob();
     }
     return file;
+  }
+  const nativeRoot = nativeRoots.get(repoId);
+  if (nativeRoot) {
+    const { invoke } = await import('@tauri-apps/api/tauri');
+    const bytes = await invoke<number[]>('read_wiki_asset', { rootPath: nativeRoot, assetPath: path });
+    return new Blob([new Uint8Array(bytes)]);
   }
   const repo = usePlanStore.getState().repos.find(r => r.id === repoId);
   if (!repo?.assets?.includes(path)) throw new Error('Asset is not in this wiki.');

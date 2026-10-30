@@ -29,3 +29,7 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 - 2026-10-30 — RB-01 completed: explicit branch selection resolves slash-containing refs in
   GitHub and GitLab requests and source IDs; unit and browser coverage passed. Retired the plan;
   three executable outcomes remain. The 2026-10-29 portfolio-wide review is still current.
+- 2026-10-30 — TD-01/02 completed after the Apple Silicon fallback omitted the hidden `.wiki`
+  directory and the scope-checked native Tauri path passed focused tests and packaging. The mounted
+  Apple Silicon DMG imported successfully; TD-03 now waits only on Windows and Linux release
+  artifacts and interactive hosts. Intel macOS is not supported. Three executable outcomes remain.

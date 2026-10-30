@@ -24,6 +24,15 @@ export interface DroppedSources {
   files: File[];
 }
 
+interface NativeWiki {
+  folderName: string;
+  rootPath: string;
+  files: Array<{ path: string; text: string }>;
+  assets: string[];
+}
+
+export const hasNativeFolderPicker = () => typeof window !== 'undefined' && '__TAURI__' in window;
+
 /** Capture every browser-specific drop source synchronously before the drag data store closes. */
 export async function collectDroppedSources(items: DataTransferItemList): Promise<DroppedSources> {
   const pending: Array<{
@@ -185,6 +194,30 @@ export function useFileSystem() {
 
   const openFolder = async (): Promise<LoadResult | null> => {
     setError(null);
+    if (hasNativeFolderPicker()) {
+      try {
+        const { open } = await import('@tauri-apps/api/dialog');
+        const path = await open({
+          title: 'Open .wiki Folder',
+          directory: true,
+          multiple: false,
+          recursive: true,
+        });
+        if (!path || Array.isArray(path)) return null;
+        setLoading(true);
+        const { invoke } = await import('@tauri-apps/api/tauri');
+        const wiki = await invoke<NativeWiki>('read_wiki_folder', { path });
+        return await ingest(wiki.folderName, async (project, r) => ({
+          ...await parseWikiTexts(wiki.files, project, r, wiki.assets),
+          nativeRoot: wiki.rootPath,
+        }));
+      } catch (e) {
+        setError(String(e instanceof Error ? e.message : e));
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    }
     if (!('showDirectoryPicker' in window)) {
       setError('This browser cannot open folders directly. Use the fallback picker.');
       return null;
@@ -256,6 +289,7 @@ export function useFileSystem() {
 
   return {
     openFolder, loadFileList, dropItems, loadRemote, cancelRemote,
+    nativeFolderPicker: hasNativeFolderPicker(),
     pending: pending[0] ?? null, confirmPending, cancelPending,
     existingProjects: repos.map(r => r.label),
     loading, remoteLoading, error, scanning, setScanning, progress,

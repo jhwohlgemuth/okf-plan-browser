@@ -4,13 +4,20 @@ import { readFileSync } from 'node:fs';
 import {
   parseWikiFileList, parseWikiFolder, parseWikiEntry, parseWikiTexts, findWikiDir, findWikiEntry, isWikiFolderName,
 } from '@/lib/wikiParser';
-import { collectDroppedSources } from '@/hooks/useFileSystem';
+import { collectDroppedSources, hasNativeFolderPicker } from '@/hooks/useFileSystem';
 import { fileList, projectRoot, dirEntry } from '@/test/handles';
 
 const ids = (r: { plans: { id: string }[] }) => r.plans.map(p => p.id).sort();
 const expected = ['r:plan-one.md', 'r:sub/plan-two.md'];
 
 describe('ingest paths', () => {
+  it('uses the native folder picker only inside the packaged shell', () => {
+    expect(hasNativeFolderPicker()).toBe(false);
+    vi.stubGlobal('window', { __TAURI__: {} });
+    expect(hasNativeFolderPicker()).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
   it('parseWikiFileList reads the .wiki folder of a project', async () => {
     const r = await parseWikiFileList(fileList(), 'r');
     expect(ids(r)).toEqual(expected);

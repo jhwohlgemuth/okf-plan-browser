@@ -11,11 +11,16 @@ export interface LoadResult {
   warnings: number;
 }
 
-export type Parsed = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }>; assets?: WikiAsset[] };
+export type Parsed = {
+  plans: ParsedPlan[];
+  errors: Array<{ name: string; error: string }>;
+  assets?: WikiAsset[];
+  nativeRoot?: string;
+};
 
 export function commitWiki(
   project: string,
-  { plans, errors, assets = [] }: Parsed,
+  { plans, errors, assets = [], nativeRoot }: Parsed,
   source?: { remote?: RemoteWikiRef; label?: string; refresh?: boolean },
 ): LoadResult {
   if (errors.length) {
@@ -43,6 +48,6 @@ export function commitWiki(
     ...errors.map(e => ({ repoId: project, fileName: e.name, errors: [e.error] })),
   ];
   store.addPlans(plans, repo, warns);
-  registerAssetFiles(project, assets);
+  registerAssetFiles(project, assets, nativeRoot);
   return { repoId: project, plans: plans.length, warnings: warns.length };
 }

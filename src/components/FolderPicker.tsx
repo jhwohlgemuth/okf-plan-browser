@@ -17,7 +17,7 @@ interface Props {
 export function FolderPicker({ label = 'Open .wiki Folder', compact = false, cards = false }: Props) {
   const {
     openFolder, loadFileList, dropItems, loadRemote, cancelRemote, pending, confirmPending, cancelPending,
-    existingProjects, loading, remoteLoading, error, scanning, setScanning, progress,
+    existingProjects, loading, remoteLoading, error, scanning, setScanning, progress, nativeFolderPicker,
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
   const [remoteSpec, setRemoteSpec] = useState('');
@@ -137,7 +137,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
   );
 
   const handleOpen = async () => {
-    if (!('showDirectoryPicker' in window)) {
+    if (!nativeFolderPicker && !('showDirectoryPicker' in window)) {
       toast({
         title: 'Choose a folder or Markdown files',
         description: 'Pick the project or .wiki folder. The browser reads plans, related Markdown, images, and PDFs.',

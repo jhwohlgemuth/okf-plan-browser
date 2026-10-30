@@ -8,11 +8,168 @@ use reqwest::{
     Client, Url,
 };
 use serde::Serialize;
-use std::{collections::HashMap, net::IpAddr, str::FromStr, sync::Mutex, time::Duration};
+use std::{
+    collections::HashMap,
+    fs,
+    net::IpAddr,
+    path::{Component, Path, PathBuf},
+    str::FromStr,
+    sync::Mutex,
+    time::Duration,
+};
+use tauri::Manager;
 
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
 #[derive(Default)]
 struct Requests(Mutex<HashMap<String, tokio::sync::oneshot::Sender<()>>>);
+
+const MAX_WIKI_DEPTH: usize = 6;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeWikiFile {
+    path: String,
+    text: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeWiki {
+    folder_name: String,
+    root_path: String,
+    files: Vec<NativeWikiFile>,
+    assets: Vec<String>,
+}
+
+fn is_viewable_asset(path: &Path) -> bool {
+    matches!(
+        path.extension()
+            .and_then(|extension| extension.to_str())
+            .map(str::to_ascii_lowercase)
+            .as_deref(),
+        Some("png" | "jpg" | "jpeg" | "gif" | "webp" | "avif" | "bmp" | "svg" | "ico" | "pdf")
+    )
+}
+
+fn relative_path(prefix: &str, name: &str) -> String {
+    if prefix.is_empty() {
+        name.to_string()
+    } else {
+        format!("{prefix}/{name}")
+    }
+}
+
+fn collect_wiki_entries(
+    directory: &Path,
+    prefix: &str,
+    depth: usize,
+    files: &mut Vec<NativeWikiFile>,
+    assets: &mut Vec<String>,
+) -> Result<(), String> {
+    let mut entries = fs::read_dir(directory)
+        .map_err(|error| format!("Could not read {}: {error}", directory.display()))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| format!("Could not read {}: {error}", directory.display()))?;
+    entries.sort_by_key(|entry| entry.file_name());
+
+    for entry in entries {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let path = entry.path();
+        let relative = relative_path(prefix, &name);
+        let file_type = entry
+            .file_type()
+            .map_err(|error| format!("Could not inspect {}: {error}", path.display()))?;
+        if file_type.is_dir() {
+            if depth < MAX_WIKI_DEPTH && name != ".git" && name != "node_modules" {
+                collect_wiki_entries(&path, &relative, depth + 1, files, assets)?;
+            }
+        } else if file_type.is_file() && name.to_ascii_lowercase().ends_with(".md") {
+            let bytes = fs::read(&path)
+                .map_err(|error| format!("Could not read {}: {error}", path.display()))?;
+            files.push(NativeWikiFile {
+                path: relative,
+                text: String::from_utf8_lossy(&bytes).into_owned(),
+            });
+        } else if file_type.is_file() && is_viewable_asset(&path) {
+            assets.push(relative);
+        }
+    }
+    Ok(())
+}
+
+fn selected_wiki(path: &Path) -> Result<NativeWiki, String> {
+    let selected = path
+        .canonicalize()
+        .map_err(|error| format!("Could not open {}: {error}", path.display()))?;
+    if !selected.is_dir() {
+        return Err("Select a project folder or its .wiki folder.".into());
+    }
+    let folder_name = selected
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "wiki".into());
+    let nested = selected.join(".wiki");
+    let root = if nested.is_dir() { nested } else { selected };
+    let root = root
+        .canonicalize()
+        .map_err(|error| format!("Could not open the wiki folder: {error}"))?;
+    let mut files = Vec::new();
+    let mut assets = Vec::new();
+    collect_wiki_entries(&root, "", 0, &mut files, &mut assets)?;
+    Ok(NativeWiki {
+        folder_name,
+        root_path: root.to_string_lossy().into_owned(),
+        files,
+        assets,
+    })
+}
+
+#[tauri::command(async)]
+fn read_wiki_folder(path: String, window: tauri::Window) -> Result<NativeWiki, String> {
+    if !window.fs_scope().is_allowed(&path) {
+        return Err("Folder access was not granted by the native picker.".into());
+    }
+    selected_wiki(Path::new(&path))
+}
+
+fn safe_asset_path(root: &Path, relative: &str) -> Result<PathBuf, String> {
+    let relative = Path::new(relative);
+    if relative.as_os_str().is_empty()
+        || relative
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+        || !is_viewable_asset(relative)
+    {
+        return Err("Invalid wiki asset path.".into());
+    }
+    let target = root.join(relative);
+    let canonical = target
+        .canonicalize()
+        .map_err(|error| format!("Could not open wiki asset: {error}"))?;
+    if !canonical.starts_with(root) || !canonical.is_file() {
+        return Err("Invalid wiki asset path.".into());
+    }
+    Ok(canonical)
+}
+
+#[tauri::command(async)]
+fn read_wiki_asset(
+    root_path: String,
+    asset_path: String,
+    window: tauri::Window,
+) -> Result<Vec<u8>, String> {
+    let root = Path::new(&root_path)
+        .canonicalize()
+        .map_err(|error| format!("Could not reopen the wiki folder: {error}"))?;
+    if !window.fs_scope().is_allowed(&root) {
+        return Err("Reopen this wiki folder to view its assets.".into());
+    }
+    let target = safe_asset_path(&root, &asset_path)?;
+    if !window.fs_scope().is_allowed(&target) {
+        return Err("Wiki asset access was not granted.".into());
+    }
+    fs::read(target).map_err(|error| format!("Could not read wiki asset: {error}"))
+}
 
 fn append_response(bytes: &mut Vec<u8>, chunk: &[u8]) -> Result<(), String> {
     if bytes.len().saturating_add(chunk.len()) > MAX_RESPONSE_BYTES {
@@ -304,6 +461,8 @@ fn main() {
             clear_forge_tokens,
             forge_request,
             cancel_forge_request,
+            read_wiki_folder,
+            read_wiki_asset,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -312,11 +471,15 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        append_response, normalized_host, perform_forge_request, same_origin_redirect,
-        MAX_RESPONSE_BYTES,
+        append_response, normalized_host, perform_forge_request, safe_asset_path,
+        same_origin_redirect, selected_wiki, MAX_RESPONSE_BYTES,
     };
     use reqwest::Url;
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     #[test]
     fn response_limit_does_not_append_an_overflowing_chunk() {
@@ -378,5 +541,53 @@ mod tests {
         assert!(normalized_host("gitlab", "127.0.0.1").is_err());
         assert!(normalized_host("gitlab", "gitlab.example.com/path").is_err());
         assert!(normalized_host("gitlab", "user@gitlab.example.com").is_err());
+    }
+
+    #[test]
+    fn native_wiki_reader_targets_dot_wiki_and_preserves_relative_paths() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let project = std::env::temp_dir().join(format!("okf-native-wiki-{nonce}"));
+        let wiki = project.join(".wiki");
+        fs::create_dir_all(wiki.join("plan/_assets")).unwrap();
+        fs::create_dir_all(project.join("node_modules")).unwrap();
+        fs::write(wiki.join("index.md"), "---\ntype: Plan\ntitle: Root\n---\n").unwrap();
+        fs::write(
+            wiki.join("plan/index.md"),
+            "---\ntype: Plan\ntitle: Nested\n---\n",
+        )
+        .unwrap();
+        fs::write(wiki.join("plan/_assets/diagram.svg"), "<svg/>").unwrap();
+        fs::write(project.join("outside.md"), "not part of the wiki").unwrap();
+
+        let result = selected_wiki(&project).unwrap();
+        assert_eq!(
+            result
+                .files
+                .iter()
+                .map(|file| file.path.as_str())
+                .collect::<Vec<_>>(),
+            ["index.md", "plan/index.md"]
+        );
+        assert_eq!(result.assets, ["plan/_assets/diagram.svg"]);
+        assert_eq!(
+            result.folder_name,
+            project.file_name().unwrap().to_string_lossy()
+        );
+        assert_eq!(
+            result.root_path,
+            wiki.canonicalize().unwrap().to_string_lossy()
+        );
+        fs::remove_dir_all(project).unwrap();
+    }
+
+    #[test]
+    fn native_asset_reader_rejects_paths_outside_the_wiki() {
+        let root = std::env::temp_dir();
+        assert!(safe_asset_path(&root, "../secret.pdf").is_err());
+        assert!(safe_asset_path(&root, "/secret.pdf").is_err());
+        assert!(safe_asset_path(&root, "notes.md").is_err());
     }
 }

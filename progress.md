@@ -63,3 +63,14 @@
 - Budget: Completed within the five-hour active-time budget.
 - Blockers / failed approaches: None.
 - Next action: Review and commit the implementation when desired.
+
+## Implementation — Desktop folder ingest
+
+- Plan: `.wiki/tauri-desktop-ingest.md`; active phase: TD-03; state: blocked on remaining external installer validation.
+- Authorized scope and decisions: Execute TD-01, TD-02, then TD-03; preserve browser ingest and Tauri 1.x; use the native route only when the Tauri bridge is present.
+- Baseline and local work: `bd33614`; clean worktree at phase start; no CodeGraph index. The Apple Silicon WKWebView lacked `showDirectoryPicker`, and its directory-input fallback omitted the hidden `.wiki` child from a selected project folder.
+- Verified state: Tauri 1.8.3 now opens a recursively scoped native directory dialog, reads only the selected wiki tree, and lazy-loads scope-checked assets. Typecheck and lint passed; all 116 unit tests, 6 native tests, and the integrity browser suite (26 passed, 16 expected viewport skips) passed; `npm run tauri:build` produced the Apple Silicon app and DMG. Launching `OKF Plan Browser_1.0.0_aarch64.dmg` and importing the repository produced 3 plans plus 1 Epic with no warnings. Evidence: `docs/desktop-ingest.md`.
+- Remaining work: Launch and exercise draft release artifacts on Windows and Linux, record exact artifact names and results, then retire the plan. Intel macOS is not supported.
+- Budget: TD-01 and TD-02 completed within their phase budgets; TD-03 retains its external-host validation budget.
+- Blockers / failed approaches: Current worktree has no Windows or Linux release artifacts or interactive hosts. CI compilation would not prove installer interaction.
+- Next action: After this change is available to the release workflow, build the two remaining supported artifacts and run the TD-03 smoke matrix on their target hosts.
