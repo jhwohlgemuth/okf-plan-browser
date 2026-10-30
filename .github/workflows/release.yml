@@ -13,8 +13,32 @@ jobs:
   checks:
     uses: ./.github/workflows/ci.yml
 
-  build-tauri:
+  prepare-release:
     needs: checks
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create or reset the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > release.json 2>/dev/null; then
+            jq -e '.draft == true' release.json
+            jq -r '.assets[].name' release.json | while IFS= read -r asset; do
+              gh release delete-asset "$RELEASE_TAG" "$asset" --yes
+            done
+          else
+            gh release create "$RELEASE_TAG" --draft \
+              --title "OKF Plan Browser $RELEASE_TAG" \
+              --notes 'Desktop builds for Windows, macOS (Apple Silicon and Intel) and Linux. Builds are unsigned, so your OS may warn on first launch.'
+          fi
+
+  build-tauri:
+    needs: prepare-release
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
@@ -25,15 +49,19 @@ jobs:
           - platform: ubuntu-22.04
             args: '--bundles deb,appimage'
             required_formats: 'deb AppImage'
+            asset_platform: 'linux-x64'
           - platform: macos-15
             args: '--target aarch64-apple-darwin --bundles dmg'
             required_formats: 'dmg'
+            asset_platform: 'macos-aarch64'
           - platform: macos-15-intel
             args: '--target x86_64-apple-darwin --bundles dmg'
             required_formats: 'dmg'
+            asset_platform: 'macos-x64'
           - platform: windows-latest
             args: '--bundles msi'
             required_formats: 'msi'
+            asset_platform: 'windows-x64'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -67,30 +95,34 @@ jobs:
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: OKF Plan Browser ${{ github.ref_name }}
-          releaseBody: |
-            Desktop builds for Windows, macOS (Apple Silicon and Intel) and Linux. Builds are unsigned, so your OS may warn on first launch.
-          releaseDraft: true
-          prerelease: false
           args: ${{ matrix.args }}
 
       - name: Verify packaged artifacts
         shell: bash
         env:
           REQUIRED_FORMATS: ${{ matrix.required_formats }}
+          ASSET_PLATFORM: ${{ matrix.asset_platform }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          mkdir -p release-assets
           for format in $REQUIRED_FORMATS; do
             files=$(find src-tauri/target -type f -path "*/bundle/*" -name "*.$format")
-            if [ -z "$files" ]; then
-              echo "Missing $format bundle" >&2
+            if [ -z "$files" ] || [ "$(printf '%s\n' "$files" | wc -l | tr -d ' ')" -ne 1 ]; then
+              echo "Expected exactly one $format bundle, found: $files" >&2
               exit 1
             fi
             printf '%s\n' "$files"
+            cp "$files" "release-assets/okf-plan-browser_${RELEASE_TAG#v}_${ASSET_PLATFORM}.$format"
           done
+
+      - name: Upload each standalone release asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release upload "$RELEASE_TAG" release-assets/* --clobber
 
   publish:
     needs: build-tauri
@@ -107,13 +139,16 @@ jobs:
         run: |
           gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" > release.json
           jq -r '.assets[].name' release.json
-          jq -e --arg version "${RELEASE_TAG#v}" '
+          if ! jq -e --arg version "${RELEASE_TAG#v}" '
             [.assets[].name | select(contains($version))] as $names |
             ([$names[] | select(endswith(".dmg"))] | length >= 2) and
             any($names[]; endswith(".msi")) and
             any($names[]; endswith(".deb")) and
             any($names[]; endswith(".AppImage"))
-          ' release.json
+          ' release.json; then
+            echo "::error title=Missing release assets::$(jq -c '[.assets[].name]' release.json)"
+            exit 1
+          fi
 
       - name: Attach checksums for every standalone installer
         env:

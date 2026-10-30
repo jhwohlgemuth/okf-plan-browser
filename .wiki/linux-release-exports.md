@@ -17,7 +17,7 @@ Every published release has a usable x86_64 `.deb` and `.AppImage` with predicta
 
 # Current evidence
 
-At `63e5738`, the first `v0.0.1` run passed CI and all four platform packaging jobs, but its asset-name assertion failed before publication. The repaired gate at `b8ce41f` requires two version-matched DMGs plus MSI, Debian, and AppImage; that rerun stopped earlier at a browser focus test. A local timing repair now awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
+At `3a7bae0`, the third `v0.0.1` run passed CI and all four platform package builds, but its draft asset gate failed before publication. The current local workflow change prepares one draft and uploads each verified bundle with a deterministic platform filename, then checks the resulting release inventory and attaches checksums. It awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
 
 # Boundaries and decisions
 
@@ -47,7 +47,7 @@ Release asset checks must run before the draft is published. A tagged draft and 
 - Primary integration lock: release workflow
 - Outcome: Build explicit Debian and AppImage targets, require both expected assets for the Linux job before publishing, and attach a SHA-256 checksum file.
 - Focused validation: Inspect workflow syntax; run a draft release and verify both asset names and checksums against downloaded files.
-- Handoff: The second tagged run stopped in CI on a late heading-focus assertion. Commit the locally verified focus repair, move the unpublished tag with an exact lease, and verify all formats and `SHA256SUMS` before making LX-02 eligible.
+- Handoff: Package builds passed, but the implicit action upload did not satisfy the asset gate. Commit the explicit-upload workflow, move the unpublished tag with an exact lease, and verify all five deterministic assets and `SHA256SUMS` before making LX-02 eligible.
 
 ## LX-02 — Verify Linux downloads
 
