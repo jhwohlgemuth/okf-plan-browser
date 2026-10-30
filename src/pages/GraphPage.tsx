@@ -24,10 +24,11 @@ export function GraphPage() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto lg:flex">
-        <div className="min-h-[500px] flex-1 overflow-hidden">
+        <div className="min-h-[500px] flex-1 overflow-hidden" data-tour="dependency-graph">
           <DependencyGraph />
         </div>
         <section
+          data-tour="graph-relationships"
           aria-labelledby="resolved-relationships-title"
           className="shrink-0 border-t border-border bg-card/80 p-4 text-foreground lg:w-80 lg:overflow-y-auto lg:border-l lg:border-t-0"
         >

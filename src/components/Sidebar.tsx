@@ -55,6 +55,7 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
           {isDesktop && (
             <button
               type="button"
+              data-tour="sidebar-toggle"
               onClick={toggleSidebar}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               aria-expanded={!collapsed}
@@ -106,7 +107,7 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
 
       {/* Repo colour pills */}
       {repos.length > 0 && (
-        <div className={cn('px-4 pb-4 border-t border-border pt-3 space-y-1.5 max-h-[40%] overflow-y-auto', hideLabel)}>
+        <div data-tour="sidebar-repos" className={cn('px-4 pb-4 border-t border-border pt-3 space-y-1.5 max-h-[40%] overflow-y-auto', hideLabel)}>
           <div className="flex items-center mb-2">
             <p className="text-xs text-muted-foreground font-medium">Repos</p>
             {!isDemoData && (

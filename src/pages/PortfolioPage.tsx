@@ -33,7 +33,7 @@ export function PortfolioPage() {
             {' · '}<TimeRemaining plans={filtered} />
           </p>
         </div>
-        <div className="relative w-full sm:w-64 sm:ml-auto">
+        <div className="relative w-full sm:w-64 sm:ml-auto" data-tour="portfolio-search">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             className="pl-8 h-8 text-xs"
@@ -45,10 +45,10 @@ export function PortfolioPage() {
       </div>
 
       {/* Filters */}
-      <FilterBar />
+      <div data-tour="portfolio-filters"><FilterBar /></div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto" data-tour="plan-table">
         <PlanTable />
       </div>
     </div>

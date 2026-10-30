@@ -5,6 +5,7 @@ import { usePlanStore } from '@/store/planStore';
 import { FolderPicker } from '@/components/FolderPicker';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { WalkthroughButton } from '@/components/WalkthroughButton';
 
 function HomeFooter() {
   const linkClass = 'font-medium text-foreground hover:text-od-blue transition-colors underline underline-offset-4 decoration-border hover:decoration-od-blue';
@@ -31,7 +32,7 @@ function HomeFooter() {
 
 function PlanningLink() {
   return (
-    <Link to="/planning" className="block rounded-xl border border-border bg-card p-4 text-left hover:border-od-blue/60 transition-colors">
+    <Link data-tour="planning-link" to="/planning" className="block rounded-xl border border-border bg-card p-4 text-left hover:border-od-blue/60 transition-colors">
       <span className="block text-sm font-semibold text-foreground">Official home of the planning skill</span>
       <span className="block text-xs text-muted-foreground mt-1 leading-relaxed">
         Plan and implement in bounded phases, resume from saved progress, and draft articles with evidence review.
@@ -56,17 +57,18 @@ export function HomePage() {
   if (isEmpty) {
     return (
       <div className="min-h-full flex flex-col items-center px-6 py-10 gap-8">
-        <div className="w-full max-w-[420px] flex flex-1 flex-col items-center justify-center text-center">
+        <div className="w-full max-w-[420px] flex flex-1 flex-col items-center justify-center text-center" data-tour="home-intro">
           <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center mb-4">
             <Layers className="h-6 w-6 text-od-blue" />
           </div>
           <h1 className="text-xl font-bold text-foreground">OKF Plan Browser</h1>
+          <div className="mt-4"><WalkthroughButton prominent /></div>
           <div className="w-full mt-4"><PlanningLink /></div>
           <p className="text-xs text-muted-foreground mt-2 mb-6">
             Load a .wiki folder, or a GitHub / GitLab repo
           </p>
 
-          <div className="w-full">
+          <div className="w-full" data-tour="home-overview">
             <FolderPicker cards />
           </div>
 
@@ -76,7 +78,7 @@ export function HomePage() {
             className="mt-5 text-od-purple bg-od-purple/10 hover:bg-od-purple/20 border border-od-purple/30"
             onClick={() => {
               loadDemoData();
-              toast({ title: 'Demo data loaded', description: '6 synthetic plans across 3 repos' });
+              toast({ title: 'Demo data loaded', description: 'Synthetic plans are ready to explore' });
             }}
           >
             <Sparkles className="h-3.5 w-3.5 mr-2" />
@@ -97,7 +99,7 @@ export function HomePage() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
       {/* Hero */}
-      <div>
+      <div data-tour="home-intro">
         <h1 className="text-2xl font-bold text-foreground mb-1">OKF Plan Browser</h1>
         <p className="text-muted-foreground text-sm leading-relaxed">
           Browse, filter, and visualise{' '}
@@ -105,13 +107,14 @@ export function HomePage() {
           dependency graphs, phase kanban, full-text search. Folders stay on this machine; remote
           wikis are fetched in the browser from GitHub or GitLab.
         </p>
+        <div className="mt-4"><WalkthroughButton prominent /></div>
       </div>
 
       <PlanningLink />
 
       <div className="space-y-4">
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4" data-tour="home-overview">
             {[
               { label: 'Plans',    value: plans.length },
               { label: 'Repos',    value: repos.length },

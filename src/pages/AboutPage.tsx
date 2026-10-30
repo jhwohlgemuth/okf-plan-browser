@@ -1,5 +1,6 @@
 import { ExternalLink, Box, Lock, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { WalkthroughButton } from '@/components/WalkthroughButton';
 import {
   siReact, siVite, siTypescript, siTailwindcss, siTauri, siReactrouter,
   siRadixui, siD3, siMarkdown, siYaml, siLucide, siGithub, siGithubcopilot,
@@ -52,11 +53,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function AboutPage() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
-      <div>
+      <div data-tour="about-heading">
         <h1 className="text-xl font-bold text-foreground">About</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           The official home of the planning skill and a local-first viewer for <code>.wiki</code> planning portfolios.
         </p>
+        <WalkthroughButton className="mt-3" />
         <a
           href="https://github.com/jhwohlgemuth/okf-plan-browser"
           target="_blank" rel="noreferrer"

@@ -70,7 +70,7 @@ export function SettingsPage() {
       </div>
 
       {/* Theme */}
-      <section>
+      <section data-tour="settings-theme">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Theme</h2>
         <div className="flex gap-2">
           {THEMES.map(({ value, label, icon: Icon }) => (
@@ -92,7 +92,7 @@ export function SettingsPage() {
       </section>
 
       {/* GitHub token */}
-      <section>
+      <section data-tour="settings-github-token">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">GitHub</h2>
         {!tokenStorageAvailable ? (
           <div className="flex gap-2 rounded-xl border border-od-red/30 bg-od-red/10 p-4 text-xs text-od-red">
@@ -163,7 +163,7 @@ export function SettingsPage() {
         )}
       </section>
 
-      <section>
+      <section data-tour="settings-gitlab-token">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">GitLab</h2>
         {!tokenStorageAvailable ? (
           <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground">
@@ -247,7 +247,7 @@ export function SettingsPage() {
       </section>
 
       {/* Data */}
-      <section>
+      <section data-tour="settings-data">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Loaded Data</h2>
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
           <div className="flex justify-between text-sm">
@@ -284,6 +284,7 @@ export function SettingsPage() {
                   </span>
                   <span className="text-xs text-muted-foreground">{r.planCount}</span>
                   <button
+                    data-tour="remove-wiki"
                     className="p-1 text-muted-foreground hover:text-od-red transition-colors"
                     title="Remove this wiki"
                     onClick={() => { removeRepo(r.id); toast({ title: `Removed ${r.label}` }); }}
@@ -297,6 +298,7 @@ export function SettingsPage() {
 
           <div className="flex gap-2 pt-1">
             <Button
+              data-tour="clear-loaded"
               variant="outline"
               size="sm"
               className="flex-1"
@@ -307,6 +309,7 @@ export function SettingsPage() {
               Clear loaded
             </Button>
             <Button
+              data-tour="clear-saved"
               variant="outline"
               size="sm"
               className="flex-1 text-od-red border-od-red/30 hover:bg-od-red/10"

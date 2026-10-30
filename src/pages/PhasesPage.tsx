@@ -24,7 +24,7 @@ export function PhasesPage() {
       <FilterBar />
 
       {/* Board */}
-      <div className="flex-1 overflow-hidden px-4 py-4">
+      <div className="flex-1 overflow-hidden px-4 py-4" data-tour="phase-board">
         <KanbanBoard />
       </div>
     </div>

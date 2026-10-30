@@ -209,7 +209,7 @@ export function SearchPage() {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Search bar */}
-      <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
+      <div className="shrink-0 px-5 py-4 border-b border-border bg-background" data-tour="search-controls">
         <h1 className="text-base font-semibold text-foreground mb-3">Search</h1>
         <div className="flex gap-1 mb-3" role="tablist" aria-label="Search category">
           <button type="button" role="tab" aria-selected={mode === 'plans'} onClick={() => changeMode('plans')} className={`rounded px-3 py-1.5 text-xs ${mode === 'plans' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Plans</button>

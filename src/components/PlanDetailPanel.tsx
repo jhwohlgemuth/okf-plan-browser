@@ -10,6 +10,7 @@ import { Markdown } from './Markdown';
 import { headingAnchorForPlan, planAnchor, resolvePlanTarget } from '@/lib/planLinks';
 import { resolveWikiPath } from '@/lib/wikiAssets';
 import { AssetViewer, type AssetTarget } from './AssetViewer';
+import { useWalkthrough } from './Walkthrough';
 
 const IMPACT_CLASSES: Record<string, string> = {
   critical: 'text-od-red',
@@ -19,6 +20,7 @@ const IMPACT_CLASSES: Record<string, string> = {
 };
 
 export function PlanDetailPanel() {
+  const { active: tourActive } = useWalkthrough();
   const plans          = usePlanStore(s => s.plans);
   const selectedPlanId = usePlanStore(s => s.selectedPlanId);
   const selectedAnchor = usePlanStore(s => s.selectedAnchor);
@@ -61,10 +63,10 @@ export function PlanDetailPanel() {
 
   // Close on Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDetail(); };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && !tourActive) closeDetail(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [closeDetail]);
+  }, [closeDetail, tourActive]);
 
   const open = detailOpen && !!selectedPlanId;
   const [mounted, setMounted] = useState(open);
@@ -86,8 +88,8 @@ export function PlanDetailPanel() {
   }, [open, mounted]);
 
   useEffect(() => {
-    if (open && mounted && !selectedAnchor) panelRef.current?.focus();
-  }, [open, mounted, selectedAnchor]);
+    if (open && mounted && !selectedAnchor && !tourActive) panelRef.current?.focus();
+  }, [open, mounted, selectedAnchor, tourActive]);
 
   useEffect(() => {
     if (!open || !mounted || !selectedAnchor) return;
@@ -108,6 +110,7 @@ export function PlanDetailPanel() {
   }, [location.hash, mounted, open, plan?.id, selectedAnchor, selectedPlanId]);
 
   const trapFocus = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (tourActive) return;
     if (e.key !== 'Tab') return;
     const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -143,7 +146,8 @@ export function PlanDetailPanel() {
       <div
         ref={panelRef}
         role="dialog"
-        aria-modal="true"
+        aria-modal={tourActive ? undefined : 'true'}
+        data-tour="plan-detail"
         aria-labelledby="plan-detail-title"
         tabIndex={-1}
         onKeyDown={trapFocus}

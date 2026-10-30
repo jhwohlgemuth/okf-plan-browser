@@ -76,7 +76,8 @@ The [draft workflow](.agents/skills/planning/references/write-draft.md) saves `d
 - 🗂️ **Multiple repos** — "Add another .wiki" merges data with distinct repo colour labels
 - 🔄 **One-click refresh** — re-read a single wiki or all wikis from the sidebar. Remote wikis re-fetch from the forge. Chromium browsers remember a local folder (and may ask to re-allow access after a restart); in Firefox/Safari a local wiki's refresh button re-opens the folder picker and re-uploads into the same project
 - 🖱️ **Slide-in detail panel** — click any plan for full frontmatter, sections, phases, dependencies
-- 🎭 **Embedded demo data** — 6 synthetic plans load instantly with no files required
+- 🎭 **Embedded demo data** — synthetic plans load instantly with no files required
+- 🧭 **Guided walkthrough** — select **Take a tour** on Home or About to explore the views with loaded plans or demo data
 - 🖥️ **Optional Tauri desktop app** — native window, no Electron overhead
 - ⚙️ **GitHub Actions** — CI, GitHub Pages deploy, multi-platform Tauri release, automated versioning
 
@@ -133,6 +134,8 @@ npm run dev
 ```
 
 Open `http://localhost:5173` in Chrome or Edge. Click **Open Folder** and pick any `.wiki/` directory, paste a GitHub `owner/repo` or GitLab URL, or click **Load Demo Data** to explore immediately.
+
+Select **Take a tour** on Home or About for a guided walkthrough. If no plans are loaded, the tour offers to load demo plans first.
 
 Plan details display images inline and let you open image and PDF links. The **Images & PDFs** tab on Search lists viewable assets from the entire `.wiki`, including shared files in `.wiki/_assets/`. Browser folder uploads cache these assets for viewing after reload.
 

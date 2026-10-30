@@ -8,6 +8,7 @@ import { Sidebar } from './Sidebar';
 import { PlanDetailPanel } from './PlanDetailPanel';
 import { TooltipProvider } from './ui/tooltip';
 import { usePlanStore } from '@/store/planStore';
+import { WalkthroughProvider } from './Walkthrough';
 
 export function Layout() {
   const [navOpen, setNavOpen] = useState(false);
@@ -74,6 +75,7 @@ export function Layout() {
   }, []);
 
   return (
+    <WalkthroughProvider>
     <TooltipProvider>
       <DialogPrimitive.Root open={navOpen} onOpenChange={setNavOpen}>
         <div className="flex h-dvh overflow-hidden bg-background">
@@ -83,6 +85,7 @@ export function Layout() {
               <DialogPrimitive.Trigger asChild>
                 <button
                   type="button"
+                  data-tour="navigation-trigger"
                   aria-label="Open navigation"
                   className="p-2 -ml-1 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
@@ -128,5 +131,6 @@ export function Layout() {
         </div>
       </DialogPrimitive.Root>
     </TooltipProvider>
+    </WalkthroughProvider>
   );
 }
