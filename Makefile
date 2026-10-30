@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install dev lint typecheck test audit build ci visual visual-update visual-report tauri-dev tauri-build \
         pages-enable pages-deploy pages-url \
-        bump-patch bump-minor bump-major bump release release-prepare release-publish release-retry-draft release-run release-watch release-tag release-list release-view release-download release-delete \
+        bump-patch bump-minor bump-major bump release version check-version release-version release-prepare release-publish release-retry-draft release-run release-watch release-tag release-list release-view release-download release-delete \
         runs watch logs ci-status
 
 REPO    := $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
@@ -70,6 +70,13 @@ pages-url: ## Print the published site URL
 
 ## Versioning and releases
 
+version: ## Print the project version string
+	@node -p 'require("./package.json").version'
+
+check-version: ## Validate npm, Tauri, and Cargo version metadata
+	@node scripts/sync-version.mjs --check
+	@cargo metadata --locked --no-deps --format-version 1 --manifest-path src-tauri/Cargo.toml >/dev/null
+
 bump: ## Run the Version Bump workflow on GitHub (BUMP=patch|minor|major)
 	gh workflow run version-bump.yml --ref main -f bump=$(BUMP)
 	@sleep 5
@@ -83,12 +90,16 @@ release: ## Bump (BUMP=patch|minor|major), then watch the desktop release build
 	$(MAKE) bump BUMP=$(BUMP)
 	$(MAKE) release-watch
 
-release-prepare: ## Set an exact version in npm and Tauri/Cargo (VERSION=X.Y.Z)
+release-version: ## Set an exact release version and verify it (VERSION=X.Y.Z)
 	@test -n "$(VERSION)" || (echo 'Set VERSION=X.Y.Z' >&2; exit 1)
 	npm version "$(VERSION)" --no-git-tag-version --allow-same-version
 	node scripts/sync-version.mjs
+	@$(MAKE) check-version
+
+release-prepare: release-version ## Prepare an exact release version (alias for release-version)
 
 release-publish: ## Push a clean committed version and tag to start Release (VERSION=X.Y.Z)
+	@$(MAKE) check-version
 	@set -eu; \
 	  test "$(VERSION)" = "$$(node -p 'require("./package.json").version')"; \
 	  test -z "$$(git status --porcelain)" || { echo 'Commit all release changes before publishing' >&2; exit 1; }; \
@@ -98,6 +109,7 @@ release-publish: ## Push a clean committed version and tag to start Release (VER
 	  git push origin "v$(VERSION)"
 
 release-retry-draft: ## Retry an unpublished tag at HEAD with a lease (VERSION=X.Y.Z EXPECTED_TAG_SHA=...)
+	@$(MAKE) check-version
 	@set -eu; \
 	  test -n "$(EXPECTED_TAG_SHA)" || { echo 'Set EXPECTED_TAG_SHA to the remote tag commit' >&2; exit 1; }; \
 	  test "$(VERSION)" = "$$(node -p 'require("./package.json").version')"; \

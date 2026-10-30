@@ -74,7 +74,7 @@ make release BUMP=patch   # or minor / major
 For a specific version, prepare and commit the version files, then publish the tag:
 
 ```bash
-make release-prepare VERSION=0.0.1
+make release-version VERSION=0.0.1
 git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
 git commit -m "Release v0.0.1"
 make release-publish VERSION=0.0.1
@@ -82,6 +82,7 @@ make release-publish VERSION=0.0.1
 
 `release-publish` requires a clean tree, pushes the commit, and then pushes the tag to start the Release workflow. Inspect it with `make release-watch` and `make release-view TAG=v0.0.1`.
 If a draft release fails before publication, commit the fix and retry the same unpublished tag with `make release-retry-draft VERSION=0.0.1 EXPECTED_TAG_SHA=<remote-tag-commit>`. The lease refuses to move a tag that changed remotely.
+Use `make version` to print the npm version and `make check-version` to check npm, Tauri, and Cargo metadata before a release. These match the version and release-version task names used in Acorn; `release-prepare` remains an alias.
 
 This runs the **Version Bump** workflow, which updates `package.json` and `tauri.conf.json`, commits, tags `vX.Y.Z`, and starts the **Release** workflow. That workflow attaches Apple Silicon and Intel macOS DMGs, a Windows MSI, and Linux Debian and AppImage packages to a draft GitHub release. It checks that all five assets are present, attaches `SHA256SUMS`, and only then publishes the release. Intel macOS builds are provided as artifacts but are not a supported desktop-ingest target.
 

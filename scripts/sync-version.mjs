@@ -9,13 +9,23 @@ const root = resolve(__dirname, '..');
 
 const pkg     = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
 const version = pkg.version;
+const checkOnly = process.argv.includes('--check');
+
+const lock = JSON.parse(readFileSync(resolve(root, 'package-lock.json'), 'utf8'));
+if (lock.version !== version || lock.packages[''].version !== version) {
+  throw new Error(`package-lock.json must match package.json version ${version}`);
+}
 
 const tauriPath = resolve(root, 'src-tauri', 'tauri.conf.json');
 const tauri     = JSON.parse(readFileSync(tauriPath, 'utf8'));
 
-tauri.package.version = version;
-
-writeFileSync(tauriPath, JSON.stringify(tauri, null, 2) + '\n');
+if (checkOnly && tauri.package.version !== version) {
+  throw new Error(`Tauri version ${tauri.package.version} does not match ${version}`);
+}
+if (!checkOnly && tauri.package.version !== version) {
+  tauri.package.version = version;
+  writeFileSync(tauriPath, JSON.stringify(tauri, null, 2) + '\n');
+}
 
 for (const relativePath of ['src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']) {
   const path = resolve(root, relativePath);
@@ -28,7 +38,13 @@ for (const relativePath of ['src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']) {
   const start = source.indexOf(marker) + marker.length;
   const end = source.indexOf('"', start);
   if (end < 0) throw new Error(`Missing version terminator in ${relativePath}`);
-  writeFileSync(path, source.slice(0, start) + version + source.slice(end));
+  const current = source.slice(start, end);
+  if (checkOnly && current !== version) {
+    throw new Error(`${relativePath} version ${current} does not match ${version}`);
+  }
+  if (!checkOnly && current !== version) {
+    writeFileSync(path, source.slice(0, start) + version + source.slice(end));
+  }
 }
 
-console.log(`✓ Synced version ${version} → Tauri config and Cargo metadata`);
+console.log(checkOnly ? `✓ Version metadata matches ${version}` : `✓ Synced version ${version} → Tauri config and Cargo metadata`);
