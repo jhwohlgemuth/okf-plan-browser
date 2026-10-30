@@ -37,6 +37,17 @@ describe('parseRemoteSpec', () => {
     });
   });
 
+  it('requires an explicit ref for ambiguous tree/blob paths and accepts slash refs', () => {
+    expect(() => parseRemoteSpec('https://github.com/acme/widgets/tree/feature/new-ui/.wiki')).toThrow(/Branch\/ref/);
+    expect(() => parseRemoteSpec('https://gitlab.com/group/proj/-/blob/feature/new-ui/README.md')).toThrow(/Branch\/ref/);
+    expect(parseRemoteSpec('https://github.com/acme/widgets/tree/main/.wiki', ' feature/new-ui ')).toEqual({
+      forge: 'github', host: 'github.com', project: 'acme/widgets', ref: 'feature/new-ui',
+    });
+    expect(parseRemoteSpec('https://gitlab.com/group/proj/-/blob/main/README.md', 'feature/new-ui').ref).toBe('feature/new-ui');
+    expect(parseRemoteSpec('acme/widgets', 'feature/new-ui').ref).toBe('feature/new-ui');
+    expect(parseRemoteSpec('https://github.com/acme/widgets/tree/feature%2Fnew-ui').ref).toBe('feature/new-ui');
+  });
+
   it('rejects empty and malformed specs', () => {
     expect(() => parseRemoteSpec('')).toThrow(/owner\/repo/);
     expect(() => parseRemoteSpec('justone')).toThrow(/owner\/repo/);
@@ -52,6 +63,8 @@ describe('remoteProjectId', () => {
     expect(remoteProjectId({
       forge: 'gitlab', host: 'code.ornl.gov', project: 'research-enablement/acorn',
     })).toBe('remote:gitlab:code.ornl.gov/research-enablement/acorn@');
+    expect(remoteProjectId({ forge: 'github', host: 'github.com', project: 'acme/widgets', ref: 'feature/new-ui' }))
+      .toBe('remote:github:github.com/acme/widgets@feature%2Fnew-ui');
   });
 });
 
@@ -159,6 +172,24 @@ describe('fetchRemoteWiki GitHub', () => {
     expect(auth).toBe('Bearer ghp_secret');
   });
 
+  it('requests a slash-containing GitHub ref without truncating it', async () => {
+    const requests: string[] = [];
+    const remote = parseRemoteSpec('acme/widgets', 'feature/new-ui');
+    const routes: Record<string, Route> = {
+      [repo]: { json: { default_branch: 'main' } },
+      [`${repo}/git/trees/feature%2Fnew-ui?recursive=1`]: { json: { truncated: false, tree: [
+        { path: '.wiki/plan-one.md', type: 'blob', sha: 's1' },
+      ] } },
+      [blob('s1')]: { json: { encoding: 'base64', content: b64(planOne) } },
+    };
+    const wiki = await fetchRemoteWiki(remote, { fetch: async (input, init) => {
+      requests.push(String(input));
+      return mockFetch(routes)(input, init);
+    } });
+    expect(requests).toContain(`${repo}/git/trees/feature%2Fnew-ui?recursive=1`);
+    expect(wiki.remote.ref).toBe('feature/new-ui');
+  });
+
   it('fetches an image through the authenticated contents API', async () => {
     let authorization = '';
     const remote = { forge: 'github' as const, host: 'github.com', project: 'acme/widgets', ref: 'main' };
@@ -195,6 +226,21 @@ describe('fetchRemoteWiki GitHub', () => {
 
 describe('fetchRemoteWiki GitLab', () => {
   const base = 'https://code.ornl.gov/api/v4/projects/research-enablement%2Facorn';
+
+  it('requests a slash-containing GitLab ref without truncating it', async () => {
+    const archiveUrl = `${base}/repository/archive.tar.gz?sha=feature%2Fnew-ui&path=.wiki`;
+    const requests: string[] = [];
+    const remote = parseRemoteSpec('https://code.ornl.gov/research-enablement/acorn', 'feature/new-ui');
+    const wiki = await fetchRemoteWiki(remote, { fetch: async input => {
+      const url = String(input);
+      requests.push(url);
+      if (url === base) return Response.json({ default_branch: 'main' });
+      if (url === archiveUrl) return new Response(wikiArchive({ 'plan-one.md': planOne }));
+      throw new Error(`unexpected fetch ${url}`);
+    } });
+    expect(requests).toEqual([base, archiveUrl]);
+    expect(wiki.remote.ref).toBe('feature/new-ui');
+  });
 
   it('rejects oversized archive members without falling back to file requests', async () => {
     const archive = wikiArchive({ 'large.md': 'x'.repeat(2 * 1024 * 1024 + 1) });

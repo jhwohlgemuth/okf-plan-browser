@@ -25,7 +25,6 @@ unit tests are release gates, but do not substitute for installer interaction te
 
 - [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md)
 - [Track refresh work independently for each repository](refresh-concurrency.md)
-- [Load branches containing slashes unambiguously](remote-branch-selection.md)
 - [Verify packaged desktop ingest](tauri-desktop-ingest.md)
 
 # Dependencies

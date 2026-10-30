@@ -150,7 +150,7 @@ export function useFileSystem() {
     return parsed;
   };
 
-  const loadRemote = useCallback(async (spec: string): Promise<LoadResult | null> => {
+  const loadRemote = useCallback(async (spec: string, refOverride?: string): Promise<LoadResult | null> => {
     const trimmed = spec.trim();
     if (!trimmed) {
       setError('Enter a GitHub owner/repo or a GitLab project URL.');
@@ -163,7 +163,7 @@ export function useFileSystem() {
       remoteController.current?.abort();
       const controller = new AbortController();
       remoteController.current = controller;
-      const remote = parseRemoteSpec(trimmed);
+      const remote = parseRemoteSpec(trimmed, refOverride);
       const wiki = await fetchRemoteWiki(remote, {
         signal: controller.signal,
         githubToken: remote.forge === 'github' ? await getGithubToken() : undefined,

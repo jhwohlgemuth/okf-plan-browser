@@ -32,7 +32,8 @@ export interface RemoteWiki {
 
 const SKIP = new Set(['node_modules', '.git']);
 
-export function parseRemoteSpec(raw: string): RemoteWikiRef {
+export function parseRemoteSpec(raw: string, refOverride?: string): RemoteWikiRef {
+  const override = refOverride?.trim() || undefined;
   let s = raw.trim().replace(/\.git$/i, '').replace(/\/+$/, '');
   if (!s) throw new Error('Enter a GitHub owner/repo or a GitLab project URL.');
 
@@ -44,7 +45,7 @@ export function parseRemoteSpec(raw: string): RemoteWikiRef {
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         throw new Error('GitHub repos look like owner/repo.');
       }
-      return { forge: 'github', host: 'github.com', project: `${parts[0]}/${parts[1]}` };
+      return { forge: 'github', host: 'github.com', project: `${parts[0]}/${parts[1]}`, ...(override ? { ref: override } : {}) };
     }
     s = `https://${s}`;
   }
@@ -70,7 +71,10 @@ export function parseRemoteSpec(raw: string): RemoteWikiRef {
     if (segs.length < 2) throw new Error('GitHub repos look like owner/repo.');
     const project = `${segs[0]}/${segs[1]}`;
     const treeIdx = segs[2] === 'tree' || segs[2] === 'blob' ? 3 : -1;
-    const ref = treeIdx > 0 && segs[treeIdx] ? segs[treeIdx] : undefined;
+    if (treeIdx > 0 && segs.length > 4 && !override) {
+      throw new Error('Tree/blob URLs with extra path segments are ambiguous. Enter the exact Branch/ref.');
+    }
+    const ref = override ?? (treeIdx > 0 && segs[treeIdx] ? decodeURIComponent(segs[treeIdx]) : undefined);
     return { forge: 'github', host: 'github.com', project, ref };
   }
 
@@ -78,10 +82,13 @@ export function parseRemoteSpec(raw: string): RemoteWikiRef {
   if (segs.length < 2) throw new Error('GitLab projects look like host/group/project.');
   let ref: string | undefined;
   if (afterDash) {
-    const m = afterDash.match(/^(?:tree|blob)\/([^/]+)/);
-    if (m?.[1]) ref = m[1];
+    const m = afterDash.match(/^(?:tree|blob)\/([^/]+)(?:\/(.+))?$/);
+    if (m?.[2] && !override) {
+      throw new Error('Tree/blob URLs with extra path segments are ambiguous. Enter the exact Branch/ref.');
+    }
+    if (m?.[1]) ref = decodeURIComponent(m[1]);
   }
-  return { forge: 'gitlab', host, project: segs.join('/'), ref };
+  return { forge: 'gitlab', host, project: segs.join('/'), ref: override ?? ref };
 }
 
 export function remoteProjectId(remote: RemoteWikiRef): string {

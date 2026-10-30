@@ -364,6 +364,34 @@ test('remote refresh preserves failed snapshots and removes a valid empty snapsh
   await expect(page.getByRole('button', { name: 'Open Epic: Original' })).toHaveCount(0);
 });
 
+test('explicit branch loads a slash ref from an ambiguous GitHub URL', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'remote source selection coverage runs on desktop');
+  const requests: string[] = [];
+  await page.route('https://api.github.com/**', async route => {
+    const url = route.request().url();
+    requests.push(url);
+    const body = url.includes('/git/trees/')
+      ? { truncated: false, tree: [{ type: 'blob', path: '.wiki/plan.md', sha: 'one' }] }
+      : url.includes('/git/blobs/')
+        ? { encoding: 'base64', content: Buffer.from(markdown('Slash branch plan')).toString('base64') }
+        : { default_branch: 'main' };
+    await route.fulfill({ json: body });
+  });
+  await page.goto('/home');
+  await page.getByRole('textbox', { name: 'GitHub owner/repo or GitLab project URL' })
+    .fill('https://github.com/team/app/tree/main/docs');
+  await page.getByRole('button', { name: 'Load', exact: true }).click();
+  await expect(page.getByText(/Tree\/blob URLs with extra path segments are ambiguous/)).toBeVisible();
+  expect(requests).toHaveLength(0);
+
+  await page.getByRole('textbox', { name: 'Branch/ref (optional)' }).fill('feature/new-ui');
+  await page.getByRole('button', { name: 'Load', exact: true }).click();
+  await expect(page.getByText('Loaded 1 plan', { exact: true })).toBeVisible();
+  expect(requests.some(url => url.includes('/git/trees/feature%2Fnew-ui?recursive=1'))).toBe(true);
+  await page.goto('/portfolio');
+  await expect(page.getByRole('button', { name: 'Open Epic: Slash branch plan' })).toBeVisible();
+});
+
 test('tokens stay in session storage and are forgotten through keyboard controls', async ({ page }) => {
   await page.goto('/settings');
   const token = page.getByRole('textbox', { name: 'GitHub personal access token' });

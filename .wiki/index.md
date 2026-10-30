@@ -7,7 +7,6 @@ The coordination record for these outcomes is [code-health-hardening.md](code-he
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
 | 2 | [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md) | medium | medium | Persist portfolio changes without rewriting on navigation |
 | 3 | [Track refresh work independently for each repository](refresh-concurrency.md) | medium | medium | Track refresh work independently for each repository |
-| 4 | [Load branches containing slashes unambiguously](remote-branch-selection.md) | medium | medium | Load branches containing slashes unambiguously |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
@@ -27,3 +26,6 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
   handling, and focused browser coverage. Evidence is in `docs/rendering-performance.md`;
   four executable outcomes remain. AX-01/02 remain retired after current code and browser
   coverage were checked again.
+- 2026-10-30 — RB-01 completed: explicit branch selection resolves slash-containing refs in
+  GitHub and GitLab requests and source IDs; unit and browser coverage passed. Retired the plan;
+  three executable outcomes remain. The 2026-10-29 portfolio-wide review is still current.

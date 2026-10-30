@@ -52,3 +52,14 @@
 - Budget: Both phases completed within their five-hour active-time budgets.
 - Blockers / failed approaches: A browser assertion initially used an inaccessible status name; a visible-text assertion resolved the test-only issue. No current blocker.
 - Next action: Review and commit the implementation when desired.
+
+## Implementation — Slash-containing remote branches
+
+- Plan: `.wiki/remote-branch-selection.md` retired after RB-01; active phase: none; state: complete.
+- Authorized scope and decisions: Implement RB-01 under the remote source selection lock. An explicit Branch/ref overrides URL inference; ambiguous tree/blob paths require that field.
+- Baseline and local work: `f3ed112`; clean worktree at phase start; no CodeGraph index present.
+- Verified state: The field passes slash-containing refs to GitHub and GitLab with encoded API paths and distinct source IDs. Unit tests cover parsing, identity, and both forge requests; a browser test covers the ambiguous URL message and successful override. `npm test -- src/lib/remoteWiki.test.ts` passed 20 tests; typecheck and lint passed; `npx playwright test e2e/integrity.spec.ts` passed 26 tests with 16 expected viewport skips.
+- Remaining work: None for RB-01.
+- Budget: Completed within the five-hour active-time budget.
+- Blockers / failed approaches: None.
+- Next action: Review and commit the implementation when desired.

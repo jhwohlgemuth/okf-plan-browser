@@ -21,6 +21,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
   } = useFileSystem();
   const [projectName, setProjectName] = useState('');
   const [remoteSpec, setRemoteSpec] = useState('');
+  const [remoteRef, setRemoteRef] = useState('');
   const [remoteHistory, setRemoteHistory] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem('okf-remote-wiki-history');
@@ -69,13 +70,13 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
     e.preventDefault();
     e.stopPropagation();
     const spec = remoteSpec.trim();
-    const result = await loadRemote(remoteSpec);
+    const result = await loadRemote(remoteSpec, remoteRef);
     if (spec && !remoteHistory.includes(spec)) {
       const next = [spec, ...remoteHistory].slice(0, 20);
       setRemoteHistory(next);
       try { localStorage.setItem('okf-remote-wiki-history', JSON.stringify(next)); } catch { /* ignore */ }
     }
-    if (result) setRemoteSpec('');
+    if (result) { setRemoteSpec(''); setRemoteRef(''); }
     announce(result);
   };
 
@@ -84,42 +85,54 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
     !remoteSpec || item.toLowerCase().includes(remoteSpec.toLowerCase()),
   );
   const remoteForm = (
-    <form className="flex gap-2" onSubmit={handleRemote}>
-      <div className="relative flex-1">
-        <Input
-          value={remoteSpec}
-          onChange={e => setRemoteSpec(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
-          placeholder="GitHub owner/repo or GitLab URL"
-          aria-label="GitHub owner/repo or GitLab project URL"
-          autoComplete="off"
-          disabled={loading}
-        />
-        {showSuggestions && suggestions.length > 0 && (
-          <ul className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-md border border-border bg-card text-sm shadow-md">
-            {suggestions.map(item => {
-              const lower = item.toLowerCase();
-              const Icon = lower.includes('gitlab') ? Gitlab : lower.includes('github') || !lower.startsWith('http') ? Github : Globe;
-              return (
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-                <li
-                  key={item}
-                  className="flex items-center gap-2 cursor-pointer px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
-                  onMouseDown={() => {
-                    setRemoteSpec(item);
-                    setShowSuggestions(false);
-                  }}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{item}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+    <form className="space-y-2" onSubmit={handleRemote}>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            value={remoteSpec}
+            onChange={e => setRemoteSpec(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+            placeholder="GitHub owner/repo or GitLab URL"
+            aria-label="GitHub owner/repo or GitLab project URL"
+            autoComplete="off"
+            disabled={loading}
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="absolute z-50 mt-1 w-full max-h-48 overflow-auto rounded-md border border-border bg-card text-sm shadow-md">
+              {suggestions.map(item => {
+                const lower = item.toLowerCase();
+                const Icon = lower.includes('gitlab') ? Gitlab : lower.includes('github') || !lower.startsWith('http') ? Github : Globe;
+                return (
+                  // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+                  <li
+                    key={item}
+                    className="flex items-center gap-2 cursor-pointer px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground"
+                    onMouseDown={() => {
+                      setRemoteSpec(item);
+                      setRemoteRef('');
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{item}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+        <Button type="submit" size="sm" disabled={loading || !remoteSpec.trim()}>Load</Button>
       </div>
-      <Button type="submit" size="sm" disabled={loading || !remoteSpec.trim()}>Load</Button>
+      <Input
+        value={remoteRef}
+        onChange={e => setRemoteRef(e.target.value)}
+        placeholder="Branch/ref (optional)"
+        aria-label="Branch/ref (optional)"
+        autoComplete="off"
+        disabled={loading}
+      />
+      <p className="text-xs text-muted-foreground">Branch/ref overrides the URL. For tree/blob URLs with more path segments, enter the exact branch here because slashes may belong to the branch or file path.</p>
     </form>
   );
 
