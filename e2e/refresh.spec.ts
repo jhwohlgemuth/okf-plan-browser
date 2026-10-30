@@ -51,6 +51,26 @@ async function seedStoredRepos(page: Page, repos: Array<{ id: string; label: str
   }, repos);
 }
 
+async function seedRemoteRepos(page: Page, repos: Array<{ id: string; label: string; project: string }>) {
+  await page.evaluate(seededRepos => {
+    localStorage.setItem('okf-plan-browser:wikis', JSON.stringify({
+      state: {
+        plans: [],
+        repos: seededRepos.map((repo, index) => ({
+          id: repo.id,
+          label: repo.label,
+          uuid: `remote-uuid-${index}`,
+          color: index % 2 ? '#98c379' : '#61afef',
+          planCount: 0,
+          remote: { forge: 'github', host: 'github.com', project: repo.project, ref: 'main' },
+        })),
+        warnings: [],
+      },
+      version: 1,
+    }));
+  }, repos);
+}
+
 async function storedHandleKeys(page: Page) {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -114,6 +134,45 @@ test('refresh re-reads a stored folder handle', async ({ page }, info) => {
   await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText('Refreshed 1 wiki').last()).toBeVisible();
   await page.getByRole('textbox').first().fill('Changed');
   await expect(page.getByText('Changed title').first()).toBeVisible();
+});
+
+test('overlapping repository refreshes keep independent busy state and invalidate removed sources', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sidebar is a drawer on small screens');
+  let releaseSlow!: () => void;
+  const slow = new Promise<void>(resolve => { releaseSlow = resolve; });
+  await page.route('https://api.github.com/**', async route => {
+    const url = route.request().url();
+    const isSlow = url.includes('/team/slow/');
+    if (url.endsWith('/repos/team/slow')) await slow;
+    const body = url.includes('/git/trees/')
+      ? { tree: [{ type: 'blob', path: '.wiki/plan.md', sha: isSlow ? 'slow' : 'fast' }] }
+      : url.includes('/git/blobs/')
+        ? { encoding: 'base64', content: btoa(plan(isSlow ? 'Slow response' : 'Fast response')) }
+        : { default_branch: 'main' };
+    await route.fulfill({ json: body });
+  });
+  await page.goto('/home');
+  await seedRemoteRepos(page, [
+    { id: 'slow', label: 'Slow', project: 'team/slow' },
+    { id: 'fast', label: 'Fast', project: 'team/fast' },
+  ]);
+  await page.reload();
+
+  await page.getByRole('button', { name: 'Refresh all wikis' }).click();
+  await expect(page.getByRole('button', { name: 'Cancel refresh Slow' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh Fast' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel refresh Slow' })).toBeVisible();
+
+  const slowRow = page.locator('main').getByText('Slow', { exact: true }).locator('xpath=../..');
+  await slowRow.getByTitle('Remove repo').click();
+  await expect(page.getByRole('button', { name: 'Cancel refresh Slow' })).toHaveCount(0);
+  releaseSlow();
+
+  await expect(page.getByRole('region', { name: 'Notifications (F8)' })
+    .getByText('Refreshed 1 wiki (1 plans)')).toBeVisible();
+  await page.goto('/portfolio');
+  await expect(page.getByRole('button', { name: 'Open Epic: Fast response' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Slow response' })).toHaveCount(0);
 });
 
 test('repository and bulk removal actions forget stored folder handles', async ({ page }, info) => {

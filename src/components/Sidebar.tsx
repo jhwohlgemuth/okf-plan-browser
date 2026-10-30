@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import type { Ref } from 'react';
 import {
   Home, LayoutGrid, Layers, Share2, Search, Settings, AlertTriangle, Info, RefreshCw,
-  PanelLeftClose, PanelLeftOpen, BookOpenCheck,
+  PanelLeftClose, PanelLeftOpen, BookOpenCheck, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlanStore } from '@/store/planStore';
@@ -115,7 +115,7 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
               <button
                 type="button"
                 onClick={refreshAll}
-                disabled={busy.size > 0}
+                disabled={repos.every(repo => busy.has(repo.id))}
                 title="Refresh all wikis"
                 aria-label="Refresh all wikis"
                 className="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
@@ -125,7 +125,11 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
               </button>
             )}
           </div>
-          {busy.size > 0 && <button type="button" onClick={cancelRefresh} className="text-xs underline">Cancel refresh</button>}
+          {busy.size > 0 && (
+            <button type="button" onClick={() => cancelRefresh()} className="text-xs underline">
+              Cancel all refreshes
+            </button>
+          )}
           {repos.map(r => (
             <div key={r.id} className="group flex items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: r.color }} />
@@ -134,13 +138,14 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
               {!isDemoData && (
                 <button
                   type="button"
-                  onClick={() => refreshOne(r.id)}
-                  disabled={busy.has(r.id)}
-                  title={refreshable.has(r.id) ? `Refresh ${r.label}` : `Re-select the ${r.label} folder to refresh`}
-                  aria-label={`Refresh ${r.label}`}
-                  className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 hover:bg-accent hover:text-foreground disabled:pointer-events-none transition"
+                  onClick={() => busy.has(r.id) ? cancelRefresh(r.id) : refreshOne(r.id)}
+                  title={busy.has(r.id)
+                    ? `Cancel refresh ${r.label}`
+                    : refreshable.has(r.id) ? `Refresh ${r.label}` : `Re-select the ${r.label} folder to refresh`}
+                  aria-label={busy.has(r.id) ? `Cancel refresh ${r.label}` : `Refresh ${r.label}`}
+                  className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 hover:bg-accent hover:text-foreground transition"
                 >
-                  <RefreshCw className={cn('h-3 w-3', busy.has(r.id) && 'animate-spin')} />
+                  {busy.has(r.id) ? <X className="h-3 w-3" /> : <RefreshCw className="h-3 w-3" />}
                 </button>
               )}
             </div>

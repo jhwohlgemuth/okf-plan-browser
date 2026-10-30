@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { parseWikiFile, parseWikiTexts } from './wikiParser';
-import { commitWiki } from './commitWiki';
+import { beginWikiOperation, commitWiki, commitWikiOperation } from './commitWiki';
 import { restorePortfolio } from './restorePortfolio';
 import { usePlanStore } from '@/store/planStore';
 import {
@@ -39,6 +39,36 @@ describe('portfolio integrity', () => {
     expect(usePlanStore.getState().plans).toEqual([]);
     expect(usePlanStore.getState().repos[0]?.planCount).toBe(0);
     expect(() => commitWiki('new', { plans: [], errors: [] })).toThrow(/No plans/);
+  });
+
+  it('rejects an older refresh after a newer refresh or import starts', () => {
+    commitWiki('r', { plans: [plan('r', 'original.md')], errors: [] });
+    const older = beginWikiOperation('r');
+    const newer = beginWikiOperation('r');
+
+    expect(commitWikiOperation('r', older, { plans: [plan('r', 'old.md')], errors: [] }, { refresh: true }))
+      .toBeNull();
+    expect(commitWikiOperation('r', newer, { plans: [plan('r', 'new.md')], errors: [] }, { refresh: true })?.plans)
+      .toBe(1);
+    expect(usePlanStore.getState().plans[0]?.fileName).toBe('new.md');
+
+    const pending = beginWikiOperation('r');
+    commitWiki('r', { plans: [plan('r', 'imported.md')], errors: [] });
+    expect(commitWikiOperation('r', pending, { plans: [plan('r', 'stale.md')], errors: [] }, { refresh: true }))
+      .toBeNull();
+    expect(usePlanStore.getState().plans[0]?.fileName).toBe('imported.md');
+  });
+
+  it('rejects a refresh response after its repository is removed', () => {
+    commitWiki('r', { plans: [plan('r', 'original.md')], errors: [] });
+    const pending = beginWikiOperation('r');
+
+    void usePlanStore.getState().removeRepo('r');
+
+    expect(commitWikiOperation('r', pending, { plans: [plan('r', 'stale.md')], errors: [] }, { refresh: true }))
+      .toBeNull();
+    expect(usePlanStore.getState().repos).toEqual([]);
+    expect(usePlanStore.getState().plans).toEqual([]);
   });
 
   it('separates hosts, branches, and local identities sharing a label', () => {

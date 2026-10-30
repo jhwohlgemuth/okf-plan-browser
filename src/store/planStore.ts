@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 import type { ParsedPlan, WikiRepo, PlanFilters, ParseWarning } from '@/types/wiki';
 import { DEMO_PLANS, DEMO_REPOS } from '@/lib/demoData';
 import { buildSearchText } from '@/lib/wikiParser';
@@ -22,6 +22,7 @@ interface PlanStore {
   filters:        PlanFilters;
   isDemoData:     boolean;
   storageError:   boolean;
+  portfolioRevision: number;
 
   // Actions
   addPlans:      (plans: ParsedPlan[], repo: WikiRepo, warns: ParseWarning[]) => void;
@@ -38,18 +39,50 @@ interface PlanStore {
 
 export const PLAN_STORAGE_KEY = 'okf-plan-browser:wikis';
 
-// Quota errors must not break the app; surface them through storageError instead.
-const safeStorage: StateStorage = {
-  getItem: k => { try { return localStorage.getItem(k); } catch { return null; } },
-  setItem: (k, v) => {
+interface PersistedPortfolio {
+  plans: ParsedPlan[];
+  repos: WikiRepo[];
+  warnings: ParseWarning[];
+  portfolioRevision: number;
+}
+
+let persistedRevision = 0;
+
+// Zustand's JSON storage serializes after every store update, including navigation and filters.
+// Keep the revision check outside JSON.stringify so transient changes do no persistence work.
+const portfolioStorage: PersistStorage<PersistedPortfolio> = {
+  getItem: key => {
     try {
-      localStorage.setItem(k, v);
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const value = JSON.parse(raw) as StorageValue<PersistedPortfolio>;
+      persistedRevision = Number.isSafeInteger(value.state?.portfolioRevision)
+        ? value.state.portfolioRevision
+        : 0;
+      return value;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key, value) => {
+    const revision = value.state.portfolioRevision;
+    if (revision === persistedRevision) return;
+    persistedRevision = revision;
+    try {
+      const stored: StorageValue<PersistedPortfolio> = {
+        ...value,
+        state: {
+          ...value.state,
+          plans: value.state.plans.map(plan => ({ ...plan, searchText: undefined })),
+        },
+      };
+      localStorage.setItem(key, JSON.stringify(stored));
       if (usePlanStore.getState().storageError) usePlanStore.setState({ storageError: false });
     } catch {
       if (!usePlanStore.getState().storageError) usePlanStore.setState({ storageError: true });
     }
   },
-  removeItem: k => { try { localStorage.removeItem(k); } catch { /* ignore */ } },
+  removeItem: key => { try { localStorage.removeItem(key); } catch { /* ignore */ } },
 };
 
 const EMPTY_FILTERS: PlanFilters = {
@@ -83,6 +116,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
   filters:        { ...EMPTY_FILTERS },
   isDemoData:     false,
   storageError:   false,
+  portfolioRevision: 0,
 
   addPlans: (plans, repo, warns) =>
     set(s => ({
@@ -92,6 +126,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
                     : [...s.repos, repo],
       warnings:   [...s.warnings.filter(w => w.repoId !== repo.id), ...warns],
       isDemoData: false,
+      portfolioRevision: s.portfolioRevision + 1,
     })),
 
   removeRepo: (repoId) => {
@@ -101,6 +136,7 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       plans:    s.plans.filter(p => p.repoId !== repoId),
       repos:    s.repos.filter(r => r.id !== repoId),
       warnings: s.warnings.filter(w => w.repoId !== repoId),
+      portfolioRevision: s.portfolioRevision + 1,
     }));
     return cleanupOutcome(cleanup);
   },
@@ -127,13 +163,14 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       warnings:   [],
       isDemoData: true,
       filters:    { ...EMPTY_FILTERS },
+      portfolioRevision: usePlanStore.getState().portfolioRevision + 1,
     });
   },
 
   clearAll: () => {
     const cleanup = clearHandles();
     usePlanStore.getState().repos.forEach(repo => forgetAssets(repo.id));
-    set({
+    set(s => ({
       plans:          [],
       repos:          [],
       warnings:       [],
@@ -142,33 +179,41 @@ export const usePlanStore = create<PlanStore>()(persist((set) => ({
       detailOpen:     false,
       isDemoData:     false,
       filters:        { ...EMPTY_FILTERS },
-    });
+      portfolioRevision: s.portfolioRevision + 1,
+    }));
     return cleanupOutcome(cleanup);
   },
 
   clearSavedData: () => {
     const cleanup = clearHandles();
     forgetAllAssets();
-    set({
+    set(s => ({
       plans: [], repos: [], warnings: [], selectedPlanId: null, selectedAnchor: null, detailOpen: false,
       isDemoData: false, storageError: false, filters: { ...EMPTY_FILTERS },
-    });
+      portfolioRevision: s.portfolioRevision + 1,
+    }));
     usePlanStore.persist.clearStorage();
     return cleanupOutcome(cleanup);
   },
 }), {
   name:    PLAN_STORAGE_KEY,
   version: 1,
-  storage: createJSONStorage(() => safeStorage),
-  merge: (saved, current) => ({ ...current, ...restorePortfolio(saved) }),
-  // Demo data is never saved; the derived search text is rebuilt on load rather than stored.
-  partialize: s => s.isDemoData
-    ? { plans: [], repos: [], warnings: [] }
-    : {
-        plans:    s.plans.map(p => ({ ...p, searchText: undefined })),
-        repos:    s.repos,
-        warnings: s.warnings,
-      },
+  storage: portfolioStorage,
+  merge: (saved, current) => ({
+    ...current,
+    ...restorePortfolio(saved),
+    portfolioRevision: typeof (saved as Partial<PersistedPortfolio>)?.portfolioRevision === 'number'
+      ? (saved as PersistedPortfolio).portfolioRevision
+      : 0,
+  }),
+  // Demo data is never saved. The storage adapter strips derived search text only after this
+  // revision changes, avoiding serialization as well as writes for transient UI updates.
+  partialize: s => ({
+    plans: s.isDemoData ? [] : s.plans,
+    repos: s.isDemoData ? [] : s.repos,
+    warnings: s.isDemoData ? [] : s.warnings,
+    portfolioRevision: s.portfolioRevision,
+  }),
 }));
 
 // ─── Derived selectors ────────────────────────────────────────────────────────

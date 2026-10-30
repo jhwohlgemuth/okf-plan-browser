@@ -74,3 +74,14 @@
 - Budget: TD-01 and TD-02 completed within their phase budgets; TD-03 retains its external-host validation budget.
 - Blockers / failed approaches: Current worktree has no Windows or Linux release artifacts or interactive hosts. CI compilation would not prove installer interaction.
 - Next action: After this change is available to the release workflow, build the two remaining supported artifacts and run the TD-03 smoke matrix on their target hosts.
+
+## Implementation — Portfolio persistence and refresh coordination
+
+- Plan: PS-01 and RF-01 retired after completion; active phase: none; state: complete.
+- Authorized scope and decisions: Execute PS-01 and RF-01 serially under their separate integration locks; retain `localStorage` unless representative measurements justify migration.
+- Baseline and local work: `fe83490`; clean worktree at phase start; no CodeGraph index is present.
+- Verified state: PS-01 is complete: 401 transient updates caused zero serialization and writes; a 1,075,408-character portfolio caused one serialization/write, with Chromium `localStorage` latency of 0.60 ms median and 0.90 ms p95. RF-01 now uses per-repository controllers and generations, cancels only targeted work, invalidates removed sources, and rejects responses older than a refresh or import. All 120 unit tests, typecheck, lint, production build, and the refresh browser matrix passed (4 desktop passes, 8 expected viewport skips).
+- Remaining work: None for PS-01 or RF-01.
+- Budget: Both phases completed within their five-hour active-time budgets.
+- Blockers / failed approaches: The first all-project browser run could not bind the sandboxed preview port; the approved local-server run passed. No implementation blocker remains.
+- Next action: Review and commit the implementation when desired.

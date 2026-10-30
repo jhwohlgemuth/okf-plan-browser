@@ -5,8 +5,12 @@ Evidence for the decision to keep `localStorage` as the persistence backend.
 ## Method
 
 Each wiki was parsed with `parseWikiFile` and the resulting plan array serialized with
-`JSON.stringify` (with the derived `searchText` omitted, as `partialize` does). The reported
+`JSON.stringify` (with the derived `searchText` omitted, as persistence does). The reported
 size is `length * 2` bytes, the convention used by the Settings size readout.
+
+Write-scope measurements use the `planStore` persistence test and a representative synthetic
+portfolio of 50 plans and 1,075,408 persisted characters (about 2.05 MB by that convention).
+Browser write latency was sampled 20 times in headless Chromium on Apple Silicon on 2026-10-30.
 
 ## Results
 
@@ -15,6 +19,19 @@ size is `length * 2` bytes, the convention used by the Settings size readout.
 | acorn (largest available) | 43 | 558,271 | 1.65 MB |
 | xylem | 13 | 128,911 | 0.36 MB |
 | okf-plan-browser | 15 | 68,155 | 0.20 MB |
+
+## Interaction write cost
+
+| Operation | Samples | Serializations | `localStorage` writes | Latency |
+| ---- | ----: | ----: | ----: | ----: |
+| Filter/detail-only store updates | 401 | 0 | 0 | no persistence work |
+| Replace representative 50-plan portfolio | 1 | 1 | 1 | 0.30 ms serialization in Vitest |
+| Write the 1,075,408-character payload in Chromium | 20 | n/a | 20 | 0.60 ms median; 0.90 ms p95 |
+
+The persisted store carries a monotonically increasing portfolio revision. Only portfolio
+actions advance it; the storage adapter checks it before copying plans or calling
+`JSON.stringify`. Selection, anchors, detail visibility, filters, and storage-error UI state
+therefore do not serialize or write the portfolio.
 
 ## Headroom
 

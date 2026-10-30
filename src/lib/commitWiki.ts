@@ -18,10 +18,28 @@ export type Parsed = {
   nativeRoot?: string;
 };
 
-export function commitWiki(
+type WikiSource = { remote?: RemoteWikiRef; label?: string; refresh?: boolean };
+
+const operationGenerations = new Map<string, number>();
+
+export function beginWikiOperation(project: string): number {
+  const generation = (operationGenerations.get(project) ?? 0) + 1;
+  operationGenerations.set(project, generation);
+  return generation;
+}
+
+export function invalidateWikiOperation(project: string): void {
+  beginWikiOperation(project);
+}
+
+function isCurrentWikiOperation(project: string, generation: number): boolean {
+  return operationGenerations.get(project) === generation;
+}
+
+function applyWiki(
   project: string,
   { plans, errors, assets = [], nativeRoot }: Parsed,
-  source?: { remote?: RemoteWikiRef; label?: string; refresh?: boolean },
+  source?: WikiSource,
 ): LoadResult {
   if (errors.length) {
     throw new Error(`Import failed; existing plans were kept. ${errors.map(e => `${e.name}: ${e.error}`).join('; ')}`);
@@ -50,4 +68,22 @@ export function commitWiki(
   store.addPlans(plans, repo, warns);
   registerAssetFiles(project, assets, nativeRoot);
   return { repoId: project, plans: plans.length, warnings: warns.length };
+}
+
+/** Commit a user import and invalidate any older refresh response for this repository. */
+export function commitWiki(project: string, parsed: Parsed, source?: WikiSource): LoadResult {
+  invalidateWikiOperation(project);
+  return applyWiki(project, parsed, source);
+}
+
+/** Commit only if this refresh is still the newest operation and the repository still exists. */
+export function commitWikiOperation(
+  project: string,
+  generation: number,
+  parsed: Parsed,
+  source?: WikiSource,
+): LoadResult | null {
+  if (!isCurrentWikiOperation(project, generation)) return null;
+  if (!usePlanStore.getState().repos.some(repo => repo.id === project)) return null;
+  return applyWiki(project, parsed, source);
 }

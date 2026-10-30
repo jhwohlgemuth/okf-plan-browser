@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
+import { PLAN_STORAGE_KEY, usePlanStore, selectFilteredPlans } from '@/store/planStore';
 import { parseWikiFile } from '@/lib/wikiParser';
 import type { ParsedPlan, WikiRepo } from '@/types/wiki';
 
@@ -28,8 +28,60 @@ const run = (filters: Partial<ReturnType<typeof usePlanStore.getState>['filters'
 };
 
 beforeEach(() => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn((key: string) => values.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => { values.set(key, value); }),
+    removeItem: vi.fn((key: string) => { values.delete(key); }),
+  });
   handleCleanup.deleteHandle.mockReset().mockResolvedValue(undefined);
   handleCleanup.clearHandles.mockReset().mockResolvedValue(undefined);
+});
+
+describe('portfolio persistence', () => {
+  const repo: WikiRepo = { id: 'r1', label: 'one', color: '#61afef', planCount: 1 };
+
+  it('does not serialize or write the portfolio for filter and detail updates', () => {
+    usePlanStore.getState().addPlans([plans[0]!], repo, []);
+    const write = vi.mocked(localStorage.setItem);
+    write.mockClear();
+    const stringify = vi.spyOn(JSON, 'stringify');
+
+    for (let index = 0; index < 100; index += 1) {
+      usePlanStore.getState().setFilter('search', `alpha-${index}`);
+      usePlanStore.getState().selectPlan(plans[0]!.id);
+      usePlanStore.getState().syncPlanSelection(plans[0]!.id, 'goal');
+      usePlanStore.getState().closeDetail();
+    }
+    usePlanStore.getState().clearFilters();
+
+    expect(stringify).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
+    stringify.mockRestore();
+  });
+
+  it('serializes and writes once for a representative large portfolio mutation', () => {
+    const largePlans = Array.from({ length: 50 }, (_, index) => mk(
+      `large-${index}`,
+      'status: planned\nimpact: high',
+      `# Goal\n${'Representative portfolio content. '.repeat(625)}\n`,
+    ));
+    const largeRepo = { ...repo, planCount: largePlans.length };
+    const write = vi.mocked(localStorage.setItem);
+    write.mockClear();
+    const stringify = vi.spyOn(JSON, 'stringify');
+    const started = performance.now();
+
+    usePlanStore.getState().addPlans(largePlans, largeRepo, []);
+
+    const elapsed = performance.now() - started;
+    expect(stringify).toHaveBeenCalledOnce();
+    expect(write).toHaveBeenCalledOnce();
+    expect(write).toHaveBeenCalledWith(PLAN_STORAGE_KEY, expect.any(String));
+    expect(write.mock.calls[0]![1].length).toBeGreaterThan(750_000);
+    expect(elapsed).toBeLessThan(1_000);
+    stringify.mockRestore();
+  });
 });
 
 describe('selectFilteredPlans', () => {

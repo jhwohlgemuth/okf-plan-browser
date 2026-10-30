@@ -1,12 +1,8 @@
 # Executable plans
 
-The coordination record for these outcomes is [code-health-hardening.md](code-health-hardening.md).
-
 | Order | Plan | Difficulty | Impact | Outcome |
 |---|---|---|---|---|
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
-| 2 | [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md) | medium | medium | Persist portfolio changes without rewriting on navigation |
-| 3 | [Track refresh work independently for each repository](refresh-concurrency.md) | medium | medium | Track refresh work independently for each repository |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
@@ -33,3 +29,9 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
   directory and the scope-checked native Tauri path passed focused tests and packaging. The mounted
   Apple Silicon DMG imported successfully; TD-03 now waits only on Windows and Linux release
   artifacts and interactive hosts. Intel macOS is not supported. Three executable outcomes remain.
+- 2026-10-30 — PS-01 completed with revision-gated portfolio persistence and representative
+  write-count and latency measurements in `docs/persistence-measurement.md`. Retired the plan;
+  two executable outcomes remain.
+- 2026-10-30 — RF-01 completed with per-repository controllers and generations, removal
+  invalidation, and delayed-overlap browser coverage. Retired the plan and the no-longer-needed
+  coordination record; TD-03 is the sole remaining executable outcome.
