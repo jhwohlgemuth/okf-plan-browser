@@ -17,7 +17,7 @@ Every published release has a usable x86_64 `.deb` and `.AppImage` with predicta
 
 # Current evidence
 
-At `87f741a`, the fourth `v0.0.1` run passed CI, draft reset, and all four explicit platform upload jobs, but the publish job failed in its API asset-inventory step before checksums. The current local change verifies the draft by downloading and checking five exact filenames, then hashes those downloads before publication. It awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
+At `ceb4f5c`, the fifth `v0.0.1` run passed CI, draft reset, and all four explicit platform upload jobs, but the publish job failed while downloading the draft assets. The current local change generates a SHA-256 sidecar beside each bundle in its platform job and publishes only after all uploads pass. It awaits a tagged run. `docs/desktop-ingest.md` records Linux interaction as pending. [Tauri v1 documents Debian and AppImage bundles](https://v1.tauri.app/v1/guides/building/linux/); build success alone does not prove a usable download.
 
 # Boundaries and decisions
 
@@ -32,7 +32,7 @@ Release asset checks must run before the draft is published. A tagged draft and 
 
 # Acceptance criteria
 
-- The publish job requires one x86_64 `.deb` and one x86_64 `.AppImage` from the same version and exposes immutable GitHub release URLs plus SHA-256 values.
+- The publish job requires successful x86_64 `.deb` and `.AppImage` uploads from the same version, each with a SHA-256 sidecar and stable GitHub release URL.
 - Both downloaded artifacts pass install or launch and folder-import smoke tests on Linux, with the observed distribution recorded.
 - Release and installation docs state the artifact names, checksums, and supported Linux baseline without promising older distributions that were not tested.
 
@@ -45,9 +45,9 @@ Release asset checks must run before the draft is published. A tagged draft and 
 - Prerequisites: none
 - Exact write set: `.github/workflows/release.yml`, `CONTRIBUTING.md`
 - Primary integration lock: release workflow
-- Outcome: Build explicit Debian and AppImage targets, require both expected assets for the Linux job before publishing, and attach a SHA-256 checksum file.
+- Outcome: Build explicit Debian and AppImage targets, require both expected assets for the Linux job before publishing, and attach a SHA-256 sidecar for each.
 - Focused validation: Inspect workflow syntax; run a draft release and verify both asset names and checksums against downloaded files.
-- Handoff: All explicit upload jobs passed, but the publish API inventory gate failed. Commit the download-based gate, move the unpublished tag with an exact lease, and verify all five deterministic assets and `SHA256SUMS` before making LX-02 eligible.
+- Handoff: All explicit upload jobs passed, but the draft download gate failed. Commit the per-asset checksum workflow, move the unpublished tag with an exact lease, and verify all five deterministic assets and their `.sha256` sidecars before making LX-02 eligible.
 
 ## LX-02 — Verify Linux downloads
 

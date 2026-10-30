@@ -116,6 +116,19 @@ jobs:
             cp "$files" "release-assets/okf-plan-browser_${RELEASE_TAG#v}_${ASSET_PLATFORM}.$format"
           done
 
+      - name: Generate per-asset checksums
+        shell: bash
+        run: |
+          cd release-assets
+          for asset in *.dmg *.msi *.deb *.AppImage; do
+            [ -f "$asset" ] || continue
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum -- "$asset" > "$asset.sha256"
+            else
+              shasum -a 256 -- "$asset" > "$asset.sha256"
+            fi
+          done
+
       - name: Upload each standalone release asset
         shell: bash
         env:
@@ -131,35 +144,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Verify downloads and attach checksums
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          mkdir release-assets
-          gh release download "$RELEASE_TAG" --dir release-assets
-          cd release-assets
-          version=${RELEASE_TAG#v}
-          for asset in \
-            "okf-plan-browser_${version}_macos-aarch64.dmg" \
-            "okf-plan-browser_${version}_macos-x64.dmg" \
-            "okf-plan-browser_${version}_windows-x64.msi" \
-            "okf-plan-browser_${version}_linux-x64.deb" \
-            "okf-plan-browser_${version}_linux-x64.AppImage"; do
-            if [ ! -s "$asset" ]; then
-              echo "::error title=Missing release asset::$asset"
-              ls -la
-              exit 1
-            fi
-          done
-          test "$(find . -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 5
-          sha256sum -- *.dmg *.msi *.deb *.AppImage > SHA256SUMS
-          gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
-
       - name: Publish only after every platform succeeds
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release edit "$RELEASE_TAG" --draft=false
+        run: gh release edit "$RELEASE_TAG" -R "$GH_REPO" --draft=false
