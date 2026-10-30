@@ -2,6 +2,14 @@ import { isValidElement, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import bash from 'highlight.js/lib/languages/bash';
+import diff from 'highlight.js/lib/languages/diff';
+import javascript from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import markdown from 'highlight.js/lib/languages/markdown';
+import python from 'highlight.js/lib/languages/python';
+import typescript from 'highlight.js/lib/languages/typescript';
+import yaml from 'highlight.js/lib/languages/yaml';
 import { Check, Clipboard } from 'lucide-react';
 import { InlineWikiImage, type AssetTarget } from './AssetViewer';
 import { planAnchor } from '@/lib/planLinks';
@@ -16,6 +24,7 @@ interface Props {
 }
 
 const EXTERNAL_RE = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
+const languages = { bash, diff, javascript, json, markdown, python, typescript, yaml };
 
 function nodeText(node: ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
@@ -66,7 +75,8 @@ export function Markdown({ children, resolveLink, resolveImage, openAsset, headi
     <div className="md-body">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
+        rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true, languages,
+          aliases: { js: 'javascript', ts: 'typescript', sh: 'bash', yml: 'yaml', py: 'python', md: 'markdown' } }]]}
         components={{
           pre: ({ children: c }) => <CodeBlock>{c}</CodeBlock>,
           h1: ({ children: c }) => <MarkdownHeading level={1} headingId={headingId}>{c}</MarkdownHeading>,

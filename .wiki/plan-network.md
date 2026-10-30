@@ -8,7 +8,6 @@
 - [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md): no upstream plan blocker.
 - [Track refresh work independently for each repository](refresh-concurrency.md): no upstream plan blocker.
 - [Load branches containing slashes unambiguously](remote-branch-selection.md): no upstream plan blocker.
-- [Reduce initial loading and graph layout work](rendering-performance.md): no upstream plan blocker.
 
 ## Phase edges
 

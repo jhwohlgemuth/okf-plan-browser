@@ -26,6 +26,41 @@ const importFiles = async (page: Page, title: string, text = markdown(title)) =>
   await expect(labels).toHaveCount(previousCount + 1);
 };
 
+test('large plan loads document rendering on first detail open', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'document loading coverage runs on desktop');
+  const markdownRequests: string[] = [];
+  await page.route('**/assets/Markdown-*.js', async route => {
+    markdownRequests.push(route.request().url());
+    await new Promise(resolve => setTimeout(resolve, 250));
+    await route.continue();
+  });
+  await page.goto('/home');
+  expect(markdownRequests).toHaveLength(0);
+  const source = `${markdown('Large rendering plan')}\n${Array.from({ length: 150 }, (_, i) => `## Section ${i + 1}\n\nSome **formatted** content.\n`).join('\n')}`;
+  await importFiles(page, 'Large rendering plan', source);
+  await page.goto('/portfolio');
+  expect(markdownRequests).toHaveLength(0);
+  await page.getByRole('button', { name: 'Open Epic: Large rendering plan' }).click();
+  await expect(page.getByText('Loading document…').first()).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Large rendering plan' }).getByText('Some formatted content.').first()).toBeVisible();
+  expect(markdownRequests).toHaveLength(1);
+});
+
+test('graph recenters after resize while retaining zoom', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'graph resize coverage runs on desktop');
+  await page.goto('/home');
+  await page.getByRole('button', { name: 'Load Demo Data' }).click();
+  await page.getByRole('link', { name: 'Dependency Graph' }).click();
+  const graph = page.locator('svg#dependency-graph');
+  const layer = graph.locator(':scope > g').first();
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  const before = await layer.getAttribute('transform');
+  const width = await graph.evaluate(element => element.clientWidth);
+  await graph.evaluate((element, nextWidth) => { element.style.width = `${nextWidth}px`; }, width - 100);
+  await expect(layer).not.toHaveAttribute('transform', before ?? '');
+  await expect(layer).toHaveAttribute('transform', /scale\(1\.25\)/);
+});
+
 test('drop zone imports standalone Markdown file handles', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'drop-contract coverage only needs one browser viewport');
   await page.goto('/home');

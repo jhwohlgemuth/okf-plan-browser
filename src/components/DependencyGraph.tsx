@@ -5,6 +5,7 @@ import { buildPlanEdges } from '@/lib/planLinks';
 import { usePlanStore } from '@/store/planStore';
 import type { ParsedPlan } from '@/types/wiki';
 import { isEpic } from '@/lib/planKind';
+import { advanceGraphLayout } from '@/lib/graphLayout';
 
 interface Node extends d3.SimulationNodeDatum {
   id:    string;
@@ -36,8 +37,8 @@ export function DependencyGraph() {
     const svg = svgRef.current;
     if (!svg || plans.length === 0) return;
 
-    const width  = svg.clientWidth  || 900;
-    const height = svg.clientHeight || 600;
+    let width  = svg.clientWidth  || 900;
+    let height = svg.clientHeight || 600;
 
     // Build nodes
     const nodes: Node[] = plans.map((p, i) => {
@@ -97,16 +98,27 @@ export function DependencyGraph() {
       .attr('stroke-opacity', 0.7)
       .attr('marker-end', d => `url(#arrow-${d.type})`);
 
+    let frame = 0;
+    let draw = () => {};
+    const runFrame = () => {
+      frame = 0;
+      const more = advanceGraphLayout(sim, () => performance.now());
+      draw();
+      if (more) schedule();
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(runFrame); };
+
     // Nodes
     const drag = d3.drag<SVGGElement, Node>()
       .on('start', (event, d) => {
-        if (!event.active) sim.alphaTarget(0.3).restart();
+        if (!event.active) { sim.alphaTarget(0.3); sim.alpha(0.3); schedule(); }
         d.fx = d.x; d.fy = d.y;
       })
-      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; d.x = event.x; d.y = event.y; draw(); schedule(); })
       .on('end', (event, d) => {
         if (!event.active) sim.alphaTarget(0);
         d.fx = null; d.fy = null;
+        schedule();
       });
 
     const node = g.append('g')
@@ -185,7 +197,7 @@ export function DependencyGraph() {
       });
     node.append('title').text(d => d.plan.frontmatter.title);
 
-    const draw = () => {
+    draw = () => {
       link
         .attr('x1', d => (d.source as Node).x!)
         .attr('y1', d => (d.source as Node).y!)
@@ -194,12 +206,38 @@ export function DependencyGraph() {
       node.attr('transform', d => `translate(${d.x},${d.y})`);
     };
 
-    sim.on('tick', draw);
     sim.stop();
-    sim.tick(300);
     draw();
+    schedule();
+
+    const observer = new ResizeObserver(() => {
+      const nextWidth = svg.clientWidth || width;
+      const nextHeight = svg.clientHeight || height;
+      if (nextWidth === width && nextHeight === height) return;
+      const dx = (nextWidth - width) / 2;
+      const dy = (nextHeight - height) / 2;
+      width = nextWidth;
+      height = nextHeight;
+      for (const node of nodes) {
+        node.x = (node.x ?? 0) + dx;
+        node.y = (node.y ?? 0) + dy;
+        if (node.fx != null) node.fx += dx;
+        if (node.fy != null) node.fy += dy;
+      }
+      (sim.force('center') as d3.ForceCenter<Node>).x(width / 2).y(height / 2);
+      const current = d3.zoomTransform(svg);
+      sel.call(zoom.transform, d3.zoomIdentity.translate(
+        current.x + dx * (1 - current.k), current.y + dy * (1 - current.k),
+      ).scale(current.k));
+      draw();
+      sim.alpha(0.3);
+      schedule();
+    });
+    observer.observe(svg);
 
     return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
       sim.stop();
       if (zoomRef.current === zoom) zoomRef.current = null;
     };

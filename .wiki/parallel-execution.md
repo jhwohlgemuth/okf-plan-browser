@@ -10,7 +10,6 @@ sets intersect, even when their named locks differ.
 | [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md) | portfolio storage | PS-01 |
 | [Track refresh work independently for each repository](refresh-concurrency.md) | refresh lifecycle | RF-01 |
 | [Load branches containing slashes unambiguously](remote-branch-selection.md) | remote source selection | RB-01 |
-| [Reduce initial loading and graph layout work](rendering-performance.md) | rendering performance | RP-01, RP-02 |
 
 ## Write collisions
 

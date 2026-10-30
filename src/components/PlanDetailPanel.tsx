@@ -1,12 +1,11 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn } from '@/lib/utils';
-import { Markdown } from './Markdown';
 import { headingAnchorForPlan, planAnchor, resolvePlanTarget } from '@/lib/planLinks';
 import { resolveWikiPath } from '@/lib/wikiAssets';
 import { AssetViewer, type AssetTarget } from './AssetViewer';
@@ -20,6 +19,9 @@ const IMPACT_CLASSES: Record<string, string> = {
   medium:   'text-od-yellow',
   low:      'text-od-muted',
 };
+
+const Markdown = lazy(() => import('./Markdown').then(module => ({ default: module.Markdown })));
+const documentFallback = <p role="status" className="text-sm text-muted-foreground">Loading document…</p>;
 
 export function PlanDetailPanel() {
   const { active: tourActive } = useWalkthrough();
@@ -309,7 +311,7 @@ export function PlanDetailPanel() {
                       </div>
                     )}
 
-                    {section.body.trim() && <Markdown headingId={heading => headingAnchorForPlan(plan, heading)} resolveLink={href => resolveLink(href)} resolveImage={src => resolveImage(src)} openAsset={setSelectedAsset}>{section.body.trim()}</Markdown>}
+                    {section.body.trim() && <Suspense fallback={documentFallback}><Markdown headingId={heading => headingAnchorForPlan(plan, heading)} resolveLink={href => resolveLink(href)} resolveImage={src => resolveImage(src)} openAsset={setSelectedAsset}>{section.body.trim()}</Markdown></Suspense>}
                   </div>
                 </section>
               ))}
@@ -322,7 +324,7 @@ export function PlanDetailPanel() {
                   </div>
                   {selectedDoc && <div className="rounded-lg border border-border p-4">
                     <p className="mb-3 text-xs font-mono text-muted-foreground">{selectedDoc.fileName}</p>
-                    <Markdown headingId={heading => headingAnchorForPlan(plan, heading)} resolveLink={href => resolveLink(href, selectedDoc.fileName)} resolveImage={src => resolveImage(src, selectedDoc.fileName)} openAsset={setSelectedAsset}>{selectedDoc.text.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '')}</Markdown>
+                    <Suspense fallback={documentFallback}><Markdown headingId={heading => headingAnchorForPlan(plan, heading)} resolveLink={href => resolveLink(href, selectedDoc.fileName)} resolveImage={src => resolveImage(src, selectedDoc.fileName)} openAsset={setSelectedAsset}>{selectedDoc.text.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '')}</Markdown></Suspense>
                   </div>}
                 </section>
               )}

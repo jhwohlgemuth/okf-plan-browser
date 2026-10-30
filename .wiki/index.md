@@ -8,7 +8,6 @@ The coordination record for these outcomes is [code-health-hardening.md](code-he
 | 2 | [Persist portfolio changes without rewriting on navigation](persistence-write-scope.md) | medium | medium | Persist portfolio changes without rewriting on navigation |
 | 3 | [Track refresh work independently for each repository](refresh-concurrency.md) | medium | medium | Track refresh work independently for each repository |
 | 4 | [Load branches containing slashes unambiguously](remote-branch-selection.md) | medium | medium | Load branches containing slashes unambiguously |
-| 5 | [Reduce initial loading and graph layout work](rendering-performance.md) | medium | medium | Reduce initial loading and graph layout work |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
@@ -24,3 +23,7 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
   the 2026-10-29 evidence review remains current for the six remaining executable outcomes.
 - 2026-10-30 — Reconciled FD-01 against the working tree after modern file-handle and legacy
   directory-drop coverage passed. Retired the completed plan; five executable outcomes remain.
+- 2026-10-30 — RP-01/02 completed with lazy document rendering, bounded graph frames, resize
+  handling, and focused browser coverage. Evidence is in `docs/rendering-performance.md`;
+  four executable outcomes remain. AX-01/02 remain retired after current code and browser
+  coverage were checked again.

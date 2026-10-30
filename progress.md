@@ -41,3 +41,14 @@
 - Budget: Both phases completed within their five-hour budgets.
 - Blockers / failed approaches: The first reciprocal-effect implementation raced on history navigation; a guarded store subscription plus native popstate reconciliation resolved it. Cross-plan focus initially ran before the final router location commit; keying focus restoration to the committed hash resolved it. No current blocker.
 - Next action: Review and commit the implementation when desired.
+
+## Implementation — Rendering performance
+
+- Plan: `.wiki/rendering-performance.md` retired after RP-01/02; active phase: none; state: complete.
+- Authorized scope and decisions: Execute both RP phases serially. Keep the existing graph interaction and zoom controls.
+- Baseline and local work: `0ae3009`; clean worktree at phase start; no CodeGraph index present.
+- Verified state: Document rendering loads on first detail open with a visible fallback and a restricted code-language set. The graph advances in bounded animation frames and recenters on resize while retaining zoom. Build and transfer measurements plus representative graph benchmarks are in `docs/rendering-performance.md`. Focused layout unit and browser integrity/graph checks passed.
+- Remaining work: None for RP-01/02.
+- Budget: Both phases completed within their five-hour active-time budgets.
+- Blockers / failed approaches: A browser assertion initially used an inaccessible status name; a visible-text assertion resolved the test-only issue. No current blocker.
+- Next action: Review and commit the implementation when desired.
