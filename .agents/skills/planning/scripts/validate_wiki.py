@@ -201,6 +201,8 @@ def _validate_plan(plan: Plan, root: Path, wiki: Path) -> list[str]:
             errors.append(f"{label}: phased plans require phase_budget_hours: 5")
         if not plan.phases:
             errors.append(f"{label}: phased plan has no execution phases")
+        if status == "in-progress" and not any(phase.fields.get("Status") == "in-progress" for phase in plan.phases):
+            errors.append(f"{label}: plan status is in-progress but no phase is in-progress")
         errors.extend(error for phase in plan.phases for error in _validate_phase(plan, phase, root))
     errors.extend(_internal_link_errors(plan, root))
     errors.extend(_membership_errors(plan, root, wiki))

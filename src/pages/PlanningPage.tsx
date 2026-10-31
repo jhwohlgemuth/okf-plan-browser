@@ -107,6 +107,7 @@ const PROMPTS = ([
 
 const RULES = [
   { icon: Layers3, title: 'Epics coordinate plans', text: 'Use execution: coordination and link executable child plans. Epics have no phases or independent effort estimate.' },
+  { icon: ListChecks, title: 'Status follows active phases', text: 'A phased plan is in progress only while a remaining phase is in progress. Reconcile plan status when that phase ends.' },
   { icon: Clock3, title: 'Five-hour slices', text: 'Every executable phase fits at most five active agent hours.' },
   { icon: GitMerge, title: 'Mergeable handoffs', text: 'Each phase names one write set, one primary lock, focused validation, and a clean handoff.' },
   { icon: ListChecks, title: 'Traceable evidence', text: 'Inspect code and test results for repository claims; open primary sources for article claims. Record verified, incorrect, or unresolved verdicts.' },

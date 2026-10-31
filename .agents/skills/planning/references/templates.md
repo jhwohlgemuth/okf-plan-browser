@@ -32,6 +32,8 @@ phase_budget_hours: 5
 ---
 ```
 
+Use `in-progress` only while at least one remaining execution phase has `- Status: in-progress`. A plan with only `ready`, `planned`, or `blocked` phases is not in progress; keep its plan status `planned` unless validation is genuinely pending.
+
 ## Coordination metadata
 
 An Epic is a non-executable plan of plans. Use `execution: coordination`, omit `phase_budget_hours`, and include no execution phases. State the shared outcome, what the linked plans cover, current decisions and blockers, and how completion will be recognized. Link to atomic executable child plans with relative `.md` links. The browser also displays older plans with zero parsed phases as Epics; add coordination metadata when maintaining those files. Epic time is excluded from portfolio effort totals so child estimates are not counted twice.

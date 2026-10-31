@@ -22,7 +22,7 @@ Prune aggressively. Remove completed sections, phases, tasks, obsolete alternati
 
 ## Execute and hand off
 
-Before starting a phase, recheck its prerequisites, exact write set, primary lock, and current code evidence. Mark only that phase `in-progress`. At completion, run focused validation, preserve durable implementation knowledge, remove the phase from the plan, and update the next phase to `ready` when its prerequisites are satisfied.
+Before starting a phase, recheck its prerequisites, exact write set, primary lock, and current code evidence. Mark only that phase `in-progress` and set the executable plan's status to `in-progress`. At completion, run focused validation, preserve durable implementation knowledge, remove the phase from the plan, and update the next phase to `ready` when its prerequisites are satisfied. If no remaining phase is `in-progress`, clear the plan's `in-progress` status; use `planned` for remaining queued work or `waiting-on-validation` when validation is genuinely pending.
 
 If work stops incomplete, keep the phase and record a concise handoff with the verified state, changed files, commands run, failures, and exact next action. Do not claim completion.
 

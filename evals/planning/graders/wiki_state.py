@@ -33,6 +33,7 @@ elif mode == "prune":
     plan = read(".wiki/csv-export.md")
     require("CSV-02" in plan and "CSV-01" not in plan, "completed phase retained or stable ID lost")
     require("src/export.py" not in plan, "completed implementation retained as task")
+    require(re.search(r"^status:\s*planned\s*$", plan, re.M), "plan remains in progress after its active phase was pruned")
     for text in (index, network, lane):
         require("CSV-02" in text and "CSV-01" not in text, "stale cross-index phase")
 elif mode == "blocked":

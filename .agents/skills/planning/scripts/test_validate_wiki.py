@@ -114,6 +114,14 @@ class ValidatorTests(unittest.TestCase):
         root = self._repository(PLAN.replace("Status: ready", "Status: complete"))
         self.assertTrue(any("invalid phase status" in error for error in validate_repository(root)))
 
+    def test_in_progress_plan_requires_an_in_progress_phase(self) -> None:
+        root = self._repository(PLAN.replace("status: planned", "status: in-progress"))
+        self.assertTrue(any("no phase is in-progress" in error for error in validate_repository(root)))
+
+    def test_in_progress_plan_with_an_active_phase_passes(self) -> None:
+        active = PLAN.replace("status: planned", "status: in-progress").replace("- Status: ready", "- Status: in-progress")
+        self.assertEqual(validate_repository(self._repository(active)), [])
+
     def test_dangling_prerequisite_is_rejected(self) -> None:
         root = self._repository(PLAN.replace("Prerequisites: none", "Prerequisites: XX-99"))
         self.assertTrue(any("unknown prerequisite" in error for error in validate_repository(root)))
