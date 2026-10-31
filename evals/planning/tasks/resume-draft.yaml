@@ -1,0 +1,23 @@
+id: resume-draft
+name: Resume a draft from progress
+inputs:
+  prompt: "Continue the draft from progress.md. Resolve the weekday-hours claim using sources/library-record.md; keep the Sunday claim unresolved because there is no evidence. Update article, checks, and progress without recreating the existing outline or touching guard.txt."
+  files:
+    - path: progress.md
+      content: "# Draft progress\n- Draft: drafts/article.md; checks: drafts/checks.md; outline: drafts/outline.md.\n- Open issue: weekday-hours claim needs checking against the board record. Sunday claim has no source.\n- Next action: inspect sources/library-record.md and update checks.\n"
+    - path: drafts/outline.md
+      content: "# Outline\n1. Weekday hours\n2. Sunday uncertainty\n"
+    - path: drafts/article.md
+      content: "# Arbor Library hours\nThe library opens 09:00 to 17:00 on weekdays. [REVIEW: verify board record]\nIt opens on Sundays. [REVIEW: no evidence]\n"
+    - path: drafts/checks.md
+      content: "| Claim | Verdict | Source URL | Required correction |\n| --- | --- | --- | --- |\n| Weekday hours | unresolved | board record pending | Check record |\n| Sunday opening | unresolved | none | Find official Sunday schedule |\n"
+    - path: sources/library-record.md
+      content: "# Arbor Library Board record, 2025-01-08\nThe board approved weekday opening hours of 09:00 to 17:00 beginning 2025-02-01. The record makes no statement about Sunday hours.\n"
+    - path: guard.txt
+      content: "leave this alone\n"
+graders:
+  - type: program
+    name: resumed-draft-state
+    config:
+      command: python3
+      args: [evals/planning/graders/artifact_state.py, resume-draft]

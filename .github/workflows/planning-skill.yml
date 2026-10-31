@@ -1,0 +1,39 @@
+name: Planning skill Waza
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '.agents/skills/planning/**'
+      - 'evals/planning/**'
+      - '.waza.yaml'
+      - 'Makefile'
+      - 'CONTRIBUTING.md'
+      - '.github/workflows/planning-skill.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/planning/**'
+      - 'evals/planning/**'
+      - '.waza.yaml'
+      - 'Makefile'
+      - 'CONTRIBUTING.md'
+      - '.github/workflows/planning-skill.yml'
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install pinned Waza v0.39.1
+        run: |
+          curl -LsSf https://github.com/microsoft/waza/releases/download/v0.39.1/waza-linux-amd64 -o /tmp/waza
+          echo '43fedb4405851021663d75309bd2b6f5df317239859c8c6e741da20565b55fc1  /tmp/waza' | sha256sum -c -
+          chmod +x /tmp/waza
+          /tmp/waza --version
+      - name: Planning skill offline checks
+        run: make planning-skill-test WAZA=/tmp/waza
+      - name: Planning wiki validator tests
+        run: python3 -m unittest discover -s .agents/skills/planning/scripts -p 'test_*.py'

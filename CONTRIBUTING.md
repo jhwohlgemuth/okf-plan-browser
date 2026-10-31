@@ -50,6 +50,19 @@ python3 -m unittest discover -s .agents/skills/planning/scripts -p "test_*.py"
 
 When changing `.wiki` plans, run `python3 .agents/skills/planning/scripts/validate_wiki.py .`. Keep active plans focused on remaining work and preserve durable evidence before retiring them.
 
+### Waza evaluation
+
+Install [Waza v0.39.1](https://github.com/microsoft/waza/releases/tag/v0.39.1) or newer. The repository's `.waza.yaml` discovers the canonical skill in `.agents/skills/` and the separated suites in `evals/planning/`. No evaluation files are included in the skill ZIP or plugin package.
+
+| Target | Purpose |
+|---|---|
+| `make planning-skill-check` | Readiness, strict trigger coverage, and preflight for behavior and routing specs; no model calls. |
+| `make planning-skill-test` | The above plus a mock fixture-copy task; this proves harness wiring only. |
+| `make planning-skill-dev` | Interactive development for the canonical `SKILL.md`. |
+| `make planning-skill-test-real` | Opt-in Copilot SDK routing and baseline/skill artifact suites; requires authentication, model access, and awareness of provider usage. |
+
+The behavior suite injects the skill body and grades final artifacts in isolated miniature workspaces. The routing suite disables body injection and checks natural skill invocation. Real results are written under ignored `results/planning/`; record the Waza version, model, per-task results, file diffs, and limitations when reviewing them. Program graders inspect final files and do not prove that transient forbidden edits never occurred. Preflight warns about unavailable runtime prerequisites and does not execute those graders. CI runs only the offline target and validator unit tests with a checksum-verified v0.39.1 binary.
+
 ## Deploy to GitHub Pages
 
 One-time setup: run `make pages-enable`, or open **Settings → Pages → Source → GitHub Actions**.

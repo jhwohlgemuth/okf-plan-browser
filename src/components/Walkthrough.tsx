@@ -43,7 +43,7 @@ function buildSteps({ hasPlan, hasPhases, hasRelationships, hasRepos, isDemoData
     step('/home', refreshTarget, 'Refresh project wikis', `${refreshHint}${isDemoData
       ? 'Demo plans have no source to refresh. With a project wiki loaded, use Refresh all or the icon beside one project to re-read it.'
       : 'Use Refresh all or the icon beside one project to re-read its wiki. A local folder may need to be reselected if access has expired.'}`),
-    step('/home', '[data-tour="planning-link"]', 'Planning workflows', 'The Planning Skill page explains how to create and work through the plans shown here.'),
+    step('/home', '[data-tour="planning-link"]', 'Planning workflows', 'The Planning Skill page explains how to create and work through the plans shown here. The tour visits it near the end.'),
     step('/portfolio', '[data-tour="portfolio-search"]', 'Find a plan quickly', 'Quick search narrows the portfolio by plan text.'),
     step('/portfolio', '[data-tour="portfolio-filters"]', 'Narrow the portfolio', 'Filter by status, priority, impact, difficulty, repository, tags, or package. Your current filters will stay unchanged during this tour.'),
     ...(hasPlan ? [step('/portfolio', '[data-tour="plan-table"]', 'Compare plans', 'Sort the table by priority, status, impact, difficulty, or remaining time. Select a row to read the full plan.'),
@@ -52,6 +52,9 @@ function buildSteps({ hasPlan, hasPhases, hasRelationships, hasRepos, isDemoData
     step('/graph', '[data-tour="dependency-graph"]', 'Explore relationships', 'Nodes represent plans. Use the controls to zoom, drag nodes, and select one to open its details.'),
     ...(hasRelationships ? [step('/graph', '[data-tour="graph-relationships"]', 'Resolved links', 'This list explains the dependency and reference lines in the graph. Select a relationship to open its target plan.')] : []),
     step('/search', '[data-tour="search-controls"]', 'Search plans and assets', 'Search plan text, tags, images, and PDFs. Switch categories to choose what you are looking for.'),
+    step('/planning', '[data-tour="planning-install"]', 'Install the planning skill', 'Download the complete skill folder and place it in your repository so an agent can use the planning workflows.'),
+    step('/planning', '[data-tour="planning-prompts"]', 'Choose a planning prompt', 'Filter by task, then copy a prompt to create plans, implement phases, write drafts, or review evidence.'),
+    step('/planning', '[data-tour="planning-package"]', 'Inspect the skill package', 'Download the ZIP or inspect the bundled instructions, references, and validator before using the skill.'),
     step('/settings', '[data-tour="settings-theme"]', 'Choose an appearance', 'Use Dark, Light, or System mode. The tour will leave your current choice alone.'),
     step('/settings', '[data-tour="settings-github-token"]', 'GitHub access token', tokenStorageAvailable
       ? 'For private GitHub repositories, add an expiring fine-grained token limited to the repositories you need, with Contents: read. Web tokens last only for this tab; the desktop app uses the operating system credential store.'

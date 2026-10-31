@@ -1,0 +1,12 @@
+id: implicit-planning
+name: Implicit planning and drafting routing
+inputs:
+  prompt: "Continue the article draft from progress.md, checking each source claim and recording what remains unresolved."
+expected:
+  should_trigger: true
+graders:
+  - type: skill_invocation
+    name: planning-invoked
+    config:
+      required_skills: [planning]
+      mode: any_order

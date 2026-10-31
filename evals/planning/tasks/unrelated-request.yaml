@@ -1,0 +1,11 @@
+id: unrelated-request
+name: Unrelated code explanations do not invoke planning
+inputs:
+  prompt: "Explain what this JavaScript expression does: [1, 2, 3].map(x => x * 2)."
+expected:
+  should_trigger: false
+graders:
+  - type: skill_invocation
+    name: planning-not-invoked
+    config:
+      forbidden_skills: [planning]

@@ -1,0 +1,25 @@
+name: planning-behavior
+description: Injected planning skill behavior in isolated task workspaces
+skill: planning
+schemaVersion: "1.4"
+version: "1.0"
+config:
+  executor: copilot-sdk
+  model: claude-sonnet-4.6
+  trials_per_task: 1
+  timeout_seconds: 600
+  parallel: false
+  inject_skill_body: true
+metrics:
+  - name: behavioral-state
+    weight: 1.0
+    threshold: 1.0
+tasks:
+  - tasks/create-bounded-plan.yaml
+  - tasks/prune-completed-work.yaml
+  - tasks/preserve-blocked-work.yaml
+  - tasks/resume-implementation.yaml
+  - tasks/source-backed-draft.yaml
+  - tasks/resume-draft.yaml
+  - tasks/review-claims.yaml
+  - tasks/unrelated-request.yaml

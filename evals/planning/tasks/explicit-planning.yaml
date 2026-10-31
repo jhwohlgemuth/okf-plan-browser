@@ -1,0 +1,12 @@
+id: explicit-planning
+name: Explicit planning skill routing
+inputs:
+  prompt: "Use the planning skill to review a repository .wiki plan and prune completed phases."
+expected:
+  should_trigger: true
+graders:
+  - type: skill_invocation
+    name: planning-invoked
+    config:
+      required_skills: [planning]
+      mode: any_order

@@ -66,3 +66,6 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
   installers and matching checksum sidecars are public. Pruned LX-01; LX-02 and TD-03 now wait
   on interactive Linux and Windows hosts. The release-workflow lock is free for the remaining
   distribution phases.
+- 2026-10-30 — PWZ-01 completed in the current worktree: Waza v0.39.1 passed schema, strict
+  coverage, preflight, and mock fixture wiring; 16 validator tests passed. PWZ-02/03 await
+  authorized model-backed trials; PWZ-04 awaits a GitHub Actions run of the new workflow.

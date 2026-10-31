@@ -1,0 +1,41 @@
+id: preserve-blocked-work
+name: Preserve a blocked phase while pruning completed work
+inputs:
+  prompt: "Review the current plan. API-01 was completed and its helper is present. API-02 still depends on an external test credential, which is unavailable. Prune API-01; retain API-02 as blocked under its original ID and preserve the prerequisite in the plan, index, network, and lane. Do not change guard.txt."
+  files:
+    - path: .wiki/api-sync.md
+      content: |
+        ---
+        type: Plan
+        title: API sync
+        status: blocked
+        execution: phased
+        phase_budget_hours: 5
+        ---
+        # API sync
+        ## API-01 — Helper
+        - Status: ready
+        - Exact write set: src/helper.py
+        ## API-02 — Live verification
+        - Status: blocked
+        - Prerequisites: External test credential.
+        - Exact write set: tests/test_live.py
+        - Primary integration lock: API integration
+        - Focused validation: Run live test.
+        - Handoff: Record verification.
+    - path: src/helper.py
+      content: "def sync():\n    return True\n"
+    - path: .wiki/index.md
+      content: "# Portfolio\n\n- [API sync](api-sync.md): API-01 and API-02.\n"
+    - path: .wiki/plan-network.md
+      content: "# Network\n\nAPI-01 precedes API-02.\n"
+    - path: .wiki/parallel-execution.md
+      content: "# Lanes\n\nAPI-01 helper lock; API-02 blocked on credential.\n"
+    - path: guard.txt
+      content: "leave this alone\n"
+graders:
+  - type: program
+    name: blocked-plan-state
+    config:
+      command: python3
+      args: [evals/planning/graders/wiki_state.py, blocked]

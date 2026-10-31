@@ -1,0 +1,21 @@
+name: planning-routing
+description: Natural discovery of planning skill for relevant and unrelated requests
+skill: planning
+schemaVersion: "1.4"
+version: "1.0"
+config:
+  executor: copilot-sdk
+  model: claude-sonnet-4.6
+  trials_per_task: 1
+  timeout_seconds: 300
+  parallel: false
+  inject_skill_body: false
+  trigger_skill_routing: true
+metrics:
+  - name: routing
+    weight: 1.0
+    threshold: 1.0
+tasks:
+  - tasks/explicit-planning.yaml
+  - tasks/implicit-planning.yaml
+  - tasks/unrelated-request.yaml

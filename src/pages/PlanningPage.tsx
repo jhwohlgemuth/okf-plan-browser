@@ -1,10 +1,13 @@
-import { BookOpenCheck, Clock3, Download, FileCode2, FileText, GitMerge, Layers3, ListChecks, Scissors, TerminalSquare } from 'lucide-react';
+import { BookOpenCheck, CalendarCheck2, Clock3, Download, FileCode2, FilePenLine, FilePlus2, FileSearch, FileText, GitMerge, Layers3, ListChecks, ListOrdered, Network, PlayCircle, Rocket, RotateCcw, Scissors, TerminalSquare } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import { AgentCommandButton } from '@/components/AgentCommandButton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { createTextZip } from '@/lib/zip';
+import { cn } from '@/lib/utils';
 import { PLANNING_SITE_URL, withPlanningReference } from '@/lib/agentCommand';
 import skillSource from '../../.agents/skills/planning/SKILL.md?raw';
 import openaiSource from '../../.agents/skills/planning/agents/openai.yaml?raw';
@@ -18,53 +21,89 @@ import evidenceSource from '../../.agents/skills/planning/references/evidence-re
 import validatorSource from '../../.agents/skills/planning/scripts/validate_wiki.py?raw';
 import validatorTestsSource from '../../.agents/skills/planning/scripts/test_validate_wiki.py?raw';
 
-const PROMPTS = [
+const PROMPT_STYLES = {
+  Plan: {
+    card: 'border-sky-200 bg-sky-50/60 dark:border-sky-800/70 dark:bg-sky-950/20',
+    icon: 'bg-sky-100 text-sky-700 dark:bg-sky-900/70 dark:text-sky-300',
+  },
+  Implement: {
+    card: 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-800/70 dark:bg-emerald-950/20',
+    icon: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/70 dark:text-emerald-300',
+  },
+  Write: {
+    card: 'border-violet-200 bg-violet-50/60 dark:border-violet-800/70 dark:bg-violet-950/20',
+    icon: 'bg-violet-100 text-violet-700 dark:bg-violet-900/70 dark:text-violet-300',
+  },
+  Review: {
+    card: 'border-amber-200 bg-amber-50/60 dark:border-amber-800/70 dark:bg-amber-950/20',
+    icon: 'bg-amber-100 text-amber-700 dark:bg-amber-900/70 dark:text-amber-300',
+  },
+} as const;
+
+const PROMPT_FILTERS = ['All', 'Plan', 'Implement', 'Write', 'Review'] as const;
+
+const PROMPTS = ([
   {
+    category: 'Implement', icon: Rocket,
     title: 'Implement a long plan',
     description: 'Continue through ready phases, validate each outcome, and save checkpoints across sessions.',
     command: 'Use $planning to implement .wiki/<plan>.md or .wiki/<plan>/index.md through eligible phases within its scope. Validate each outcome and save a compact handoff in progress.md.',
   },
   {
+    category: 'Implement', icon: RotateCcw,
     title: 'Resume implementation',
     description: 'Reconcile the saved handoff with the current tree and continue the first unfinished action.',
     command: 'Use $planning to read the implementation section of progress.md, inspect its referenced plan and validation evidence, and continue from the next unfinished action. Update progress.md.',
   },
   {
+    category: 'Write', icon: FilePenLine,
     title: 'Write a draft',
     description: 'Outline an article from sources, review factual claims, and save the draft and checks.',
     command: 'Use $planning to draft an article about <topic> from sources/. Open primary sources, ask evidence-reviewer to check claims, correct errors, and save drafts/article.md, drafts/checks.md, and progress.md.',
   },
   {
+    category: 'Write', icon: FileText,
     title: 'Resume a draft',
     description: 'Inspect the recorded draft and checks, then continue without repeating unaffected review work.',
     command: 'Use $planning to read progress.md and inspect the referenced draft and checks. Continue from the recorded next action and update the progress note.',
   },
   {
+    category: 'Review', icon: FileSearch,
     title: 'Review factual claims',
     description: 'Check opened primary sources and identify the evidence missing from unresolved claims.',
     command: 'Use $planning to review <draft-path> against its source material and opened primary sources. Return a table of claim, verdict, source URL, and required correction using verified, incorrect, or unresolved.',
   },
   {
+    category: 'Plan', icon: FilePlus2,
     title: 'Create or update a plan',
     description: 'Ground a plan in the current repository and divide the remaining work into mergeable phases.',
     command: 'Use $planning to create or update a .wiki plan for: <describe the goal>.',
   },
   {
+    category: 'Implement', icon: PlayCircle,
     title: 'Execute one phase',
     description: 'Implement one bounded phase, validate it, and reconcile the plan with the resulting evidence.',
     command: 'Use $planning to execute phase <PHASE-ID> in .wiki/<plan>.md or .wiki/<plan>/index.md.',
   },
   {
+    category: 'Review', icon: Network,
     title: 'Review the portfolio',
     description: 'Rank remaining work and reconcile dependencies, indexes, and parallel execution lanes.',
     command: 'Use $planning to review the .wiki portfolio and recommend the next independently mergeable phases.',
   },
   {
+    category: 'Review', icon: ListOrdered,
+    title: 'Understand plans and next steps',
+    description: 'Turn the portfolio into a read-only, ordered briefing with clear actions and parallel work.',
+    command: 'Use $planning to inspect the .wiki portfolio without changing files. Present it as a concise, easy-to-scan briefing in recommended execution order. For each active plan, show: (1) its outcome, (2) current status, (3) dependencies or blockers, and (4) the next concrete phase or action. Separate coordination-only Epics from executable plans, call out work that can proceed in parallel, and end with a numbered "What to do next" list. Base the ordering on current repository evidence and clearly label any uncertainty.',
+  },
+  {
+    category: 'Review', icon: CalendarCheck2,
     title: 'Review plan currency',
     description: 'Check every plan against current evidence each month while planning work is active, then prune finished work.',
     command: 'Use $planning to review the currency of every .wiki plan against current code, tests, documentation, and history. Prune completed or obsolete work, retire finished plans, and record the review date, evidence scope, and blockers in the root index.',
   },
-].map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
+] as const).map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
 
 const RULES = [
   { icon: Layers3, title: 'Epics coordinate plans', text: 'Use execution: coordination and link executable child plans. Epics have no phases or independent effort estimate.' },
@@ -129,6 +168,8 @@ function downloadSkillZip(): void {
 
 export function PlanningPage() {
   const { toast } = useToast();
+  const [promptFilter, setPromptFilter] = useState<(typeof PROMPT_FILTERS)[number]>('All');
+  const visiblePrompts = PROMPTS.filter(prompt => promptFilter === 'All' || prompt.category === promptFilter);
 
   const download = () => {
     try {
@@ -163,7 +204,7 @@ export function PlanningPage() {
         </p>
       </div>
 
-      <section className="rounded-xl border border-border bg-card p-4 space-y-2">
+      <section data-tour="planning-install" className="rounded-xl border border-border bg-card p-4 space-y-2">
         <h2 className="text-sm font-semibold text-foreground">Install and start</h2>
         <p className="text-sm text-muted-foreground">
           Download the skill folder below and extract the ZIP into your target repository. Keep the complete
@@ -174,16 +215,43 @@ export function PlanningPage() {
           The browser displays planning portfolios and provides the skill package. Your agent performs implementation,
           drafting, and review. The execution loop saves resumable state; it does not schedule future runs.
         </p>
+        <Link to="/install" className="inline-block text-xs font-medium text-primary underline underline-offset-4">
+          Step-by-step installation instructions
+        </Link>
       </section>
 
-      <section>
+      <section data-tour="planning-prompts">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Use the skill</h2>
+        <div role="group" aria-label="Filter planning prompts" className="mb-4 flex flex-wrap gap-2">
+          {PROMPT_FILTERS.map(filter => (
+            <button
+              key={filter}
+              type="button"
+              aria-pressed={promptFilter === filter}
+              onClick={() => setPromptFilter(filter)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                promptFilter === filter
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground',
+              )}
+            >
+              {filter} <span className="ml-1 opacity-75">{filter === 'All' ? PROMPTS.length : PROMPTS.filter(prompt => prompt.category === filter).length}</span>
+            </button>
+          ))}
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {PROMPTS.map(prompt => (
-            <article key={prompt.title} className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">{prompt.title}</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{prompt.description}</p>
+          {visiblePrompts.map(prompt => (
+            <article key={prompt.title} className={cn('group rounded-xl border p-4 flex flex-col gap-3 motion-safe:transition-[transform,box-shadow] motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md', PROMPT_STYLES[prompt.category].card)}>
+              <div className="flex items-start gap-3">
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-110', PROMPT_STYLES[prompt.category].icon)}>
+                  <prompt.icon aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{prompt.category}</span>
+                  <h3 className="text-sm font-semibold text-foreground">{prompt.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{prompt.description}</p>
+                </div>
               </div>
               <div className="mt-auto flex items-start gap-2 rounded-lg border border-border bg-background/60 p-2.5">
                 <code className="min-w-0 flex-1 whitespace-pre-wrap break-words text-xs text-foreground">{prompt.command}</code>
@@ -213,7 +281,7 @@ export function PlanningPage() {
         </div>
       </section>
 
-      <section>
+      <section data-tour="planning-package">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Bundled definition</h2>
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">

@@ -34,3 +34,37 @@ test('planning download contains every authored skill file with current content'
     expect(files.get(file)?.replaceAll('\r\n', '\n')).toBe(source.replaceAll('\r\n', '\n'));
   }
 });
+
+test('copies an ordered portfolio briefing prompt', async ({ page, context }, info) => {
+  test.skip(info.project.name !== 'desktop', 'prompt copy interaction is covered on desktop');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://localhost:4173' });
+  await page.goto('/planning');
+
+  const prompt = page.getByRole('article').filter({
+    has: page.getByRole('heading', { name: 'Understand plans and next steps' }),
+  });
+  await expect(prompt).toContainText('read-only, ordered briefing');
+  await prompt.getByRole('button', { name: 'Copy understand plans and next steps command' }).click();
+
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain('inspect the .wiki portfolio without changing files');
+  expect(copied).toContain('recommended execution order');
+  expect(copied).toContain('numbered "What to do next" list');
+  expect(copied).toContain('Official planning skill guide and download:');
+});
+
+test('filters planning prompts by category', async ({ page }, info) => {
+  test.skip(info.project.name === 'tablet', 'filter interaction is covered on desktop and phone');
+  await page.goto('/planning');
+
+  const filters = page.getByRole('group', { name: 'Filter planning prompts' });
+  await expect(page.getByRole('article')).toHaveCount(10);
+  await filters.getByRole('button', { name: 'Write 2' }).click();
+  await expect(filters.getByRole('button', { name: 'Write 2' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: 'Write a draft' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Resume a draft' })).toBeVisible();
+
+  await filters.getByRole('button', { name: 'All 10' }).click();
+  await expect(page.getByRole('article')).toHaveCount(10);
+});

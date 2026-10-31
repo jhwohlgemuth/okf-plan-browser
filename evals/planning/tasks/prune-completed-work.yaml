@@ -1,0 +1,42 @@
+id: prune-completed-work
+name: Prune completed wiki work
+inputs:
+  prompt: "Review the .wiki plan against the current code evidence. The export helper and test already landed; remove completed phase CSV-01, retain the remaining CSV-02 phase and its stable ID, and reconcile the index, network, and lane. Keep guard.txt unchanged."
+  files:
+    - path: .wiki/csv-export.md
+      content: |
+        ---
+        type: Plan
+        title: CSV export
+        status: in-progress
+        execution: phased
+        phase_budget_hours: 5
+        ---
+        # CSV export
+        ## CSV-01 — Export helper
+        - Status: in-progress
+        - Exact write set: src/export.py
+        ## CSV-02 — Browser download
+        - Status: planned
+        - Exact write set: src/download.py
+        - Primary integration lock: download UI
+        - Focused validation: Run download tests.
+        - Handoff: Merge browser download.
+    - path: src/export.py
+      content: "def csv_export(rows):\n    return '\\n'.join(','.join(row) for row in rows)\n"
+    - path: tests/test_export.py
+      content: "from src.export import csv_export\n\ndef test_export():\n    assert csv_export([['a','b']]) == 'a,b'\n"
+    - path: .wiki/index.md
+      content: "# Portfolio\n\n- [CSV export](csv-export.md): CSV-01 and CSV-02.\n"
+    - path: .wiki/plan-network.md
+      content: "# Network\n\nCSV-01 precedes CSV-02.\n"
+    - path: .wiki/parallel-execution.md
+      content: "# Lanes\n\nCSV-01 holds export helper lock.\n"
+    - path: guard.txt
+      content: "leave this alone\n"
+graders:
+  - type: program
+    name: pruned-plan-state
+    config:
+      command: python3
+      args: [evals/planning/graders/wiki_state.py, prune]

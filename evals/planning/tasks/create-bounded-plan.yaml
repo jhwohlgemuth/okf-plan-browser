@@ -1,0 +1,19 @@
+id: create-bounded-plan
+name: Create a bounded wiki plan
+inputs:
+  prompt: "In this miniature repository, create a .wiki plan for adding CSV export. Update the portfolio index, dependency network, and parallel lane. The implementation must be phased into at most five active hours per phase, with an exact write set, one primary lock, focused validation, and a mergeable handoff. Do not implement product code."
+  files:
+    - path: .wiki/index.md
+      content: "# Portfolio\n\nNo active plans.\n"
+    - path: .wiki/plan-network.md
+      content: "# Dependency network\n\nNo active edges.\n"
+    - path: .wiki/parallel-execution.md
+      content: "# Parallel execution\n\nNo active lanes.\n"
+    - path: guard.txt
+      content: "leave this alone\n"
+graders:
+  - type: program
+    name: bounded-plan-state
+    config:
+      command: python3
+      args: [evals/planning/graders/wiki_state.py, create]

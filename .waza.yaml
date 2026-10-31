@@ -1,0 +1,16 @@
+paths:
+  skills: .agents/skills/
+  evals: evals/
+  results: results/
+files:
+  evalFile: eval.yaml
+  taskGlob: tasks/*.yaml
+  taskFileSuffix: .yaml
+tokens:
+  limits:
+    defaults:
+      "SKILL.md": 500
+      "references/**/*.md": 2000
+      "*.md": 2000
+    overrides:
+      ".agents/skills/planning/SKILL.md": 1500

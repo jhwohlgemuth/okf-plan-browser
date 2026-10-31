@@ -15,7 +15,7 @@ phase_budget_hours: 5
 
 ## Current evidence and decisions
 
-The canonical `.agents/skills/planning/` package has instructions, references, agent metadata, a validator, and 16 passing validator unit tests. It has no Waza configuration, evaluation specs, task fixtures, behavior graders, developer targets, or skill-specific CI. Waza is not installed on the current host.
+At `35c2eab` plus the current worktree, Waza v0.39.1 is checksum verified in `/tmp/waza-v0.39.1`. The separated workspace, routing and behavior specs, isolated inline fixtures, artifact graders, Make targets, and path-filtered CI workflow are implemented. `make planning-skill-test WAZA=/tmp/waza-v0.39.1` passes static schema, 10/10 requirement coverage, preflight, and mock fixture wiring. The 16 validator unit tests pass. A deliberately broken mock task exits 1, and a program grader smoke fixture passes. A planning-specific 1,500-token limit in `.waza.yaml` makes `waza check planning` report `ready: true` at 1,333 tokens; the 500-token soft warning remains. No model-backed trial or GitHub Actions run has been observed.
 
 Use `my-shell-setup`'s `agents-check`, `agents-test`, and `agents-dev` pattern as the command-interface reference, including its distinction between credential-free mock runs and opt-in real-agent evaluation. Adapt the storage layout to this repository: configure Waza's project workspace with skills at `.agents/skills/` and evaluations at root `evals/`. Do not place Waza-only tasks, fixtures, results, or workflow metadata inside the canonical planning skill, so the web ZIP, OpenCode catalog, and Codex plugin remain runtime-only without special exclusions.
 
@@ -36,23 +36,12 @@ Waza discovers the planning skill and separated evaluation workspace from the re
 
 # Execution phases
 
-## PWZ-01 — Establish the Waza workspace and offline runner contract
-
-- Status: ready
-- Budget: 5 active hours maximum
-- Prerequisites: Install Waza v0.39.1 or newer from the official distribution before local validation; no provider credentials are required.
-- Exact write set: `.waza.yaml`, `.gitignore`, `Makefile`, `CONTRIBUTING.md`, `evals/planning/eval.yaml`, `evals/planning/routing.yaml`, `evals/planning/tasks/explicit-planning.yaml`, `evals/planning/tasks/unrelated-request.yaml`.
-- Primary integration lock: planning-skill Waza runner interface.
-- Outcome: The repository has separated skill/eval discovery and documented check, mock-test, interactive-dev, and explicit real-test targets. The offline suite validates schemas and wiring; the routing suite is configured for natural discovery without skill-body injection.
-- Focused validation: Run `waza --version`, `waza check .agents/skills/planning`, strict `waza spec verify`, preflight for both specs, the mock target, the existing 16 validator tests, and a dry inspection proving results and Waza caches are ignored.
-- Handoff: Record the Waza version, exact commands, discovered skill/eval paths, mock result, spec-coverage report, and the unavailable provider prerequisite if a real run was not authorized.
-
 ## PWZ-02 — Evaluate portfolio lifecycle behavior
 
-- Status: planned
+- Status: blocked
 - Budget: 5 active hours maximum
-- Prerequisites: PWZ-01 and explicit authorization for any model-backed trial.
-- Exact write set: `evals/planning/portfolio.yaml`, `evals/planning/tasks/create-bounded-plan.yaml`, `evals/planning/tasks/prune-completed-work.yaml`, `evals/planning/tasks/preserve-blocked-work.yaml`, `evals/planning/fixtures/create-bounded-plan/`, `evals/planning/fixtures/prune-completed-work/`, `evals/planning/fixtures/preserve-blocked-work/`, `evals/planning/graders/wiki_state.py`, `evals/planning/eval.yaml`.
+- Prerequisites: Explicit authorization and provider access for model-backed trials. Offline schemas and graders are implemented.
+- Exact write set: `evals/planning/tasks/create-bounded-plan.yaml`, `evals/planning/tasks/prune-completed-work.yaml`, `evals/planning/tasks/preserve-blocked-work.yaml`, `evals/planning/graders/wiki_state.py`, `evals/planning/eval.yaml`, `results/planning/`, `progress.md`.
 - Primary integration lock: planning portfolio behavior suite.
 - Outcome: Injected-skill trials grade five-hour phase structure, exact write sets, locks and validation, completed-work removal, blocked-work preservation, stable phase IDs, and synchronized index/network/lane edits in isolated repositories.
 - Focused validation: Run schema and strict spec checks, preflight and mock wiring, then one explicitly authorized model-backed trial per task; validate produced wikis, inspect complete file diffs, and confirm source fixtures and paths outside each trial workspace remain unchanged.
@@ -60,10 +49,10 @@ Waza discovers the planning skill and separated evaluation workspace from the re
 
 ## PWZ-03 — Evaluate resumable implementation and drafting behavior
 
-- Status: planned
+- Status: blocked
 - Budget: 5 active hours maximum
-- Prerequisites: PWZ-01 and explicit authorization for any model-backed trial; independent of PWZ-02 after the runner contract is stable.
-- Exact write set: `evals/planning/workflows.yaml`, `evals/planning/tasks/resume-implementation.yaml`, `evals/planning/tasks/source-backed-draft.yaml`, `evals/planning/tasks/resume-draft.yaml`, `evals/planning/tasks/review-claims.yaml`, `evals/planning/fixtures/resume-implementation/`, `evals/planning/fixtures/source-backed-draft/`, `evals/planning/fixtures/resume-draft/`, `evals/planning/fixtures/review-claims/`, `evals/planning/graders/artifact_state.py`, `evals/planning/eval.yaml`.
+- Prerequisites: Explicit authorization and provider access for model-backed trials; independent of PWZ-02. Offline schemas and graders are implemented.
+- Exact write set: `evals/planning/tasks/resume-implementation.yaml`, `evals/planning/tasks/source-backed-draft.yaml`, `evals/planning/tasks/resume-draft.yaml`, `evals/planning/tasks/review-claims.yaml`, `evals/planning/graders/artifact_state.py`, `evals/planning/eval.yaml`, `results/planning/`, `progress.md`.
 - Primary integration lock: planning workflow behavior suite.
 - Outcome: Injected-skill trials grade recovery from `progress.md`, adherence to the authorized phase and write set, outline/article/check creation, verified/incorrect/unresolved claim handling, precise missing-evidence notes, and preservation of unrelated files.
 - Focused validation: Run schema and strict spec checks, preflight and mock wiring, then one explicitly authorized model-backed trial per task; inspect generated progress, draft, and checks artifacts, grader evidence, and complete file diffs.
@@ -71,9 +60,9 @@ Waza discovers the planning skill and separated evaluation workspace from the re
 
 ## PWZ-04 — Gate planning-skill changes in CI
 
-- Status: planned
+- Status: blocked
 - Budget: 5 active hours maximum
-- Prerequisites: PWZ-02 and PWZ-03 schemas, tasks, fixtures, and offline checks pass.
+- Prerequisites: Commit or publish the new workflow so GitHub Actions can run it. PWZ-02 and PWZ-03 offline schemas, tasks, and checks pass.
 - Exact write set: `.github/workflows/planning-skill.yml`, `Makefile`, `CONTRIBUTING.md`.
 - Primary integration lock: planning-skill CI gate.
 - Outcome: A path-filtered workflow pins Waza v0.39.1 and runs readiness, strict spec coverage, preflight, mock wiring, and planning-validator tests without provider credentials or paid calls; model-backed targets remain manual.

@@ -10,9 +10,9 @@
 - [Planning skill web distribution](planning-skill-web-distribution.md): PSD-01 publishes the
   latest raw tree, ZIP, and OpenCode HTTP catalog; PSD-02 packages that source as a Codex plugin.
   PSD-03 requires PSD-01 before it edits and externally validates the release workflow; LX-01 is complete.
-- [Planning skill Waza workflow](planning-skill-waza-workflow.md): PWZ-01 establishes the runner;
-  PWZ-02 and PWZ-03 can then build independent behavior suites. PWZ-04 requires both suites to pass
-  offline checks. Model-backed runs require explicit authorization and provider access.
+- [Planning skill Waza workflow](planning-skill-waza-workflow.md): The offline runner and both
+  suites are implemented. PWZ-02/03 await authorized model-backed trials; PWZ-04 awaits a
+  GitHub Actions run of the new offline workflow.
 - [Scoop Extras](scoop-extra-publication.md): SC-01 needs a Windows host for the published MSI; SC-02 needs a
   working Scoop asset and Windows native-ingest smoke evidence from TD-03.
 - [WinGet](winget-publication.md): WG-01 needs Windows native-ingest smoke
@@ -20,4 +20,4 @@
 - [Homebrew cask](homebrew-cask-publication.md): HB-01 needs Apple signing/notarization credentials
   and an Apple Silicon host; HB-02 needs the resulting public DMG.
 
-PSD-03 and PWZ-01/PWZ-04 all update `CONTRIBUTING.md`; integrate those phase edits sequentially.
+PSD-03 and PWZ-04 both update `CONTRIBUTING.md`; integrate those phase edits sequentially.

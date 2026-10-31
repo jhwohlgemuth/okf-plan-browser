@@ -1,0 +1,16 @@
+name: planning-harness-wiring
+description: Credential-free task and fixture plumbing only
+skill: planning
+schemaVersion: "1.4"
+version: "1.0"
+config:
+  executor: mock
+  model: claude-sonnet-4.6
+  trials_per_task: 1
+  timeout_seconds: 30
+metrics:
+  - name: fixture-wiring
+    weight: 1.0
+    threshold: 1.0
+tasks:
+  - tasks/mock-wiring.yaml

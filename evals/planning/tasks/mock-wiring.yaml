@@ -1,0 +1,15 @@
+id: mock-wiring
+name: Fixture copied into isolated workspace
+inputs:
+  prompt: "Harness fixture-copy check only."
+  files:
+    - path: harness/fixture.txt
+      content: "planning-waza-fixture\n"
+graders:
+  - type: file
+    name: fixture-present
+    config:
+      must_exist: [harness/fixture.txt]
+      content_patterns:
+        - path: harness/fixture.txt
+          must_match: ["^planning-waza-fixture\\n?$"]

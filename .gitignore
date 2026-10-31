@@ -47,3 +47,5 @@ coverage/
 *.tsbuildinfo
 test-results/
 playwright-report/
+results/
+.waza-cache/

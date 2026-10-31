@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 .PHONY: help install dev lint typecheck test audit build ci visual visual-update visual-report tauri-dev tauri-build \
+        planning-skill-check planning-skill-test planning-skill-dev planning-skill-test-real \
         pages-enable pages-deploy pages-url \
         bump-patch bump-minor bump-major bump release version check-version release-version release-prepare release-publish release-retry-draft release-run release-watch release-tag release-list release-view release-download release-delete \
         runs watch logs ci-status
@@ -38,6 +39,28 @@ build: ## Production web build into dist/
 	npm run build
 
 ci: audit lint typecheck test build ## Run everything CI runs, locally
+
+WAZA ?= waza
+PLANNING_SKILL := .agents/skills/planning
+PLANNING_EVAL := evals/planning
+
+planning-skill-check: ## Check planning skill and all Waza specs without model calls
+	$(WAZA) check $(PLANNING_SKILL)
+	$(WAZA) spec verify $(PLANNING_SKILL) $(PLANNING_EVAL)/eval.yaml --fail
+	$(WAZA) preflight $(PLANNING_EVAL)/eval.yaml
+	$(WAZA) preflight $(PLANNING_EVAL)/routing.yaml
+
+planning-skill-test: planning-skill-check ## Run credential-free Waza harness check
+	@set -eu; tmp=$$(mktemp -d /tmp/planning-waza.XXXXXX); \
+	  TMPDIR=/tmp $(WAZA) run $(PLANNING_EVAL)/mock.yaml --output-dir "$$tmp"; \
+	  echo "Mock harness results: $$tmp (wiring only)"
+
+planning-skill-dev: ## Open Waza interactive development for planning skill
+	$(WAZA) dev $(PLANNING_SKILL)/SKILL.md
+
+planning-skill-test-real: ## Run opt-in model-backed planning evals
+	$(WAZA) run $(PLANNING_EVAL)/routing.yaml --no-cache --output-dir results/planning
+	$(WAZA) run $(PLANNING_EVAL)/eval.yaml --baseline --no-cache --output-dir results/planning
 
 visual: ## Run visual regression tests (PW_CHANNEL=msedge to use Edge)
 	npm run test:visual

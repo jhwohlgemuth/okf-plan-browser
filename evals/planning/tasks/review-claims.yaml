@@ -1,0 +1,17 @@
+id: review-claims
+name: Review verified incorrect and unresolved claims
+inputs:
+  prompt: "Read drafts/article.md and sources/library-record.md, then produce drafts/checks.md with the claim, verdict, source location, and required correction. Mark weekday hours verified, the claimed 18:00 closing incorrect with the supported correction, and Sunday opening unresolved with exact missing evidence. Keep the article and guard.txt unchanged; this is a read-only review of the draft."
+  files:
+    - path: drafts/article.md
+      content: "# Arbor Library\nThe library opens at 09:00 on weekdays. It closes at 18:00 on weekdays. It opens Sundays.\n"
+    - path: sources/library-record.md
+      content: "# Arbor Library Board record, 2025-01-08\nThe board approved weekday opening hours of 09:00 to 17:00 beginning 2025-02-01. The record makes no statement about Sunday hours.\n"
+    - path: guard.txt
+      content: "leave this alone\n"
+graders:
+  - type: program
+    name: claim-verdict-state
+    config:
+      command: python3
+      args: [evals/planning/graders/artifact_state.py, review]

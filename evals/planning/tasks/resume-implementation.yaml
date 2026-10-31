@@ -1,0 +1,21 @@
+id: resume-implementation
+name: Resume a bounded implementation phase
+inputs:
+  prompt: "Resume and execute the phased implementation from progress.md. Complete only CALC-02 in the miniature project, run the focused unittest, and update progress.md with verified state and next action. Preserve guard.txt and the unrelated progress section."
+  files:
+    - path: progress.md
+      content: "## Unrelated work\nKeep this section.\n\n## Implementation — Calculator\n- Plan: .wiki/calculator.md; active phase: CALC-02; state: in progress.\n- Verified state: CALC-01 helper exists.\n- Remaining work: Add a subtraction operation.\n- Next action: Edit calc.py and run tests.\n"
+    - path: .wiki/calculator.md
+      content: "---\ntype: Plan\ntitle: Calculator\nstatus: in-progress\nexecution: phased\nphase_budget_hours: 5\n---\n# Calculator\n## CALC-02 — Subtraction\n- Status: in-progress\n- Exact write set: calc.py, tests/test_calc.py\n- Primary integration lock: calculator\n- Focused validation: Run python3 -m unittest discover -s tests.\n- Handoff: Record test result in progress.md.\n"
+    - path: calc.py
+      content: "def add(a, b):\n    return a + b\n"
+    - path: tests/test_calc.py
+      content: "import unittest\nfrom calc import add\n\nclass CalcTest(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(1, 2), 3)\n"
+    - path: guard.txt
+      content: "leave this alone\n"
+graders:
+  - type: program
+    name: implementation-state
+    config:
+      command: python3
+      args: [evals/planning/graders/artifact_state.py, implementation]

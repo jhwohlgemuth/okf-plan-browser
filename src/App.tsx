@@ -11,6 +11,7 @@ const PhasesPage    = lazy(() => import('@/pages/PhasesPage').then(m => ({ defau
 const GraphPage     = lazy(() => import('@/pages/GraphPage').then(m => ({ default: m.GraphPage })));
 const SearchPage    = lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })));
 const PlanningPage  = lazy(() => import('@/pages/PlanningPage').then(m => ({ default: m.PlanningPage })));
+const InstallPage   = lazy(() => import('@/pages/InstallPage').then(m => ({ default: m.InstallPage })));
 const SettingsPage  = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AboutPage     = lazy(() => import('@/pages/AboutPage').then(m => ({ default: m.AboutPage })));
 
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="graph"     element={<GraphPage />} />
           <Route path="search"    element={<SearchPage />} />
           <Route path="planning"  element={<PlanningPage />} />
+          <Route path="install"   element={<InstallPage />} />
           <Route path="settings"  element={<SettingsPage />} />
           <Route path="about"     element={<AboutPage />} />
           <Route path="*"         element={<NotFoundPage />} />

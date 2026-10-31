@@ -104,6 +104,10 @@ export function AboutPage() {
         <Link to="/planning" className="inline-block mt-3 text-sm text-od-blue underline underline-offset-4">
           Read the workflows and download the planning skill
         </Link>
+        <span className="mx-2 text-muted-foreground">·</span>
+        <Link to="/install" className="inline-block mt-3 text-sm text-od-blue underline underline-offset-4">
+          Install the desktop app or skill
+        </Link>
       </Section>
 
       <Section title="Open Knowledge Format">

@@ -11,7 +11,8 @@ test('walkthrough loads demo data, visits views, goes back, and restores Home', 
     'Portfolio at a glance', 'Refresh project wikis', 'Planning workflows', 'Find a plan quickly',
     'Narrow the portfolio', 'Compare plans', 'Read plan details',
     'Track phases', 'Explore relationships', 'Resolved links',
-    'Search plans and assets', 'Choose an appearance', 'GitHub access token',
+    'Search plans and assets', 'Install the planning skill', 'Choose a planning prompt',
+    'Inspect the skill package', 'Choose an appearance', 'GitHub access token',
     'GitLab access token', 'Manage loaded data', 'Remove one project wiki',
     'Clear loaded wikis', 'Clear saved data and tokens',
     'More information',
@@ -24,6 +25,12 @@ test('walkthrough loads demo data, visits views, goes back, and restores Home', 
         ? '[data-tour="navigation-trigger"]' : '[data-tour="sidebar-repos"]';
       await expect(page.locator(target)).toBeVisible();
     }
+    if (title === 'Install the planning skill') {
+      await expect(page).toHaveURL(/\/planning$/);
+      await expect(page.locator('[data-tour="planning-install"]')).toBeVisible();
+    }
+    if (title === 'Choose a planning prompt') await expect(page.locator('[data-tour="planning-prompts"]')).toBeVisible();
+    if (title === 'Inspect the skill package') await expect(page.locator('[data-tour="planning-package"]')).toBeVisible();
     if (title === 'Remove one project wiki') await expect(page.locator('[data-tour="remove-wiki"]').first()).toBeVisible();
     if (title === 'Clear loaded wikis') await expect(page.locator('[data-tour="clear-loaded"]')).toBeVisible();
     if (title === 'Clear saved data and tokens') await expect(page.locator('[data-tour="clear-saved"]')).toBeVisible();

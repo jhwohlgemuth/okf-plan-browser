@@ -96,3 +96,14 @@
 - Budget: LX-01 completed within its five-hour active-time budget; LX-02 retains its five-hour budget. External CI waiting did not count as active work.
 - Blockers / failed approaches: No interactive Linux host is available in this workspace. Earlier API and draft download gates failed before publication; per-platform checksum sidecars resolved the release gate.
 - Next action: Download the two canonical Linux packages and sidecars to a supported interactive Linux host, verify checksums, install and remove the `.deb`, launch the AppImage, and exercise folder import.
+
+## Implementation — Planning skill Waza workflow
+
+- Plan: `.wiki/planning-skill-waza-workflow.md`; active phase: none; state: blocked on external prerequisites.
+- Authorized scope and decisions: Implement the separated Waza workspace and credential-free gates. The plan requires explicit authorization for model-backed trials; the CI run requires a committed branch.
+- Baseline and local work: `35c2eab` was clean at start. The Waza files, Make targets, documentation, and CI workflow are uncommitted. `src/pages/PlanningPage.tsx` and `e2e/planning.spec.ts` changed independently during this session and were left untouched.
+- Verified state: Waza v0.39.1 at `/tmp/waza-v0.39.1` matched the official SHA-256. `make planning-skill-test WAZA=/tmp/waza-v0.39.1` passed, including 10/10 static requirement coverage, both preflights, and a 1/1 mock fixture task. `python3 -m unittest discover -s .agents/skills/planning/scripts -p 'test_*.py'` passed 16 tests. A temporary broken mock task exited 1; a temporary program-grader fixture passed. These are harness checks, not observed planning-skill behavior.
+- Remaining work: PWZ-02 and PWZ-03 require model-backed task trials, artifact/diff review, and preserved results. PWZ-04 requires an observed GitHub Actions run of the new workflow. A planning-specific 1,500-token limit makes Waza readiness pass at 1,333 tokens; the 500-token soft warning remains.
+- Budget: PWZ-01 implementation completed within the five-hour ceiling; no active time spent on blocked external validation.
+- Blockers / failed approaches: No model-backed trial was started because the plan requires explicit authorization. The workflow has not been committed, so no GitHub Actions run exists. The first negative-injection attempt omitted HOME and tested startup failure; the corrected attempt failed on the intended broken fixture pattern.
+- Next action: After model-run authorization and provider access, run `make planning-skill-test-real WAZA=/tmp/waza-v0.39.1`, inspect every task result and file diff, and update PWZ-02/03. After the workflow is committed, inspect its GitHub Actions run for PWZ-04.

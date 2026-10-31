@@ -69,6 +69,7 @@ The [draft workflow](.agents/skills/planning/references/write-draft.md) saves `d
 | **Dependency Graph** | D3 graph of plans and Epics; edges are `.md` links and phase cross-references |
 | **Search** | Full-text across titles, descriptions, section content, tags, packages, and phase titles |
 | **Planning Skill** | Official skill source and download, with prompts for portfolio maintenance, resumable implementation, drafting, and evidence review |
+| **Install** | Desktop release downloads and setup steps for the app and planning skill |
 
 - 🌙 **One Dark theme** with Light / System toggle (persisted across sessions)
 - 📂 **File System Access API** (`showDirectoryPicker`) + drag-and-drop fallback

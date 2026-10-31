@@ -1,6 +1,8 @@
 ---
 name: planning
-description: Maintain and execute a repository's .wiki planning portfolio in bounded, resumable phases, or draft source-backed articles with claim verification. Use when creating, reviewing, updating, executing, pruning, or retiring plans in .wiki, continuing long implementation plans, writing and checking article drafts from sources/, or resuming from progress.md.
+description: |
+  USE FOR: Create .wiki plans, review .wiki plans, update .wiki plans, execute phased implementation, prune completed .wiki work, retire completed .wiki plans, write source-backed articles, review factual claims, resume article drafts from progress.md.
+  DO NOT USE FOR: Unrelated code explanations.
 ---
 
 # Planning

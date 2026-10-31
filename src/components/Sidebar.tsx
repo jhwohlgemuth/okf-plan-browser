@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import type { Ref } from 'react';
 import {
   Home, LayoutGrid, Layers, Share2, Search, Settings, AlertTriangle, Info, RefreshCw,
-  PanelLeftClose, PanelLeftOpen, BookOpenCheck, X,
+  PanelLeftClose, PanelLeftOpen, BookOpenCheck, Download, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlanStore } from '@/store/planStore';
@@ -16,6 +16,7 @@ const NAV = [
   { to: '/phases',    icon: Layers,      label: 'Phase Tracker' },
   { to: '/graph',     icon: Share2,      label: 'Dependency Graph' },
   { to: '/search',    icon: Search,      label: 'Search' },
+  { to: '/install',   icon: Download,    label: 'Install' },
   { to: '/planning',  icon: BookOpenCheck, label: 'Planning Skill' },
   { to: '/settings',  icon: Settings,    label: 'Settings' },
   { to: '/about',     icon: Info,        label: 'About' },
