@@ -10,24 +10,9 @@ import { planAnchor } from '@/lib/planLinks';
 import { isEpic, linkedPlans } from '@/lib/planKind';
 import { PlanKindBadge } from './PlanKindBadge';
 import { PlanStatusBadge } from './PlanStatusBadge';
+import { PHASE_COLUMNS, PHASE_COLUMN_HEADER } from '@/lib/phaseColumns';
 
 interface PhaseCard { plan: ParsedPlan; phase: Phase }
-
-const COLUMNS: { status: PhaseStatus; label: string }[] = [
-  { status: 'planned',     label: 'Planned' },
-  { status: 'ready',       label: 'Ready' },
-  { status: 'in-progress', label: 'In Progress' },
-  { status: 'waiting-on-validation', label: 'Waiting on Validation' },
-  { status: 'blocked',     label: 'Blocked' },
-];
-
-const COL_HEADER: Record<PhaseStatus, string> = {
-  planned:      'border-od-border  text-od-muted',
-  ready:        'border-od-green   text-od-green',
-  'in-progress':'border-od-blue    text-od-blue',
-  'waiting-on-validation': 'border-od-yellow text-od-yellow',
-  blocked:      'border-od-red     text-od-red',
-};
 
 const IMPACT_DOT: Record<string, string> = {
   critical: 'bg-od-red',
@@ -80,14 +65,14 @@ export function KanbanBoard() {
         </div>
       </section>}
       <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] xl:grid-flow-row xl:grid-cols-5 gap-4 flex-1 min-h-[360px] overflow-x-auto xl:overflow-hidden">
-      {COLUMNS.map(col => {
+      {PHASE_COLUMNS.map(col => {
         const cards = byStatus(col.status);
         return (
           <section key={col.status} aria-label={`${col.label} phases`} className="flex flex-col min-h-0 overflow-hidden">
             {/* Column header */}
             <div className={cn(
               'flex items-center justify-between px-3 py-2 mb-3 border-b-2 shrink-0',
-              COL_HEADER[col.status],
+              PHASE_COLUMN_HEADER[col.status],
             )}>
               <span className="text-xs font-semibold tracking-wide uppercase">{col.label}</span>
               <span className="text-xs font-mono opacity-70">{cards.length}</span>

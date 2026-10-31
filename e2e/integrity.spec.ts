@@ -62,6 +62,70 @@ test('stale in-progress plan status is corrected across portfolio and phase trac
   await expect(page.getByRole('region', { name: 'Planned phases' })).not.toContainText('Queued task');
 });
 
+test('simple phase view keeps collapsed items compact and expands their details', async ({ page }) => {
+  await page.goto('/home');
+  await importPortfolio(page, 'Simple phases', [
+    {
+      name: 'compact.md',
+      text: `${markdown('Compact plan', 'status: ready\npriority: next\nimpact: high\nexecution: phased')}\n# Execution phases\n\n## CMP-01 — Prepare workspace\n- Status: planned\n\n## CMP-02 — Ship the focused change\n- Status: ready\n- Deliverable: **formatted details**\n`,
+    },
+    { name: 'epic.md', text: markdown('Coordination record', "status: planned\npriority: low\nimpact: critical\nexecution: coordination\ndescription: '**Coordinate** work'") },
+  ]);
+
+  await page.goto('/phases');
+  const view = page.getByRole('switch', { name: 'Simple view' });
+  await expect(view).not.toBeChecked();
+  await view.click();
+  await expect(view).toBeChecked();
+  await expect.poll(() => new URL(page.url()).searchParams.get('view')).toBe('simple');
+  for (const status of ['Planned', 'Ready', 'In Progress', 'Waiting on Validation', 'Blocked']) {
+    await expect(page.getByRole('region', { name: `${status} phases` })).toBeVisible();
+  }
+  const planned = page.getByRole('region', { name: 'Planned phases' });
+  const ready = page.getByRole('region', { name: 'Ready phases' });
+  await expect(planned.getByRole('listitem')).toHaveCount(1);
+  await expect(ready.getByRole('listitem')).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'In Progress phases' })).toContainText('empty');
+  const epics = page.getByRole('region', { name: 'Epics' });
+  await expect(epics).toContainText('Coordination record');
+  await expect(epics.getByRole('img', { name: 'Plan priority: Low' })).toHaveClass(/text-od-muted/);
+  await expect(epics.getByRole('img', { name: 'Plan impact: Critical' })).toHaveClass(/text-od-red/);
+  await expect(epics.getByRole('img', { name: 'Project wiki: Simple phases' })).toHaveAttribute('style', /background-color:/);
+  const epic = epics.getByText('Coordination record');
+  await epic.click();
+  await expect(epics.getByRole('button', { name: 'Open full Epic' })).toBeVisible();
+  await expect(epics.locator('.md-body strong')).toHaveText('Coordinate');
+  const row = ready.getByRole('button', { name: /^Expand phase CMP-02: Ship the focused change in Compact plan/ });
+  await expect(row).toContainText('CMP-02');
+  await expect(row).toContainText('Ship the focused change');
+  await expect(row.getByRole('img', { name: 'Plan priority: Next' })).toHaveClass(/text-od-purple/);
+  await expect(row.getByRole('img', { name: 'Plan impact: High' })).toHaveClass(/text-od-orange/);
+  await expect(row.getByRole('img', { name: 'Project wiki: Simple phases' })).toHaveAttribute('style', /background-color:/);
+  await expect(row.getByRole('img', { name: /^Phase state:/ })).toHaveCount(0);
+  await expect(planned.getByRole('img', { name: 'Plan priority: Next' })).toBeVisible();
+  const box = await row.boundingBox();
+  expect(box?.height).toBeLessThan(48);
+  await row.click();
+  await expect(ready.getByRole('button', { name: 'Open phase in plan' })).toBeVisible();
+  await expect(ready.locator('.md-body li').first()).toHaveText('Status: ready');
+  await expect(ready.locator('.md-body strong')).toHaveText('formatted details');
+  await expect(page.getByRole('dialog', { name: 'Compact plan' })).toHaveCount(0);
+  await row.click();
+  await expect(ready.getByRole('button', { name: 'Open phase in plan' })).toHaveCount(0);
+
+  await page.reload();
+  await expect(view).toBeChecked();
+  await row.click();
+  await ready.getByRole('button', { name: 'Open phase in plan' }).click();
+  await expect.poll(() => new URL(page.url()).hash).toBe('#cmp-02');
+  await expect(page.getByRole('dialog', { name: 'Compact plan' })).toBeVisible();
+  await page.getByRole('dialog', { name: 'Compact plan' }).getByRole('button', { name: 'Close plan details' }).click();
+  await view.click();
+  await expect(view).not.toBeChecked();
+  await expect.poll(() => new URL(page.url()).searchParams.get('view')).toBeNull();
+  await expect(page.getByRole('region', { name: 'Ready phases' })).toContainText('CMP-02');
+});
+
 test('large plan loads document rendering on first detail open', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'document loading coverage runs on desktop');
   const markdownRequests: string[] = [];
