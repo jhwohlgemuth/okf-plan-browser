@@ -200,6 +200,69 @@ test('imports same-name portfolios independently and safely searches malformed f
   await expect(page.getByRole('button', { name: 'Open Epic: First', exact: true })).toBeVisible();
 });
 
+test('search input toggles case and regular expressions independently', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'matching behavior only needs one viewport');
+  await page.goto('/home');
+  await importPortfolio(page, 'Search options', [
+    { name: 'upper.md', text: markdown('CamelCaseToken', 'tags: [focus]') },
+    { name: 'lower.md', text: markdown('camelcasetoken', 'tags: [other]') },
+  ]);
+  await page.goto('/search');
+  const input = page.getByRole('textbox', { name: 'Search query' });
+  const matchCase = page.getByRole('button', { name: 'Match case' });
+  const regex = page.getByRole('button', { name: 'Use regular expression' });
+
+  await expect(matchCase).toHaveAttribute('aria-pressed', 'false');
+  await expect(regex).toHaveAttribute('aria-pressed', 'false');
+  await input.fill('CamelCaseToken');
+  await expect(page.getByRole('button', { name: 'Open Epic: CamelCaseToken', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: camelcasetoken', exact: true })).toBeVisible();
+
+  await matchCase.click();
+  await expect(page.getByRole('button', { name: 'Open Epic: camelcasetoken', exact: true })).toHaveCount(0);
+  await input.fill('CamelCaseToke.');
+  await expect(page.getByRole('button', { name: 'Open Epic: CamelCaseToken', exact: true })).toHaveCount(0);
+  await regex.click();
+  await expect(page.getByRole('button', { name: 'Open Epic: CamelCaseToken', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: camelcasetoken', exact: true })).toHaveCount(0);
+
+  await matchCase.click();
+  await expect(page.getByRole('button', { name: 'Open Epic: camelcasetoken', exact: true })).toBeVisible();
+  await page.getByRole('group', { name: 'Plan tags' }).getByRole('button', { name: 'focus' }).click();
+  await expect(page.getByRole('button', { name: 'Open Epic: camelcasetoken', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Clear tags' }).click();
+  await input.fill('[');
+  await expect(page.getByRole('alert')).toContainText('Invalid regular expression');
+  await regex.click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('search options also apply to image and PDF paths', async ({ page }) => {
+  await page.goto('/home');
+  await importPortfolio(page, 'Search assets', [
+    { name: 'plan.md', text: markdown('Asset search') },
+    { name: 'sample.png', text: 'png' },
+    { name: 'sample.jpg', text: 'jpg' },
+    { name: 'sample.pdf', text: 'pdf' },
+  ]);
+  await page.goto('/search');
+  await page.getByRole('tab', { name: 'Images & PDFs' }).click();
+  const input = page.getByRole('textbox', { name: 'Search query' });
+  const matchCase = page.getByRole('button', { name: 'Match case' });
+  const regex = page.getByRole('button', { name: 'Use regular expression' });
+
+  await input.fill('SAMPLE.PNG');
+  await expect(page.getByRole('button', { name: /sample\.png/ })).toBeVisible();
+  await matchCase.click();
+  await expect(page.getByRole('button', { name: /sample\.png/ })).toHaveCount(0);
+  await regex.click();
+  await input.fill('sample\\.(png|pdf)$');
+  await expect(page.getByRole('button', { name: /sample\.png/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /sample\.pdf/ })).toBeVisible();
+  await regex.click();
+  await expect(page.getByRole('button', { name: /sample\.png/ })).toHaveCount(0);
+});
+
 test('selected search tags use a canonical URL and survive reload and history', async ({ page }) => {
   const revealTags = async () => {
     const show = page.getByRole('button', { name: 'Show tags' });
