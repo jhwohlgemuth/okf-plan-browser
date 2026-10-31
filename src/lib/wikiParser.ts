@@ -2,7 +2,7 @@ import yaml from 'js-yaml';
 import { validateFrontmatter } from './frontmatter';
 import { isEpic } from './planKind';
 import type {
-  Frontmatter, Section, Phase, PhaseStatus,
+  Frontmatter, Section, Phase, PhaseStatus, PlanStatus,
   PlanDependency, ParsedPlan,
 } from '@/types/wiki';
 
@@ -95,6 +95,10 @@ export function extractSections(body: string, defaultStatus: PhaseStatus = 'plan
   });
 }
 
+export function fallbackPhaseStatus(status?: PlanStatus): PhaseStatus {
+  return status === 'in-progress' ? 'planned' : status ?? 'planned';
+}
+
 // ─── Dependencies ─────────────────────────────────────────────────────────────
 
 const LINK_RE = /\[([^\]]+)\]\(([^)]+\.md[^)]*)\)/g;
@@ -141,7 +145,7 @@ export function parseWikiFile(
   raw: string,
 ): ParsedPlan {
   const { fm, body, errors } = parseFrontmatter(raw);
-  const sections     = extractSections(body, fm.status ?? 'planned');
+  const sections     = extractSections(body, fallbackPhaseStatus(fm.status));
   // Coordination headings describe work across child plans, not executable phases.
   if (fm.execution === 'coordination') sections.forEach(section => { section.phases = []; });
   const dependencies = extractDependencies(body);

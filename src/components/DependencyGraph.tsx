@@ -4,7 +4,7 @@ import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { buildPlanEdges } from '@/lib/planLinks';
 import { usePlanStore } from '@/store/planStore';
 import type { ParsedPlan } from '@/types/wiki';
-import { isEpic } from '@/lib/planKind';
+import { isEpic, planStatus } from '@/lib/planKind';
 import { advanceGraphLayout } from '@/lib/graphLayout';
 
 interface Node extends d3.SimulationNodeDatum {
@@ -42,7 +42,7 @@ export function DependencyGraph() {
 
     // Build nodes
     const nodes: Node[] = plans.map((p, i) => {
-      const color = STATUS_COLORS[p.frontmatter.status ?? ''] ?? '#5c6370';
+      const color = STATUS_COLORS[planStatus(p) ?? ''] ?? '#5c6370';
       const angle = (2 * Math.PI * i) / plans.length;
       return {
         id: p.id, title: p.frontmatter.title, color, plan: p,

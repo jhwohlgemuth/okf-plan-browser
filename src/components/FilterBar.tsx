@@ -22,7 +22,7 @@ function ToggleGroup<T extends string>({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-muted-foreground font-medium w-16 shrink-0">{label}</span>
+      <span className="text-xs text-muted-foreground font-medium w-20 shrink-0">{label}</span>
       {options.map(o => (
         <button
           key={o}
@@ -41,7 +41,7 @@ function ToggleGroup<T extends string>({
   );
 }
 
-export function FilterBar() {
+export function FilterBar({ statusLabel = 'Status' }: { statusLabel?: string }) {
   const filters      = usePlanStore(s => s.filters);
   const setFilter    = usePlanStore(s => s.setFilter);
   const clearFilters = usePlanStore(s => s.clearFilters);
@@ -97,7 +97,7 @@ export function FilterBar() {
             onChange={v => setFilter('kinds', v)}
           />
           <ToggleGroup
-            label="Status"
+            label={statusLabel}
             options={STATUS_OPTIONS}
             selected={filters.status}
             onChange={v => setFilter('status', v)}

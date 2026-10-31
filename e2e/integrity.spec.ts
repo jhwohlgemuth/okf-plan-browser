@@ -26,6 +26,42 @@ const importFiles = async (page: Page, title: string, text = markdown(title)) =>
   await expect(labels).toHaveCount(previousCount + 1);
 };
 
+test('stale in-progress plan status is corrected across portfolio and phase tracker', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'portfolio flow runs on the desktop layout');
+  await page.goto('/home');
+  await importPortfolio(page, 'Mixed statuses', [
+    {
+      name: 'active.md',
+      text: `${markdown('Active plan', 'status: in-progress\nexecution: phased')}\n# Execution phases\n\n## ACT-01 — Next task\n- Status: ready\n\n## ACT-02 — Later task\n- Status: planned\n`,
+    },
+    {
+      name: 'queued.md',
+      text: `${markdown('Queued plan', 'status: planned\nexecution: phased')}\n# Execution phases\n\n## QUE-01 — Queued task\n- Status: planned\n`,
+    },
+    {
+      name: 'working.md',
+      text: `${markdown('Working plan', 'status: in-progress\nexecution: phased')}\n# Execution phases\n\n## WRK-01 — Active task\n- Status: in-progress\n`,
+    },
+  ]);
+
+  await page.goto('/portfolio');
+  await expect(page.getByRole('button', { name: 'Open plan: Active plan' })).toContainText('Ready');
+  await expect(page.getByRole('button', { name: 'Open plan: Active plan' }).getByTitle('Source says in-progress, but no phase is in-progress. Showing the phase-based status.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open plan: Working plan' })).toContainText('In Progress');
+
+  await page.goto('/phases');
+  await expect(page.getByText('1 plan in progress')).toBeVisible();
+  await expect(page.getByText('Columns show phase status; plan status appears on each card.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'In Progress phases' })).toContainText('Active task');
+  await expect(page.getByRole('region', { name: 'Ready phases' })).toContainText('Next task');
+  await expect(page.getByRole('region', { name: 'Ready phases' })).toContainText('Plan:Ready');
+  await page.getByRole('button', { name: 'in-progress', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'In Progress phases' })).toContainText('Active task');
+  await expect(page.getByRole('region', { name: 'Ready phases' })).not.toContainText('Next task');
+  await expect(page.getByRole('region', { name: 'Planned phases' })).not.toContainText('Later task');
+  await expect(page.getByRole('region', { name: 'Planned phases' })).not.toContainText('Queued task');
+});
+
 test('large plan loads document rendering on first detail open', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'document loading coverage runs on desktop');
   const markdownRequests: string[] = [];

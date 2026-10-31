@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseFrontmatter, extractSections, isPlanFile, parseWikiFile } from '@/lib/wikiParser';
-import { isEpic } from '@/lib/planKind';
+import { isEpic, planStatus } from '@/lib/planKind';
 
 describe('parseFrontmatter', () => {
   it('parses a basic block', () => {
@@ -107,5 +107,26 @@ describe('Epic classification', () => {
   it('keeps phased work as a plan', () => {
     const plan = parseWikiFile('repo', 'work.md', '---\ntitle: Work\nexecution: phased\n---\n# Execution phases\n## WK-01 Build\n- Budget: 2h');
     expect(isEpic(plan)).toBe(false);
+  });
+});
+
+describe('effective plan status', () => {
+  const phased = (body: string) => parseWikiFile('repo', 'work.md',
+    `---\ntitle: Work\nstatus: in-progress\nexecution: phased\n---\n# Execution phases\n## WK-01 Work\n${body}`);
+
+  it('requires an explicit active phase before showing a plan in progress', () => {
+    const unstated = phased('- Budget: 2h');
+    expect(unstated.sections[0]?.phases[0]?.status).toBe('planned');
+    expect(planStatus(unstated)).toBe('planned');
+    expect(planStatus(phased('- Status: ready'))).toBe('ready');
+    expect(planStatus(phased('- Status: in-progress'))).toBe('in-progress');
+  });
+
+  it('uses the most actionable remaining phase status for stale active metadata', () => {
+    expect(planStatus(phased('- Status: blocked'))).toBe('blocked');
+    expect(planStatus(phased('- Status: waiting-on-validation'))).toBe('waiting-on-validation');
+    const coordination = parseWikiFile('repo', 'epic.md',
+      '---\ntitle: Epic\nstatus: in-progress\nexecution: coordination\n---\n# Goal\nCoordinate child plans');
+    expect(planStatus(coordination)).toBe('in-progress');
   });
 });

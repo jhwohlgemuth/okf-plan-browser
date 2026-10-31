@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronUp, FileText, Search, Tags, X } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { Input } from '@/components/ui/input';
-import { StatusBadge } from '@/components/StatusBadge';
+import { PlanStatusBadge } from '@/components/PlanStatusBadge';
 import { PriorityBadge } from '@/components/PriorityBadge';
 import { truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
@@ -361,7 +361,7 @@ export function SearchPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <PlanKindBadge plan={plan} compact />
-                  {fm.status   && <StatusBadge status={fm.status} />}
+                  <PlanStatusBadge plan={plan} />
                   {fm.priority && <PriorityBadge priority={fm.priority} />}
                 </div>
               </div>

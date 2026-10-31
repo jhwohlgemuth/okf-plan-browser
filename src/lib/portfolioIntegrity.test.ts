@@ -7,6 +7,7 @@ import {
   buildPlanEdges, headingAnchorForPlan, planAnchor, resolvePlanAnchor, resolvePlanLink, resolvePlanTarget,
 } from './planLinks';
 import { remoteProjectId } from './remoteWiki';
+import { planStatus } from './planKind';
 
 const plan = (repo: string, path: string, body = '', metadata = '') =>
   parseWikiFile(repo, path, `---\ntype: Plan\ntitle: Example\n${metadata}\n---\n${body}`);
@@ -90,6 +91,13 @@ describe('portfolio integrity', () => {
     expect(restored.plans[0]?.frontmatter.description).toBeUndefined();
     expect(restored.warnings).toHaveLength(2);
     expect(restorePortfolio({ plans: {}, repos: 'bad' })).toEqual({ plans: [], repos: [], warnings: [] });
+  });
+
+  it('recomputes active plan status from phases when restoring saved portfolios', () => {
+    const p = plan('r', 'p.md', '# Execution phases\n## WK-01 Work\n- Status: ready', 'status: in-progress\nexecution: phased');
+    const restored = restorePortfolio({ repos: [{ id: 'r' }], plans: [p] });
+    expect(restored.plans[0]?.frontmatter.status).toBe('in-progress');
+    expect(planStatus(restored.plans[0]!)).toBe('ready');
   });
 });
 

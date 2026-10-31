@@ -9,7 +9,7 @@ import { phaseAgentCommand, planAgentCommand } from '@/lib/agentCommand';
 import { planAnchor } from '@/lib/planLinks';
 import { isEpic, linkedPlans } from '@/lib/planKind';
 import { PlanKindBadge } from './PlanKindBadge';
-import { StatusBadge } from './StatusBadge';
+import { PlanStatusBadge } from './PlanStatusBadge';
 
 interface PhaseCard { plan: ParsedPlan; phase: Phase }
 
@@ -71,7 +71,7 @@ export function KanbanBoard() {
               <p className="text-xs font-semibold text-foreground">{truncate(plan.frontmatter.title, 80)}</p>
               {plan.frontmatter.description && <p className="mt-1 text-xs text-muted-foreground">{truncate(plan.frontmatter.description, 120)}</p>}
               <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                {plan.frontmatter.status && <StatusBadge status={plan.frontmatter.status} />}
+                <PlanStatusBadge plan={plan} />
                 <span>{linked.length} linked plan{linked.length !== 1 ? 's' : ''}</span>
                 {repo && <span className="ml-auto font-mono">{repo.label}</span>}
               </div>
@@ -83,7 +83,7 @@ export function KanbanBoard() {
       {COLUMNS.map(col => {
         const cards = byStatus(col.status);
         return (
-          <div key={col.status} className="flex flex-col min-h-0 overflow-hidden">
+          <section key={col.status} aria-label={`${col.label} phases`} className="flex flex-col min-h-0 overflow-hidden">
             {/* Column header */}
             <div className={cn(
               'flex items-center justify-between px-3 py-2 mb-3 border-b-2 shrink-0',
@@ -147,6 +147,12 @@ export function KanbanBoard() {
                       {truncate(fm.title, 60)}
                     </p>
 
+                    {fm.status && (
+                      <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span>Plan:</span><PlanStatusBadge plan={plan} />
+                      </div>
+                    )}
+
                     {/* Footer */}
                     <div className="flex items-center justify-between gap-2">
                       {fm.priority && <PriorityBadge priority={fm.priority} />}
@@ -169,7 +175,7 @@ export function KanbanBoard() {
                 );
               })}
             </div>
-          </div>
+          </section>
         );
       })}
       </div>

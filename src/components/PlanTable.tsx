@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
 import { useShallow } from 'zustand/react/shallow';
-import { StatusBadge } from './StatusBadge';
+import { PlanStatusBadge } from './PlanStatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
 import type { ParsedPlan } from '@/types/wiki';
 import { AgentCommandButton } from './AgentCommandButton';
 import { planAgentCommand } from '@/lib/agentCommand';
-import { isEpic } from '@/lib/planKind';
+import { isEpic, planStatus } from '@/lib/planKind';
 import { PlanKindBadge } from './PlanKindBadge';
 
 type SortKey = 'title' | 'kind' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining';
@@ -34,7 +34,7 @@ function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
     switch (key) {
       case 'title':      diff = (afm.title ?? '').localeCompare(bfm.title ?? ''); break;
       case 'kind':       diff = Number(isEpic(a)) - Number(isEpic(b)); break;
-      case 'status':     diff = (STATUS_ORDER[afm.status ?? ''] ?? 9) - (STATUS_ORDER[bfm.status ?? ''] ?? 9); break;
+      case 'status':     diff = (STATUS_ORDER[planStatus(a) ?? ''] ?? 9) - (STATUS_ORDER[planStatus(b) ?? ''] ?? 9); break;
       case 'priority':   diff = (PRIORITY_ORDER[afm.priority ?? ''] ?? 9) - (PRIORITY_ORDER[bfm.priority ?? ''] ?? 9); break;
       case 'impact':     diff = (IMPACT_ORDER[afm.impact ?? ''] ?? 9) - (IMPACT_ORDER[bfm.impact ?? ''] ?? 9); break;
       case 'difficulty': diff = (DIFF_ORDER[afm.difficulty ?? ''] ?? 9) - (DIFF_ORDER[bfm.difficulty ?? ''] ?? 9); break;
@@ -141,7 +141,7 @@ export function PlanTable() {
 
                 {/* Status */}
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  {fm.status && <StatusBadge status={fm.status} />}
+                  <PlanStatusBadge plan={plan} />
                 </td>
 
                 {/* Priority */}

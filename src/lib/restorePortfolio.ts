@@ -1,6 +1,6 @@
 import type { ParsedPlan, WikiRepo, ParseWarning } from '@/types/wiki';
 import { validateFrontmatter } from './frontmatter';
-import { buildSearchText, extractDependencies, extractPhaseRefs, extractSections } from './wikiParser';
+import { buildSearchText, extractDependencies, extractPhaseRefs, extractSections, fallbackPhaseStatus } from './wikiParser';
 import { remoteProjectId, type RemoteWikiRef } from './remoteWiki';
 import { newUuid } from './utils';
 
@@ -50,7 +50,7 @@ export function restorePortfolio(value: unknown): { plans: ParsedPlan[]; repos: 
       const section = record(s);
       return `${section.heading ? `# ${section.heading}\n` : ''}${section.body}`;
     }).join('\n');
-    const sections = extractSections(body, fm.status ?? 'planned');
+    const sections = extractSections(body, fallbackPhaseStatus(fm.status));
     if (fm.execution === 'coordination') sections.forEach(section => { section.phases = []; });
     const id = `${repoId}:${p.fileName}`;
     if (plans.some(plan => plan.id === id)) continue;

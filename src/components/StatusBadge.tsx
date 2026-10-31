@@ -20,11 +20,13 @@ const STATUS_LABELS: Record<string, string> = {
 interface Props {
   status:    PlanStatus | PhaseStatus;
   className?: string;
+  title?: string;
 }
 
-export function StatusBadge({ status, className }: Props) {
+export function StatusBadge({ status, className, title }: Props) {
   return (
     <span
+      title={title}
       className={cn(
         'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium',
         STATUS_CLASSES[status] ?? STATUS_CLASSES.planned,

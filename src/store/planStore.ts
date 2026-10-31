@@ -5,7 +5,7 @@ import { DEMO_PLANS, DEMO_REPOS } from '@/lib/demoData';
 import { buildSearchText } from '@/lib/wikiParser';
 import { restorePortfolio } from '@/lib/restorePortfolio';
 import { forgetAllAssets, forgetAssets } from '@/lib/wikiAssets';
-import { isEpic } from '@/lib/planKind';
+import { isEpic, planStatus } from '@/lib/planKind';
 import { clearHandles, deleteHandle } from '@/lib/handleStore';
 
 export type CleanupOutcome =
@@ -223,7 +223,7 @@ export function selectFilteredPlans(s: PlanStore): ParsedPlan[] {
   return s.plans.filter(p => {
     const fm = p.frontmatter;
     if (f.kinds.length && !f.kinds.includes(isEpic(p) ? 'epic' : 'plan')) return false;
-    if (f.status.length     && !f.status.includes(fm.status!))         return false;
+    if (f.status.length     && !f.status.includes(planStatus(p)!))      return false;
     if (f.priority.length   && !f.priority.includes(fm.priority!))     return false;
     if (f.impact.length     && !f.impact.includes(fm.impact!))         return false;
     if (f.difficulty.length && !f.difficulty.includes(fm.difficulty!)) return false;

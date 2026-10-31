@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as Reac
 import { useLocation } from 'react-router-dom';
 import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
+import { PlanStatusBadge } from './PlanStatusBadge';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { cn } from '@/lib/utils';
@@ -221,7 +222,7 @@ export function PlanDetailPanel() {
               <div className="rounded-lg border border-border bg-background/40 p-4 space-y-4">
               {/* Meta pills */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                {fm?.status   && <StatusBadge status={fm.status} />}
+                {plan && <PlanStatusBadge plan={plan} />}
                 {fm?.priority && <PriorityBadge priority={fm.priority} />}
                 {fm?.impact   && (
                   <span className={cn('text-xs font-medium capitalize', IMPACT_CLASSES[fm.impact] ?? '')}>
