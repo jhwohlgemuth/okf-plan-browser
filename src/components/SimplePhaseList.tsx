@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { AssetViewer, type AssetTarget } from './AssetViewer';
 import { PHASE_COLUMNS, PHASE_COLUMN_HEADER } from '@/lib/phaseColumns';
+import { sortPhaseCards, type PhaseSortKey } from '@/lib/phaseSort';
 import { ArrowDown, ArrowUp, ChevronDown, CircleHelp, Flag, Flame, Minus, type LucideIcon } from 'lucide-react';
 import type { ParsedPlan, PlanImpact, PlanPriority, WikiRepo } from '@/types/wiki';
 
@@ -57,7 +58,7 @@ function ProjectDot({ repo }: { repo?: WikiRepo }) {
     style={{ backgroundColor: repo.color }} />;
 }
 
-export function SimplePhaseList() {
+export function SimplePhaseList({ sortKey, reversed }: { sortKey: PhaseSortKey; reversed: boolean }) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
   const toggleExpanded = (key: string) => setExpanded(current => {
@@ -131,7 +132,7 @@ export function SimplePhaseList() {
 
       <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] gap-4 flex-1 min-h-[280px] overflow-x-auto xl:grid-flow-row xl:grid-cols-5 xl:overflow-hidden">
         {PHASE_COLUMNS.map(col => {
-          const columnPhases = phases.filter(({ phase }) => phase.status === col.status);
+          const columnPhases = sortPhaseCards(phases.filter(({ phase }) => phase.status === col.status), sortKey, reversed);
           return (
             <section key={col.status} aria-label={`${col.label} phases`} className="flex min-h-0 flex-col overflow-hidden">
               <div className={cn('mb-3 flex shrink-0 items-center justify-between border-b-2 px-3 py-2', PHASE_COLUMN_HEADER[col.status])}>

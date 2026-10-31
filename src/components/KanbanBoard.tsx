@@ -3,7 +3,7 @@ import { usePlanStore, selectFilteredPlans } from '@/store/planStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PriorityBadge } from './PriorityBadge';
 import { cn, truncate } from '@/lib/utils';
-import type { PhaseStatus, Phase, ParsedPlan } from '@/types/wiki';
+import type { PhaseStatus } from '@/types/wiki';
 import { AgentCommandButton } from './AgentCommandButton';
 import { phaseAgentCommand, planAgentCommand } from '@/lib/agentCommand';
 import { planAnchor } from '@/lib/planLinks';
@@ -11,8 +11,7 @@ import { isEpic, linkedPlans } from '@/lib/planKind';
 import { PlanKindBadge } from './PlanKindBadge';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { PHASE_COLUMNS, PHASE_COLUMN_HEADER } from '@/lib/phaseColumns';
-
-interface PhaseCard { plan: ParsedPlan; phase: Phase }
+import { sortPhaseCards, type PhaseCard, type PhaseSortKey } from '@/lib/phaseSort';
 
 const IMPACT_DOT: Record<string, string> = {
   critical: 'bg-od-red',
@@ -21,7 +20,7 @@ const IMPACT_DOT: Record<string, string> = {
   low:      'bg-od-muted',
 };
 
-export function KanbanBoard() {
+export function KanbanBoard({ sortKey, reversed }: { sortKey: PhaseSortKey; reversed: boolean }) {
   const plans      = usePlanStore(useShallow(selectFilteredPlans));
   const repos      = usePlanStore(s => s.repos);
   const selectPlan = usePlanStore(s => s.selectPlan);
@@ -31,7 +30,7 @@ export function KanbanBoard() {
     plan.sections.flatMap(section => section.phases.map(phase => ({ plan, phase }))));
 
   const byStatus = (status: PhaseStatus) =>
-    allPhaseCards.filter(c => c.phase.status === status);
+    sortPhaseCards(allPhaseCards.filter(c => c.phase.status === status), sortKey, reversed);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto">

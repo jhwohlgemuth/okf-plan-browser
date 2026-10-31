@@ -126,6 +126,46 @@ test('simple phase view keeps collapsed items compact and expands their details'
   await expect(page.getByRole('region', { name: 'Ready phases' })).toContainText('CMP-02');
 });
 
+test('phase sort controls order each column in board and simple views', async ({ page }) => {
+  await page.goto('/home');
+  const source = (title: string, priority: string, impact: string, id: string, phaseTitle: string) =>
+    `${markdown(title, `status: ready\npriority: ${priority}\nimpact: ${impact}\nexecution: phased`)}\n# Execution phases\n\n## ${id} — ${phaseTitle}\n- Status: ready\n`;
+  await importPortfolio(page, 'Sorted phases', [
+    { name: 'high.md', text: source('High plan', 'high', 'low', 'SOR-01', 'Beta phase') },
+    { name: 'low.md', text: source('Low plan', 'low', 'critical', 'SOR-02', 'Alpha phase') },
+    { name: 'next.md', text: source('Next plan', 'next', 'medium', 'SOR-03', 'Gamma phase') },
+  ]);
+  await page.goto('/phases');
+  const sort = page.getByRole('combobox', { name: 'Sort phases by' });
+  const reverse = page.getByRole('button', { name: 'Reverse phase order' });
+  const ready = page.getByRole('region', { name: 'Ready phases' });
+  const boardCards = ready.locator('[role="button"][aria-label^="Open plan"]');
+  await sort.selectOption('priority');
+  await expect(boardCards.nth(0)).toHaveAttribute('aria-label', /phase SOR-03$/);
+  await expect(boardCards.nth(1)).toHaveAttribute('aria-label', /phase SOR-01$/);
+  await expect(boardCards.nth(2)).toHaveAttribute('aria-label', /phase SOR-02$/);
+  await reverse.click();
+  await expect(reverse).toHaveAttribute('aria-pressed', 'true');
+  await expect(boardCards.nth(0)).toHaveAttribute('aria-label', /phase SOR-02$/);
+
+  await page.getByRole('switch', { name: 'Simple view' }).click();
+  const simpleRows = ready.getByRole('button', { name: /^Expand phase SOR-/ });
+  await expect(simpleRows.nth(0)).toHaveAttribute('aria-label', /^Expand phase SOR-02:/);
+  await expect(simpleRows.nth(2)).toHaveAttribute('aria-label', /^Expand phase SOR-03:/);
+  await sort.selectOption('impact');
+  await expect(reverse).toHaveAttribute('aria-pressed', 'false');
+  await expect(simpleRows.nth(0)).toHaveAttribute('aria-label', /^Expand phase SOR-02:/);
+  await expect(simpleRows.nth(1)).toHaveAttribute('aria-label', /^Expand phase SOR-03:/);
+  await expect(simpleRows.nth(2)).toHaveAttribute('aria-label', /^Expand phase SOR-01:/);
+  await sort.selectOption('phase-title');
+  await page.reload();
+  await expect(sort).toHaveValue('phase-title');
+  await expect(page.getByRole('switch', { name: 'Simple view' })).toBeChecked();
+  await expect(simpleRows.nth(0)).toHaveAttribute('aria-label', /^Expand phase SOR-02:/);
+  await expect(simpleRows.nth(1)).toHaveAttribute('aria-label', /^Expand phase SOR-01:/);
+  await expect(simpleRows.nth(2)).toHaveAttribute('aria-label', /^Expand phase SOR-03:/);
+});
+
 test('large plan loads document rendering on first detail open', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'document loading coverage runs on desktop');
   const markdownRequests: string[] = [];
