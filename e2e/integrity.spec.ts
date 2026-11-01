@@ -525,6 +525,15 @@ status: ready
   await expect(phaseHeading).toBeFocused();
   await page.reload();
   await expect(phaseHeading).toBeFocused();
+  const targetDialog = page.getByRole('dialog', { name: 'Target plan' });
+  const firstPhaseLink = targetDialog.getByRole('link', { name: 'Jump to phase TP-01: Prepare' });
+  await expect(firstPhaseLink).toHaveAttribute('href', '#tp-01');
+  await firstPhaseLink.click();
+  await expect.poll(() => new URL(page.url()).hash).toBe('#tp-01');
+  await expect(targetDialog.locator('#tp-01')).toBeFocused();
+  await targetDialog.getByRole('link', { name: 'Jump to phase TP-02: Ship It' }).click();
+  await expect.poll(() => new URL(page.url()).hash).toBe('#tp-02');
+  await expect(phaseHeading).toBeFocused();
 
   await page.goto('/portfolio');
   await page.getByRole('button', { name: 'Open Epic: Source plan', exact: true }).click();

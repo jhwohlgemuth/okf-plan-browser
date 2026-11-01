@@ -313,13 +313,29 @@ export function PlanDetailPanel() {
                   <div className="pl-3 ml-0.5 border-l border-border/60 space-y-3">
                     {section.phases.length > 0 && (
                       <div className="flex flex-wrap gap-2">
-                        {section.phases.map(ph => (
-                          <span key={ph.id} className="inline-flex items-center gap-1.5 bg-secondary rounded px-2.5 py-1" title={ph.title}>
-                            <span className="font-mono text-xs text-od-blue font-medium">{ph.id}</span>
+                        {section.phases.map(ph => {
+                          const anchor = planAnchor(ph.id);
+                          return <a
+                            key={ph.id}
+                            href={`#${anchor}`}
+                            aria-label={`Jump to phase ${ph.id}: ${ph.title}`}
+                            title={ph.title}
+                            onClick={event => {
+                              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                              event.preventDefault();
+                              if (selectedAnchor === anchor) {
+                                const heading = panelRef.current?.querySelector<HTMLElement>(`#${CSS.escape(anchor)}`);
+                                heading?.scrollIntoView({ block: 'start' });
+                                heading?.focus({ preventScroll: true });
+                              } else selectPlan(plan.id, anchor);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded bg-secondary px-2.5 py-1 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            <span className="font-mono text-xs font-medium text-od-blue">{ph.id}</span>
                             <StatusBadge status={ph.status} />
                             <TimeRemaining plans={[plan]} phase={ph} label={false} />
-                          </span>
-                        ))}
+                          </a>;
+                        })}
                       </div>
                     )}
 
