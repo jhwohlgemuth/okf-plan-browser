@@ -28,6 +28,7 @@ export function useRefresh() {
   const { toast } = useToast();
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [refreshable, setRefreshable] = useState<Set<string>>(new Set());
+  const [needsReselection, setNeedsReselection] = useState<string[]>([]);
 
   const syncBusy = useCallback(() => setBusy(new Set(operations.current.keys())), []);
   const startOperation = useCallback((id: string): RefreshOperation => {
@@ -89,8 +90,8 @@ export function useRefresh() {
     return () => { live = false; };
   }, [repoKey]);
 
-  const refresh = useCallback(async (ids: string[]) => {
-    if (isDemo || !ids.length) return;
+  const refresh = useCallback(async (ids: string[]): Promise<RefreshResult[]> => {
+    if (isDemo || !ids.length) return [];
     const uniqueIds = [...new Set(ids)];
     const results = await Promise.all(uniqueIds.map(async (id): Promise<RefreshResult> => {
       const repo = usePlanStore.getState().repos.find(candidate => candidate.id === id);
@@ -130,7 +131,7 @@ export function useRefresh() {
       }
     }));
     const reported = results.filter(result => result.status !== 'cancelled' && result.status !== 'stale');
-    if (!reported.length) return;
+    if (!reported.length) return results;
     const succeeded = reported.filter((result): result is Extract<RefreshResult, { status: 'ok' }> => result.status === 'ok');
     const problems = reported.filter((result): result is Extract<RefreshResult, { status: 'skipped' | 'failed' }> =>
       result.status === 'skipped' || result.status === 'failed');
@@ -143,14 +144,20 @@ export function useRefresh() {
         ? problems.map(problem => problem.reason).join(' ')
         : undefined,
     });
+    return results;
   }, [finishOperation, isDemo, startOperation, toast]);
 
   const pickFolderFiles = () => new Promise<File[] | null>(resolve => {
     const input = document.createElement('input');
     input.type = 'file';
+    input.multiple = true;
+    input.className = 'sr-only';
+    input.tabIndex = -1;
     input.setAttribute('webkitdirectory', '');
-    input.onchange = () => resolve(input.files?.length ? Array.from(input.files) : null);
-    input.oncancel = () => resolve(null);
+    const finish = (files: File[] | null) => { input.remove(); resolve(files); };
+    input.onchange = () => finish(input.files?.length ? Array.from(input.files) : null);
+    input.oncancel = () => finish(null);
+    document.body.append(input);
     input.click();
   });
 
@@ -165,21 +172,51 @@ export function useRefresh() {
       operation.controller.signal.throwIfAborted();
       const result = commitWikiOperation(id, operation.generation, parsed, { refresh: true });
       if (!result) return;
-      toast({ title: `Refreshed ${id}`, description: `${result.plans} plans` });
+      setNeedsReselection(current => current.filter(candidate => candidate !== id));
+      const label = usePlanStore.getState().repos.find(repo => repo.id === id)?.label ?? id;
+      toast({ title: `Refreshed ${label}`, description: `${result.plans} plans` });
     } catch (e) {
       if (wasAborted(e)) return;
-      toast({ title: `Could not refresh ${id}`, description: (e as Error).message });
+      const label = usePlanStore.getState().repos.find(repo => repo.id === id)?.label ?? id;
+      toast({ title: `Could not refresh ${label}`, description: (e as Error).message });
     } finally {
       finishOperation(id, operation);
     }
   }, [finishOperation, startOperation, toast]);
 
+  const refreshAll = useCallback(async () => {
+    const candidates = usePlanStore.getState().repos.filter(repo => !operations.current.has(repo.id));
+    const sources = await Promise.all(candidates.map(async repo => ({
+      id: repo.id,
+      automatic: !!repo.remote || !!await getHandle(repo.id),
+    })));
+    const automatic = sources.filter(source => source.automatic).map(source => source.id);
+    const manual = sources.filter(source => !source.automatic).map(source => source.id);
+    setNeedsReselection(manual);
+    if (manual.length) toast({
+      title: `Folder access needed for ${manual.length} wiki${manual.length !== 1 ? 's' : ''}`,
+      description: 'Choose each folder in the sidebar to finish refreshing.',
+    });
+    const results = await refresh(automatic);
+    const unavailable = results.filter(result => result.status === 'skipped').map(result => result.id);
+    if (unavailable.length) setNeedsReselection(current => [...new Set([...current, ...unavailable])]);
+  }, [refresh, toast]);
+
+  const refreshOne = async (id: string) => {
+    if (!refreshable.has(id)) return reupload(id);
+    const results = await refresh([id]);
+    if (results.some(result => result.status === 'skipped')) {
+      setNeedsReselection(current => [...new Set([...current, id])]);
+    }
+  };
+
   return {
     busy, refreshable,
+    needsReselection: needsReselection.filter(id => repos.some(repo => repo.id === id)),
     cancelRefresh,
-    refreshOne: (id: string) => (refreshable.has(id) ? refresh([id]) : reupload(id)),
-    refreshAll: () => refresh(usePlanStore.getState().repos
-      .map(repo => repo.id)
-      .filter(id => !operations.current.has(id))),
+    refreshOne,
+    refreshAll,
+    reselectFolder: reupload,
+    dismissReselection: () => setNeedsReselection([]),
   };
 }

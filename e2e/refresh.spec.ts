@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 const plan = (title: string) => `---
 title: ${title}
@@ -134,6 +136,85 @@ test('refresh re-reads a stored folder handle', async ({ page }, info) => {
   await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText('Refreshed 1 wiki').last()).toBeVisible();
   await page.getByRole('textbox').first().fill('Changed');
   await expect(page.getByText('Changed title').first()).toBeVisible();
+});
+
+test('refresh all re-reads every stored local wiki', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sidebar is a drawer on small screens');
+  await page.goto('/home');
+  await seedStoredRepos(page, [{ id: 'one', label: 'One' }, { id: 'two', label: 'Two' }]);
+  await page.evaluate(async ([first, second]) => {
+    const root = await navigator.storage.getDirectory();
+    for (const [id, markdown] of [['one', first], ['two', second]]) {
+      const project = await root.getDirectoryHandle(id);
+      const wiki = await project.getDirectoryHandle('.wiki', { create: true });
+      const writable = await (await wiki.getFileHandle('plan.md', { create: true })).createWritable();
+      await writable.write(markdown);
+      await writable.close();
+    }
+  }, [plan('First wiki'), plan('Second wiki')]);
+  await page.reload();
+
+  await page.getByRole('button', { name: 'Refresh all wikis' }).click();
+  await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText('Refreshed 2 wikis (2 plans)')).toBeVisible();
+  await page.goto('/portfolio');
+  await expect(page.getByRole('button', { name: 'Open Epic: First wiki' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Second wiki' })).toBeVisible();
+});
+
+test('refresh all requests a folder when saved access is denied', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sidebar is a drawer on small screens');
+  await page.goto('/home');
+  await seedStoredRepos(page, [{ id: 'denied', label: 'Denied wiki' }]);
+  await page.reload();
+  await page.evaluate(() => {
+    Object.defineProperty(FileSystemDirectoryHandle.prototype, 'queryPermission', {
+      configurable: true, value: async () => 'denied',
+    });
+    Object.defineProperty(FileSystemDirectoryHandle.prototype, 'requestPermission', {
+      configurable: true, value: async () => 'denied',
+    });
+  });
+  await page.getByRole('button', { name: 'Refresh all wikis' }).click();
+  await expect(page.getByRole('region', { name: 'Wikis needing folder access' })
+    .getByRole('button', { name: 'Choose folder for Denied wiki' })).toBeVisible();
+});
+
+test('refresh all requests each uploaded wiki folder in the web app', async ({ page }, info) => {
+  const first = test.info().outputPath('upload-one');
+  const second = test.info().outputPath('upload-two');
+  await Promise.all([first, second].map(dir => mkdir(path.join(dir, '.wiki'), { recursive: true })));
+  const firstFile = path.join(first, '.wiki', 'plan.md');
+  const secondFile = path.join(second, '.wiki', 'plan.md');
+  await writeFile(firstFile, plan('Original one'));
+  await writeFile(secondFile, plan('Original two'));
+  await page.goto('/home');
+  const upload = page.locator('input[type="file"]').first();
+  await upload.setInputFiles(first);
+  const loadedCount = () => page.evaluate(() => JSON.parse(localStorage.getItem('okf-plan-browser:wikis') ?? '{}').state?.repos?.length ?? 0);
+  await expect.poll(loadedCount).toBe(1);
+  await upload.setInputFiles(second);
+  await expect.poll(loadedCount).toBe(2);
+  if (info.project.name === 'phone') await page.getByRole('button', { name: 'Open navigation' }).click();
+  await expect(page.getByRole('button', { name: 'Refresh upload-one' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh upload-two' })).toBeVisible();
+
+  await writeFile(firstFile, plan('Updated one'));
+  await writeFile(secondFile, plan('Updated two'));
+  await page.getByRole('button', { name: 'Refresh all wikis' }).click();
+  const requests = page.getByRole('region', { name: 'Wikis needing folder access' });
+  await expect(requests).toContainText('Finish refreshing 2 wikis');
+  for (const [label, folder] of [['upload-one', first], ['upload-two', second]] as const) {
+    const chooserPromise = page.waitForEvent('filechooser');
+    await requests.getByRole('button', { name: `Choose folder for ${label}` }).click();
+    await (await chooserPromise).setFiles(folder);
+    await expect(requests.getByRole('button', { name: `Choose folder for ${label}` })).toHaveCount(0);
+  }
+  await expect(requests).toHaveCount(0);
+  await page.goto('/portfolio');
+  await expect(page.getByRole('button', { name: 'Open Epic: Updated one' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Updated two' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Epic: Original one' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open Epic: Original two' })).toHaveCount(0);
 });
 
 test('overlapping repository refreshes keep independent busy state and invalidate removed sources', async ({ page }, info) => {

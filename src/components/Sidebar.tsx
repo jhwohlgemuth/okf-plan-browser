@@ -34,7 +34,10 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
   const repos      = usePlanStore(s => s.repos);
   const warnings   = usePlanStore(s => s.warnings);
   const isDemoData = usePlanStore(s => s.isDemoData);
-  const { busy, refreshable, refreshOne, refreshAll, cancelRefresh } = useRefresh();
+  const {
+    busy, refreshable, needsReselection, refreshOne, refreshAll, reselectFolder,
+    dismissReselection, cancelRefresh,
+  } = useRefresh();
   const collapsed = useUiStore(s => s.sidebarCollapsed);
   const toggleSidebar = useUiStore(s => s.toggleSidebar);
   const isDesktop = variant === 'desktop';
@@ -131,6 +134,26 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
               Cancel all refreshes
             </button>
           )}
+          {needsReselection.length > 0 && (
+            <div role="region" aria-label="Wikis needing folder access" className="space-y-2 rounded-md border border-od-yellow/40 bg-od-yellow/5 p-2">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-medium text-foreground">Finish refreshing {needsReselection.length} wiki{needsReselection.length !== 1 ? 's' : ''}</p>
+                <button type="button" onClick={dismissReselection} aria-label="Dismiss folder requests" className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"><X className="h-3 w-3" /></button>
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">Select each folder again so the browser can read its latest files.</p>
+              {needsReselection.map(id => {
+                const repo = repos.find(candidate => candidate.id === id);
+                return repo && <button
+                  key={id}
+                  type="button"
+                  onClick={() => reselectFolder(id)}
+                  disabled={busy.has(id)}
+                  aria-label={`Choose folder for ${repo.label}`}
+                  className="block w-full truncate rounded border border-border bg-card px-2 py-1 text-left text-[11px] text-foreground hover:border-primary/50 hover:bg-accent/40 disabled:opacity-40"
+                >Choose {repo.label} folder</button>;
+              })}
+            </div>
+          )}
           {repos.map(r => (
             <div key={r.id} className="group flex items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: r.color }} />
@@ -153,6 +176,10 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
           ))}
         </div>
       )}
+      <p
+        aria-label={`Version ${__APP_VERSION__}`}
+        className={cn('shrink-0 border-t border-border px-4 py-2 font-mono text-[10px] text-muted-foreground/70', collapsed && isDesktop && 'md:px-1 md:text-center')}
+      >v{__APP_VERSION__}</p>
     </aside>
   );
 }
