@@ -6,7 +6,9 @@ import { planAnchor, resolvePlanTarget } from '@/lib/planLinks';
 import { resolveWikiPath } from '@/lib/wikiAssets';
 import { cn } from '@/lib/utils';
 import { PlanStatusBadge } from './PlanStatusBadge';
+import { AgentCommandButton } from './AgentCommandButton';
 import { AssetViewer, type AssetTarget } from './AssetViewer';
+import { phaseAgentCommand, planAgentCommand } from '@/lib/agentCommand';
 import { PHASE_COLUMNS, PHASE_COLUMN_HEADER } from '@/lib/phaseColumns';
 import { sortPhaseCards, type PhaseSortKey } from '@/lib/phaseSort';
 import { ArrowDown, ArrowUp, ChevronDown, CircleHelp, Flag, Flame, Minus, type LucideIcon } from 'lucide-react';
@@ -121,7 +123,13 @@ export function SimplePhaseList({ sortKey, reversed }: { sortKey: PhaseSortKey; 
                   {isExpanded && <div className="space-y-2 border-t border-border/50 px-3 py-3 text-xs text-muted-foreground">
                     {plan.frontmatter.description && renderMarkdown(plan.frontmatter.description, plan, repo, key)}
                     <p>{repo?.label ?? 'Unknown wiki'} · {plan.fileName}</p>
-                    <button type="button" onClick={() => selectPlan(plan.id)} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open full Epic</button>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => selectPlan(plan.id)} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open full Epic</button>
+                      <AgentCommandButton
+                        command={planAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId })}
+                        label={`Copy agent command for ${plan.frontmatter.title}`}
+                      />
+                    </div>
                   </div>}
                 </div>
               );
@@ -170,7 +178,13 @@ export function SimplePhaseList({ sortKey, reversed }: { sortKey: PhaseSortKey; 
                       <p className="font-medium text-foreground">{phase.title || 'Untitled phase'}</p>
                       <p className="text-muted-foreground">{plan.frontmatter.title} · {repo?.label ?? 'Unknown wiki'}</p>
                       {phase.rawBody.trim() && <div className="max-h-56 overflow-y-auto rounded bg-muted/40 p-2">{renderMarkdown(phase.rawBody.trim(), plan, repo, key)}</div>}
-                      <button type="button" onClick={() => selectPlan(plan.id, planAnchor(phase.id))} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open phase in plan</button>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => selectPlan(plan.id, planAnchor(phase.id))} className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open phase in plan</button>
+                        <AgentCommandButton
+                          command={phaseAgentCommand({ ...plan, repoId: repo?.label ?? plan.repoId }, phase)}
+                          label={`Copy agent command for phase ${phase.id}`}
+                        />
+                      </div>
                     </div>}
                   </div>;
                 })}

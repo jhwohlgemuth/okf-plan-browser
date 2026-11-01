@@ -94,6 +94,7 @@ test('simple phase view keeps collapsed items compact and expands their details'
   const epic = epics.getByText('Coordination record');
   await epic.click();
   await expect(epics.getByRole('button', { name: 'Open full Epic' })).toBeVisible();
+  await expect(epics.getByRole('button', { name: 'Copy agent command for Coordination record' })).toBeVisible();
   await expect(epics.locator('.md-body strong')).toHaveText('Coordinate');
   const row = ready.getByRole('button', { name: /^Expand phase CMP-02: Ship the focused change in Compact plan/ });
   await expect(row).toContainText('CMP-02');
@@ -102,11 +103,16 @@ test('simple phase view keeps collapsed items compact and expands their details'
   await expect(row.getByRole('img', { name: 'Plan impact: High' })).toHaveClass(/text-od-orange/);
   await expect(row.getByRole('img', { name: 'Project wiki: Simple phases' })).toHaveAttribute('style', /background-color:/);
   await expect(row.getByRole('img', { name: /^Phase state:/ })).toHaveCount(0);
+  await expect(ready.getByRole('button', { name: 'Copy agent command for phase CMP-02' })).toHaveCount(0);
   await expect(planned.getByRole('img', { name: 'Plan priority: Next' })).toBeVisible();
   const box = await row.boundingBox();
   expect(box?.height).toBeLessThan(48);
   await row.click();
   await expect(ready.getByRole('button', { name: 'Open phase in plan' })).toBeVisible();
+  const copyCommand = ready.getByRole('button', { name: 'Copy agent command for phase CMP-02' });
+  await expect(copyCommand).toBeVisible();
+  await copyCommand.click();
+  await expect(row).toHaveAttribute('aria-expanded', 'true');
   await expect(ready.locator('.md-body li').first()).toHaveText('Status: ready');
   await expect(ready.locator('.md-body strong')).toHaveText('formatted details');
   await expect(page.getByRole('dialog', { name: 'Compact plan' })).toHaveCount(0);
