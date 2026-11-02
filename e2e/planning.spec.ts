@@ -110,6 +110,17 @@ test('copies an ordered portfolio briefing prompt', async ({ page, context }, in
   expect(commitMessagePrompt).toContain('Return only a one-line Git commit message in sentence case');
   expect(commitMessagePrompt).toContain('summarizes all completed work');
   expect(commitMessagePrompt).toContain('Official planning skill guide and download:');
+
+  const upgradePrompt = page.getByRole('article').filter({
+    has: page.getByRole('heading', { name: 'Upgrade wiki to current skill' }),
+  });
+  await upgradePrompt.getByRole('button', { name: 'Copy upgrade wiki to current skill command' }).click();
+  const upgradeWikiPrompt = await page.evaluate(() => navigator.clipboard.readText());
+  expect(upgradeWikiPrompt).toContain('complies with the current planning skill version');
+  expect(upgradeWikiPrompt).toContain('preserve valid intent and stable IDs for unfinished phases');
+  expect(upgradeWikiPrompt).toContain('migrate deprecated conventions');
+  expect(upgradeWikiPrompt).toContain('Run the planning skill validator against the repository root');
+  expect(upgradeWikiPrompt).toContain('Official planning skill guide and download:');
 });
 
 test('filters planning prompts by category', async ({ page }, info) => {
@@ -117,13 +128,13 @@ test('filters planning prompts by category', async ({ page }, info) => {
   await page.goto('/planning');
 
   const filters = page.getByRole('group', { name: 'Filter planning prompts' });
-  await expect(page.getByRole('article')).toHaveCount(11);
+  await expect(page.getByRole('article')).toHaveCount(12);
   await filters.getByRole('button', { name: 'Write 2' }).click();
   await expect(filters.getByRole('button', { name: 'Write 2' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('article')).toHaveCount(2);
   await expect(page.getByRole('heading', { name: 'Write a draft' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Resume a draft' })).toBeVisible();
 
-  await filters.getByRole('button', { name: 'All 11' }).click();
-  await expect(page.getByRole('article')).toHaveCount(11);
+  await filters.getByRole('button', { name: 'All 12' }).click();
+  await expect(page.getByRole('article')).toHaveCount(12);
 });

@@ -98,6 +98,12 @@ const PROMPTS = ([
     description: 'Check every plan against current evidence each month while planning work is active, then prune finished work.',
     command: 'Use $planning to review the currency of every .wiki plan against current code, tests, documentation, and history. Prune completed or obsolete work, retire finished plans, and record the review date, evidence scope, and blockers in the root index.',
   },
+  {
+    category: 'Review', icon: RotateCcw,
+    title: 'Upgrade wiki to current skill',
+    description: 'Reconcile an existing .wiki portfolio with the current planning skill contract and validator.',
+    command: 'Use $planning to review and update the entire .wiki portfolio so it complies with the current planning skill version. Read the active planning skill\'s SKILL.md and every reference it routes this task to before editing. Inspect current repository evidence; preserve valid intent and stable IDs for unfinished phases; reconcile frontmatter, phase budgets and statuses, indexes, dependency network, and parallel lanes; migrate deprecated conventions; prune completed or obsolete work; and retire finished plans only after preserving durable evidence. Run the planning skill validator against the repository root, then report the changes, remaining blockers, and any uncertainty.',
+  },
 ] as const).map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
 
 const RULES = [
