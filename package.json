@@ -1,6 +1,6 @@
 {
   "name": "okf-wiki-browser",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Browse, visualize, and search .wiki markdown planning portfolios",
   "private": true,
   "type": "module",
