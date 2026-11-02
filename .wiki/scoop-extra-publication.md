@@ -5,7 +5,7 @@ description: Provide a Scoop-compatible Windows release and submit a verified Ex
 difficulty: medium
 impact: medium
 package: [okf-plan-browser]
-tags: [release, windows, scoop]
+tags: [release, os:windows, scoop]
 status: planned
 execution: phased
 phase_budget_hours: 5

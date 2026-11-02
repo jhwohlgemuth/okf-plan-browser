@@ -12,6 +12,19 @@ from pathlib import Path
 ALLOWED_DIFFICULTIES = {"high", "low", "medium", "mixed", "not-assessed"}
 ALLOWED_EXECUTION = {"coordination", "phased"}
 ALLOWED_IMPACTS = {"critical", "high", "low", "medium", "mixed", "not-assessed"}
+ALLOWED_OS_LABELS = {
+    "os:android",
+    "os:debian",
+    "os:fedora",
+    "os:freebsd",
+    "os:ios",
+    "os:ipados",
+    "os:linux",
+    "os:macos",
+    "os:red-hat",
+    "os:ubuntu",
+    "os:windows",
+}
 ALLOWED_PHASE_STATUSES = {"blocked", "in-progress", "planned", "ready"}
 ALLOWED_PLAN_STATUSES = {"in-progress", "planned", "waiting-on-validation"}
 FIELD_PATTERN = re.compile(r"^- ([A-Za-z ]+):\s*(.*)$", re.MULTILINE)
@@ -176,6 +189,7 @@ def _validate_plan(plan: Plan, root: Path, wiki: Path) -> list[str]:
     execution = str(plan.fields.get("execution", ""))
     impact = str(plan.fields.get("impact", ""))
     package = plan.fields.get("package", [])
+    tags = plan.fields.get("tags", [])
     status = str(plan.fields.get("status", ""))
     if difficulty not in ALLOWED_DIFFICULTIES:
         errors.append(f"{label}: invalid difficulty `{difficulty}`")
@@ -185,6 +199,10 @@ def _validate_plan(plan: Plan, root: Path, wiki: Path) -> list[str]:
         errors.append(f"{label}: invalid impact `{impact}`")
     if not isinstance(package, list) or not package:
         errors.append(f"{label}: package must be a non-empty list")
+    if isinstance(tags, list):
+        for tag in tags:
+            if isinstance(tag, str) and tag.startswith("os:") and tag not in ALLOWED_OS_LABELS:
+                errors.append(f"{label}: unsupported operating-system label `{tag}`")
     if status not in ALLOWED_PLAN_STATUSES:
         errors.append(f"{label}: invalid plan status `{status}`")
     if re.search(r"^\s*-\s*\[[xX]\]", plan.text, re.MULTILINE):

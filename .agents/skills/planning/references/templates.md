@@ -25,7 +25,7 @@ description: One-sentence remaining outcome.
 difficulty: low | medium | high | mixed | not-assessed
 impact: low | medium | high | critical | mixed | not-assessed
 package: [non-empty, owners]
-tags: [focused, terms]
+tags: [focused, terms, os:linux]
 status: planned | in-progress | waiting-on-validation
 execution: phased
 phase_budget_hours: 5
@@ -33,6 +33,9 @@ phase_budget_hours: 5
 ```
 
 Use `in-progress` only while at least one remaining execution phase has `- Status: in-progress`. A plan with only `ready`, `planned`, or `blocked` phases is not in progress; keep its plan status `planned` unless validation is genuinely pending.
+
+Use canonical `os:<name>` tags only when work or validation is platform-conditioned. The supported
+labels are listed in `SKILL.md`; architecture and package formats remain ordinary tags.
 
 ## Coordination metadata
 

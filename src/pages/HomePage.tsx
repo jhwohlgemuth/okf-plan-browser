@@ -225,7 +225,7 @@ description: "What this is about"
 difficulty: medium        # easy | medium | hard
 impact: critical          # low | medium | high | critical
 package: [pkg-a, pkg-b]
-tags: [feature, api]
+tags: [feature, api, os:linux]
 status: planned           # planned | in-progress | waiting-on-validation | blocked
 priority: next            # next | high | medium | low
 execution: phased         # phased | coordination

@@ -12,6 +12,7 @@ import { AgentCommandButton } from './AgentCommandButton';
 import { planAgentCommand } from '@/lib/agentCommand';
 import { isEpic, planStatus } from '@/lib/planKind';
 import { PlanKindBadge } from './PlanKindBadge';
+import { TagBadge } from './TagBadge';
 
 type SortKey = 'title' | 'kind' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining';
 
@@ -175,7 +176,7 @@ export function PlanTable() {
                 <td className="px-3 py-2.5 max-w-[200px]">
                   <div className="flex flex-wrap gap-1">
                     {(fm.tags ?? []).slice(0, 2).map(t => (
-                      <span key={t} className="text-xs bg-accent px-1.5 py-0.5 rounded text-muted-foreground">#{t}</span>
+                      <TagBadge key={t} tag={t} compact />
                     ))}
                     {(fm.tags?.length ?? 0) > 2 && (
                       <span className="text-xs text-muted-foreground">+{fm.tags!.length - 2}</span>

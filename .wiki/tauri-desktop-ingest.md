@@ -5,7 +5,7 @@ description: Verify folder ingest on each Tauri webview and repair the desktop l
 difficulty: high
 impact: critical
 package: [okf-plan-browser, src-tauri]
-tags: [tauri, desktop, rust, file-system, decision]
+tags: [tauri, desktop, rust, file-system, decision, os:windows, os:macos, os:linux]
 status: planned
 execution: phased
 phase_budget_hours: 5

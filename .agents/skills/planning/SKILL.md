@@ -53,3 +53,17 @@ Use `verified`, `incorrect`, or `unresolved` for claim verdicts as defined in th
 - A validation defect becomes a new bounded repair phase; it does not silently expand the active phase.
 - A finished plan is deleted with every index, network, and lane entry. Durable information must survive somewhere outside the active plan.
 - Never retain checked-off task lists as planning history.
+
+## Operating-system labels
+
+Use canonical `os:<name>` tags when a plan's outcome, prerequisite, validation matrix, or supported
+artifact is specific to an operating system. Supported canonical labels are `os:windows`,
+`os:macos`, `os:ios`, `os:ipados`, `os:linux`, `os:android`, `os:ubuntu`, `os:debian`,
+`os:fedora`, `os:red-hat`, and `os:freebsd`. Multiple OS labels are appropriate for a real
+cross-platform matrix; do not add every platform merely because the repository can build there.
+
+The OKF browser gives these labels dedicated names, colors, and platform logos while preserving
+ordinary tag filtering. Legacy bare tags such as `windows`, `macos`, `linux`, `ubuntu`, and
+`debian` remain visually recognized, but new and maintained plans should use the canonical `os:`
+form. Keep architecture or packaging constraints separate, for example `x86_64`, `arm64`, `msi`,
+or `appimage`.

@@ -5,7 +5,7 @@ description: Submit a validated Windows installer manifest to the community cata
 difficulty: medium
 impact: high
 package: [okf-plan-browser]
-tags: [release, windows, winget]
+tags: [release, os:windows, winget]
 status: planned
 execution: phased
 phase_budget_hours: 5

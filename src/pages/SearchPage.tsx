@@ -11,6 +11,8 @@ import type { ParsedPlan } from '@/types/wiki';
 import { AssetThumbnail, AssetViewer, type AssetTarget } from '@/components/AssetViewer';
 import { PlanKindBadge } from '@/components/PlanKindBadge';
 import { formatPlanCounts, isEpic } from '@/lib/planKind';
+import { isOsLabel } from '@/lib/osLabels';
+import { TagBadge } from '@/components/TagBadge';
 
 interface Hit {
   plan:    ParsedPlan;
@@ -193,6 +195,8 @@ export function SearchPage() {
     for (const plan of plans) for (const t of plan.frontmatter.tags ?? []) set.add(t);
     return [...set].sort();
   }, [plans]);
+  const osTags = useMemo(() => allTags.filter(isOsLabel), [allTags]);
+  const planTags = useMemo(() => allTags.filter(tag => !isOsLabel(tag)), [allTags]);
   const extensionTags = useMemo(() => {
     const paths = [
       ...plans.flatMap(plan => [plan.fileName, ...(plan.documents?.map(document => document.fileName) ?? [])]),
@@ -319,23 +323,41 @@ export function SearchPage() {
             </div>
             {tagsOpen && (
               <div id="search-tag-groups" className="space-y-3 rounded-lg border border-border/70 bg-card/40 p-3">
-                {allTags.length > 0 && (
-                  <div role="group" aria-label="Plan tags">
+                {osTags.length > 0 && (
+                  <div role="group" aria-label="Operating system labels">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                      <Tags className="h-3 w-3" aria-hidden />
+                      Platforms
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {osTags.map(tag => (
+                        <TagBadge
+                          key={tag}
+                          tag={tag}
+                          selected={selectedTags.includes(tag)}
+                          showHash={false}
+                          onClick={() => toggleTag(tag)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {planTags.length > 0 && (
+                  <div role="group" aria-label="Plan tags" className={osTags.length > 0 ? 'border-t border-border/60 pt-3' : ''}>
                     <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
                       <Tags className="h-3 w-3" aria-hidden />
                       Plan tags
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {allTags.map(tag => (
-                        <button
+                      {planTags.map(tag => (
+                        <TagBadge
                           key={tag}
-                          type="button"
-                          aria-pressed={selectedTags.includes(tag)}
+                          tag={tag}
+                          selected={selectedTags.includes(tag)}
+                          showHash={false}
                           onClick={() => toggleTag(tag)}
-                          className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${selectedTags.includes(tag) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:text-foreground'}`}
-                        >
-                          {tag}
-                        </button>
+                          className={!selectedTags.includes(tag) ? 'bg-secondary text-muted-foreground' : undefined}
+                        />
                       ))}
                     </div>
                   </div>

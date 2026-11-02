@@ -411,6 +411,29 @@ test('selected search tags use a canonical URL and survive reload and history', 
   await expect(page.getByRole('button', { name: 'Clear tags' })).toBeDisabled();
 });
 
+test('OS labels use platform logos and a dedicated search group', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'platform label presentation only needs one viewport');
+  await page.goto('/home');
+  await importPortfolio(page, 'Platform labels', [
+    { name: 'platform.md', text: markdown('Platform plan', 'tags: [os:windows, release, linux]') },
+  ]);
+
+  await page.goto('/portfolio');
+  const row = page.getByRole('button', { name: 'Open Epic: Platform plan' });
+  await expect(row.getByLabel('Operating system: Windows')).toHaveAttribute('data-os-label', 'os:windows');
+  await expect(row.getByLabel('Operating system: Windows')).toHaveClass(/text-sky-700/);
+  await expect(row.getByText('#release')).toBeVisible();
+
+  await page.goto('/search');
+  const platforms = page.getByRole('group', { name: 'Operating system labels' });
+  await expect(platforms.getByRole('button', { name: 'Operating system: Windows' })).toBeVisible();
+  await expect(platforms.getByRole('button', { name: 'Operating system: Linux' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Plan tags' }).getByRole('button', { name: 'release' })).toBeVisible();
+  await platforms.getByRole('button', { name: 'Operating system: Windows' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.getAll('tag')).toEqual(['os:windows']);
+  await expect(page.getByRole('button', { name: 'Open Epic: Platform plan' })).toBeVisible();
+});
+
 test('wiki extensions become canonical file-type search tags', async ({ page }) => {
   const revealTags = async () => {
     const show = page.getByRole('button', { name: 'Show tags' });

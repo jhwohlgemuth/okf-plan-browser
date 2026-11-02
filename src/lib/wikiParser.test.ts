@@ -44,8 +44,8 @@ describe('parseFrontmatter', () => {
   });
 
   it('keeps list tags and defaults absent ones to empty arrays', () => {
-    const r = parseFrontmatter('---\ntitle: T\ntags: [x, y]\n---\n');
-    expect(r.fm.tags).toEqual(['x', 'y']);
+    const r = parseFrontmatter('---\ntitle: T\ntags: [x, y, os:linux]\n---\n');
+    expect(r.fm.tags).toEqual(['x', 'y', 'os:linux']);
     expect(r.fm.package).toEqual([]);
   });
 

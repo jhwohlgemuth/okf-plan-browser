@@ -5,7 +5,7 @@ description: Prepare a Gatekeeper-compatible macOS release and submit a cask for
 difficulty: high
 impact: high
 package: [okf-plan-browser, src-tauri]
-tags: [release, macos, homebrew, cask]
+tags: [release, os:macos, homebrew, cask]
 status: planned
 execution: phased
 phase_budget_hours: 5

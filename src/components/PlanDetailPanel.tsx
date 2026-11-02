@@ -13,6 +13,7 @@ import { AssetViewer, type AssetTarget } from './AssetViewer';
 import { useWalkthrough } from './Walkthrough';
 import { PlanKindBadge } from './PlanKindBadge';
 import { isEpic, linkedPlans } from '@/lib/planKind';
+import { TagBadge } from './TagBadge';
 
 const IMPACT_CLASSES: Record<string, string> = {
   critical: 'text-od-red',
@@ -266,7 +267,7 @@ export function PlanDetailPanel() {
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {fm!.tags!.map(t => (
-                      <span key={t} className="text-xs bg-accent px-2 py-0.5 rounded text-accent-foreground">#{t}</span>
+                      <TagBadge key={t} tag={t} />
                     ))}
                   </div>
                 </div>

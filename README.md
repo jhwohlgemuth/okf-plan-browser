@@ -105,7 +105,7 @@ description: "What this is about"
 difficulty: medium          # easy | medium | hard
 impact: critical            # low | medium | high | critical
 package: [workspace, acorn-lib]
-tags: [feature, automation]
+tags: [feature, automation, os:linux]
 status: planned             # planned | ready | in-progress | blocked | waiting-on-validation
 priority: next              # next | high | medium | low
 execution: phased           # phased | coordination
@@ -127,6 +127,9 @@ Phase body with cross-references like PA-02, PA-03...
 ```
 
 **Notes:**
+- Canonical `os:<name>` tags are rendered as colored platform labels with OS logos. Use them for
+  genuine platform conditions (for example `os:windows`, `os:macos`, `os:linux`, or `os:ubuntu`);
+  keep architecture and package formats as separate ordinary tags.
 - Status values are `planned | ready | in-progress | blocked | waiting-on-validation` — completed plans are **deleted** from `.wiki/`, not marked done.
 - Phase IDs follow the pattern `PA-01`, `PA-02`, etc. (or `1.`, `2.` numbered variants).
 - Dependency links use standard markdown: `[text](../relative/path.md)`.

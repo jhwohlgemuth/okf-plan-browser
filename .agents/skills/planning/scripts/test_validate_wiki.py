@@ -114,6 +114,14 @@ class ValidatorTests(unittest.TestCase):
         root = self._repository(PLAN.replace("Status: ready", "Status: complete"))
         self.assertTrue(any("invalid phase status" in error for error in validate_repository(root)))
 
+    def test_unknown_operating_system_label_is_rejected(self) -> None:
+        root = self._repository(PLAN.replace("tags: [example]", "tags: [example, os:window]"))
+        self.assertTrue(any("unsupported operating-system label `os:window`" in error for error in validate_repository(root)))
+
+    def test_supported_operating_system_label_is_accepted(self) -> None:
+        root = self._repository(PLAN.replace("tags: [example]", "tags: [example, os:windows]"))
+        self.assertFalse(any("operating-system label" in error for error in validate_repository(root)))
+
     def test_in_progress_plan_requires_an_in_progress_phase(self) -> None:
         root = self._repository(PLAN.replace("status: planned", "status: in-progress"))
         self.assertTrue(any("no phase is in-progress" in error for error in validate_repository(root)))

@@ -3,6 +3,8 @@ import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { Button } from './ui/button';
 import type { PlanStatus, PlanPriority, PlanImpact, PlanDifficulty } from '@/types/wiki';
+import { isOsLabel } from '@/lib/osLabels';
+import { TagBadge } from './TagBadge';
 
 const STATUS_OPTIONS:     PlanStatus[]     = ['planned', 'ready', 'in-progress', 'waiting-on-validation', 'blocked'];
 const PRIORITY_OPTIONS:   PlanPriority[]   = ['next', 'high', 'medium', 'low'];
@@ -54,7 +56,8 @@ export function FilterBar({ statusLabel = 'Status' }: { statusLabel?: string }) 
   );
 
   // Collect all tags and packages from loaded plans
-  const allTags = [...new Set(plans.flatMap(p => p.frontmatter.tags ?? []))].sort();
+  const allTags = [...new Set(plans.flatMap(p => p.frontmatter.tags ?? []))].sort((a, b) =>
+    Number(!isOsLabel(a)) - Number(!isOsLabel(b)) || a.localeCompare(b));
   const allPkgs = [...new Set(plans.flatMap(p => p.frontmatter.package ?? []))].sort();
 
   const hasFilters =
@@ -154,16 +157,14 @@ export function FilterBar({ statusLabel = 'Status' }: { statusLabel?: string }) 
                 {allTags.map(t => {
                   const active = filters.tags.includes(t);
                   return (
-                    <button
+                    <TagBadge
                       key={t}
-                      aria-pressed={active}
+                      tag={t}
+                      compact
+                      selected={active}
                       onClick={() => setFilter('tags', active ? filters.tags.filter(x => x !== t) : [...filters.tags, t])}
-                      className={`shrink-0 text-xs px-2 py-0.5 rounded border transition-colors ${
-                        active ? 'bg-accent text-accent-foreground border-border' : 'text-muted-foreground border-border/50 hover:border-border'
-                      }`}
-                    >
-                      #{t}
-                    </button>
+                      className={!active && !isOsLabel(t) ? 'text-muted-foreground' : undefined}
+                    />
                   );
                 })}
               </div>
