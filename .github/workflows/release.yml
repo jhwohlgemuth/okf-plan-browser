@@ -178,6 +178,28 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: gh release upload "$RELEASE_TAG" release-assets/planning-skill.zip release-assets/planning-skill.zip.sha256 --clobber
 
+      - name: Verify downloaded draft release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          download_dir="$RUNNER_TEMP/planning-release"
+          mkdir -p "$download_dir/extracted"
+          gh release download "$RELEASE_TAG" \
+            --pattern 'planning-skill.zip*' \
+            --dir "$download_dir" \
+            --clobber
+          cd "$download_dir"
+          sha256sum --check planning-skill.zip.sha256
+          cmp "$GITHUB_WORKSPACE/release-assets/planning-skill.zip" planning-skill.zip
+          cmp "$GITHUB_WORKSPACE/release-assets/planning-skill.zip.sha256" planning-skill.zip.sha256
+          unzip -q planning-skill.zip -d extracted
+          diff -ru --exclude=__pycache__ \
+            "$GITHUB_WORKSPACE/.agents/skills/planning" \
+            extracted/.agents/skills/planning
+
   publish:
     needs: [build-tauri, build-planning-skill]
     if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') && inputs.keep_draft != true
