@@ -107,3 +107,14 @@
 - Budget: PWZ-01 implementation completed within the five-hour ceiling; no active time spent on blocked external validation.
 - Blockers / failed approaches: No model-backed trial was started because the plan requires explicit authorization. The workflow has not been committed, so no GitHub Actions run exists. The first negative-injection attempt omitted HOME and tested startup failure; the corrected attempt failed on the intended broken fixture pattern.
 - Next action: After model-run authorization and provider access, run `make planning-skill-test-real WAZA=/tmp/waza-v0.39.1`, inspect every task result and file diff, and update PWZ-02/03. After the workflow is committed, inspect its GitHub Actions run for PWZ-04.
+
+## Implementation — Planning skill web distribution
+
+- Plan: `.wiki/planning-skill-web-distribution.md`; active phase: PSD-03; state: PSD-02 complete, PSD-03 in progress.
+- Authorized scope and decisions: Publish the canonical planning skill as a discovered raw tree, deterministic repository-ready ZIP, OpenCode v2 catalog, portable Codex plugin, and immutable release asset. Execute PSD-02 then PSD-03 under their separate locks.
+- Baseline and local work: `0c4e097`; PSD-01 remains uncommitted in the worktree and passed its recorded checks; no CodeGraph index is present. PSD-02/03 will preserve those changes and stay within their declared write sets plus required wiki and progress reconciliation.
+- Verified state: PSD-01 evidence remains current. PSD-02 adds portable `.agents/plugin.json` and repo marketplace metadata synchronized at version `0.0.1`. `jq` manifest checks and `node scripts/sync-version.mjs --check` passed. In an isolated Codex CLI 0.166.0 profile, `codex plugin marketplace add <repository>`, `codex plugin add planning@okf-plan-browser`, and a new ephemeral session all succeeded; the session loaded the installed skill and returned `5 hours — planning` without modifying its temporary repository.
+- Remaining work: PSD-03 must build and upload the deterministic ZIP plus checksum, preserve the desktop release gate, and validate a tagged draft release.
+- Budget: PSD-01 and PSD-02 completed within their budgets; PSD-03 has its full budget.
+- Blockers / failed approaches: The first clean-session invocation could not load cloud policy inside the network sandbox; the approved retry passed. No PSD-02 product blocker remains.
+- Next action: Add a release packaging job that uploads `planning-skill.zip` and its checksum before the existing publish gate.

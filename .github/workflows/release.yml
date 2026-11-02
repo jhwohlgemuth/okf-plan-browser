@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      keep_draft:
+        description: 'Keep the release as a draft after all assets pass (validation runs only)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -136,9 +142,45 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: gh release upload "$RELEASE_TAG" release-assets/* --clobber
 
-  publish:
-    needs: build-tauri
+  build-planning-skill:
+    needs: prepare-release
     if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build deterministic planning skill bundle
+        run: npm run build
+
+      - name: Prepare planning skill release assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp dist/planning-skill.zip release-assets/planning-skill.zip
+          cd release-assets
+          sha256sum -- planning-skill.zip > planning-skill.zip.sha256
+
+      - name: Upload planning skill bundle and checksum
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release upload "$RELEASE_TAG" release-assets/planning-skill.zip release-assets/planning-skill.zip.sha256 --clobber
+
+  publish:
+    needs: [build-tauri, build-planning-skill]
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') && inputs.keep_draft != true
     runs-on: ubuntu-latest
     permissions:
       contents: write

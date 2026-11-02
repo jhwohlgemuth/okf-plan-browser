@@ -6,7 +6,7 @@ difficulty: medium
 impact: high
 package: [planning, web]
 tags: [skills, distribution, plugins, github-pages, opencode]
-status: planned
+status: in-progress
 execution: phased
 phase_budget_hours: 5
 ---
@@ -15,7 +15,7 @@ phase_budget_hours: 5
 
 ## Current evidence and decisions
 
-The canonical skill is `.agents/skills/planning/`. `PlanningPage.tsx` currently imports its authored files individually and creates `planning-skill.zip` in browser memory, so the human download works but there is no stable URL that an agent can fetch without executing the application. Copied prompts link only to the rendered guide. The repository has no portable plugin manifest or marketplace catalog.
+The canonical skill is `.agents/skills/planning/`. A build-time collector now discovers its 11 authored files, rejects unsafe paths and symbolic links, excludes generated caches, and supplies one sorted inventory to the Planning page, raw web tree, deterministic ZIP, and OpenCode v2 catalog. The development server and production build expose `/planning-skill/SKILL.md`, `/planning-skill.zip`, and `/opencode/skills/`; copied prompts name the raw instructions and ZIP when `$planning` is unavailable. `.agents/` is also a portable `planning` plugin advertised by the `okf-plan-browser` marketplace, with its manifest version synchronized to the application version.
 
 Keep `.agents/skills/planning/` as the only maintained copy. A build-time collector will discover every regular authored file, reject unsafe paths, exclude generated caches such as `__pycache__`, and use deterministic ordering for the rendered inventory, raw web tree, ZIP, and OpenCode catalog. Publish the latest source at `/planning-skill/SKILL.md` and `/planning-skill.zip`; tagged GitHub releases provide immutable ZIP URLs. Package `.agents/` itself as the portable plugin root because it already contains `skills/planning`.
 
@@ -23,7 +23,9 @@ OpenAI's plugin documentation supports portable `plugin.json` packages with a `s
 
 OpenCode v2 natively accepts an HTTP skill-catalog base URL in the `skills` array of `opencode.json`. The base must serve `index.json`; each entry lists safe same-origin files beneath `<base>/<skill>/` and changes its string `version` whenever content changes. Publish a catalog at `/opencode/skills/` with the full SHA-256 digest of the sorted runtime paths and bytes as the `planning` version. OpenCode 1 remains supported through its existing `.agents/skills/` discovery after extracting the repository-ready ZIP.
 
-LX-01 completed with the published `v0.0.1` release. PSD-03 may take the release-workflow integration lock after PSD-01.
+PSD-01 completed at `0c4e097` plus the current worktree. Its 11-file catalog version is `e1cf7c5ee7876ece76a38f22deef981ea3f85aa59c0c161f054512deb2dbf479`; the deterministic ZIP SHA-256 is `2d38f3504f96d5786ad93818acd4db6189eba79cdccf1b5d34b7efc39bf5bea2`. Unit, type, lint, desktop browser, development-server, and GitHub Pages-base build validation passed. PSD-02 and PSD-03 are ready; LX-01 already freed the release-workflow lock.
+
+PSD-02 completed with Codex CLI 0.166.0. A clean profile added the local repository marketplace, installed `planning@okf-plan-browser` version `0.0.1`, started an ephemeral read-only session against a temporary repository, loaded the installed `skills/planning/SKILL.md`, and returned `5 hours — planning`. PSD-03 now holds the release-workflow lock.
 
 ## Public interfaces
 
@@ -40,33 +42,11 @@ Every authored planning-skill file is available from the raw web tree, included 
 
 # Execution phases
 
-## PSD-01 — Publish stable latest web artifacts
-
-- Status: ready
-- Budget: 5 active hours maximum
-- Prerequisites: none.
-- Exact write set: `vite.config.ts`, `scripts/planning-skill-assets.ts`, `src/pages/PlanningPage.tsx`, `src/lib/agentCommand.ts`, `src/lib/agentCommand.test.ts`, `e2e/planning.spec.ts`, `README.md`.
-- Primary integration lock: planning-skill web distribution.
-- Outcome: The production build and development server expose the raw skill tree, deterministic ZIP, and OpenCode v2 catalog from one discovered inventory, and the page and copied prompts provide the matching generic, OpenCode, and Codex installation paths.
-- Focused validation: Run the focused unit tests, `npm run typecheck`, the desktop `e2e/planning.spec.ts` test, and a GitHub Pages-base production build; compare every emitted file and ZIP entry with `.agents/skills/planning/`, validate `opencode/skills/index.json`, verify every catalog file is same-origin and fetchable, and confirm the version digest changes after a fixture file changes.
-- Handoff: Record the public paths, OpenCode configuration, catalog version, file inventory, ZIP checksum, and focused test results for plugin packaging.
-
-## PSD-02 — Package the skill as a Codex plugin
-
-- Status: planned
-- Budget: 5 active hours maximum
-- Prerequisites: PSD-01.
-- Exact write set: `.agents/plugin.json`, `.agents/plugins/marketplace.json`, `scripts/sync-version.mjs`, `.github/workflows/version-bump.yml`, `src/pages/PlanningPage.tsx`, `README.md`.
-- Primary integration lock: planning plugin identity and marketplace metadata.
-- Outcome: `.agents/` is a portable plugin named `planning`, the repository advertises it through marketplace `okf-plan-browser`, and plugin version changes remain synchronized with the application version.
-- Focused validation: Parse and schema-check both manifests, verify version synchronization, add the repository as a marketplace in a clean Codex profile, install the plugin, start a new session, and invoke `$planning` against a temporary repository.
-- Handoff: Record the installed plugin version, exact CLI commands, discovery result, and any host-version requirement.
-
 ## PSD-03 — Attach immutable release bundles
 
-- Status: blocked
+- Status: in-progress
 - Budget: 5 active hours maximum
-- Prerequisites: PSD-01; use a tagged draft release for external validation.
+- Prerequisites: none; use a tagged draft release for external validation.
 - Exact write set: `.github/workflows/release.yml`, `CONTRIBUTING.md`.
 - Primary integration lock: release workflow.
 - Outcome: Every tagged release uploads `planning-skill.zip` and its `.sha256` sidecar before publication, alongside the desktop artifacts.

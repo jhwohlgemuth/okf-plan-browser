@@ -16,6 +16,16 @@ if (lock.version !== version || lock.packages[''].version !== version) {
   throw new Error(`package-lock.json must match package.json version ${version}`);
 }
 
+const pluginPath = resolve(root, '.agents', 'plugin.json');
+const plugin = JSON.parse(readFileSync(pluginPath, 'utf8'));
+if (checkOnly && plugin.version !== version) {
+  throw new Error(`Planning plugin version ${plugin.version} does not match ${version}`);
+}
+if (!checkOnly && plugin.version !== version) {
+  plugin.version = version;
+  writeFileSync(pluginPath, JSON.stringify(plugin, null, 2) + '\n');
+}
+
 const tauriPath = resolve(root, 'src-tauri', 'tauri.conf.json');
 const tauri     = JSON.parse(readFileSync(tauriPath, 'utf8'));
 
@@ -47,4 +57,4 @@ for (const relativePath of ['src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']) {
   }
 }
 
-console.log(checkOnly ? `✓ Version metadata matches ${version}` : `✓ Synced version ${version} → Tauri config and Cargo metadata`);
+console.log(checkOnly ? `✓ Version metadata matches ${version}` : `✓ Synced version ${version} → planning plugin, Tauri config, and Cargo metadata`);

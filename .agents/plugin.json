@@ -1,0 +1,40 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "planning",
+  "version": "0.0.1",
+  "description": "Maintain .wiki portfolios, execute bounded implementation phases, and write source-backed drafts.",
+  "author": {
+    "name": "Jason Wohlgemuth",
+    "url": "https://www.jasonwohlgemuth.com"
+  },
+  "homepage": "https://www.jasonwohlgemuth.com/okf-plan-browser/planning",
+  "repository": "https://github.com/jhwohlgemuth/okf-plan-browser",
+  "license": "MIT",
+  "keywords": [
+    "planning",
+    "implementation",
+    "portfolio",
+    "evidence"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Planning",
+        "shortDescription": "Plan, execute, and verify bounded work",
+        "longDescription": "Maintain evidence-backed .wiki portfolios, execute implementation in resumable five-hour phases, and write or review source-backed drafts.",
+        "developerName": "Jason Wohlgemuth",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://www.jasonwohlgemuth.com/okf-plan-browser/planning",
+        "defaultPrompt": [
+          "Use $planning to review this repository's .wiki portfolio and recommend the next phase.",
+          "Use $planning to execute the next ready phase and preserve a resumable handoff."
+        ],
+        "brandColor": "#61AFEF"
+      }
+    }
+  }
+}

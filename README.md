@@ -9,7 +9,7 @@
 
 ## Planning skill
 
-This repository is the canonical home for the planning skill concept, instructions, references, and validator. The source of truth is [`.agents/skills/planning/`](.agents/skills/planning/SKILL.md). The site's [Planning Skill page](https://www.jasonwohlgemuth.com/okf-plan-browser/planning) provides copy-ready prompts, the full source, and a downloadable package built from those files.
+This repository is the canonical home for the planning skill concept, instructions, references, and validator. The source of truth is [`.agents/skills/planning/`](.agents/skills/planning/SKILL.md). The site's [Planning Skill page](https://www.jasonwohlgemuth.com/okf-plan-browser/planning) provides copy-ready prompts and renders that source. The build also publishes a stable [raw `SKILL.md`](https://www.jasonwohlgemuth.com/okf-plan-browser/planning-skill/SKILL.md), repository-ready [`planning-skill.zip`](https://www.jasonwohlgemuth.com/okf-plan-browser/planning-skill.zip), and [OpenCode v2 catalog](https://www.jasonwohlgemuth.com/okf-plan-browser/opencode/skills/).
 
 | Workflow | Outcome |
 | --- | --- |
@@ -20,7 +20,15 @@ This repository is the canonical home for the planning skill concept, instructio
 
 ### Use the skill in another repository
 
-Download the skill ZIP from the Planning Skill page and extract it into your target repository, or copy this repository's complete `.agents/skills/planning/` directory to the same location in your project. Keep the references, scripts, and agent metadata together. Use an agent that supports the `$planning` invocation:
+Review the raw instructions before installing. Choose the route supported by your agent:
+
+| Agent | Installation |
+| --- | --- |
+| Codex | Run `codex plugin marketplace add jhwohlgemuth/okf-plan-browser --ref main`, then `codex plugin add planning@okf-plan-browser`. Start a new session and invoke `$planning`. The ZIP remains the manual fallback. |
+| OpenCode v2 | Add `"https://www.jasonwohlgemuth.com/okf-plan-browser/opencode/skills/"` to the `skills` array in `opencode.json`, restart OpenCode, then invoke `@planning`. The catalog version is derived from every runtime path and byte so content changes invalidate its cache. |
+| OpenCode 1 or another Agent Skills client | Download and extract the same ZIP at the repository root, or copy this repository's complete `.agents/skills/planning/` directory. |
+
+Keep the references, scripts, and agent metadata together. Downloaded instructions can execute tools and should be reviewed before installation. Use an agent that supports the `$planning` invocation:
 
 ```text
 Use $planning to create or update a .wiki plan for: <goal>.

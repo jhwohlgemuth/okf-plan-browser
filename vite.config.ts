@@ -2,6 +2,7 @@ import { defineConfig, type Plugin, type ProxyOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import pkg from './package.json';
+import { planningSkillAssetsPlugin } from './scripts/planning-skill-assets';
 
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 const repoName = process.env.REPO_NAME ?? 'okf-plan-browser';
@@ -46,7 +47,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
     __GITLAB_HOSTS__: JSON.stringify(gitlabHosts),
   },
-  plugins: [react(), cspPlugin()],
+  plugins: [planningSkillAssetsPlugin(), react(), cspPlugin()],
   base: isGitHubPages ? `/${repoName}/` : '/',
   server: { proxy: forgeProxies },
   preview: { proxy: forgeProxies },

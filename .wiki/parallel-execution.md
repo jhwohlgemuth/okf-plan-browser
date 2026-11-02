@@ -7,7 +7,7 @@ sets intersect, even when their named locks differ.
 |---|---|---|
 | [Desktop ingest](tauri-desktop-ingest.md) | desktop application packaging | TD-03 |
 | [Linux release exports](linux-release-exports.md) | Linux installer validation | LX-02 |
-| [Planning skill web distribution](planning-skill-web-distribution.md) | planning-skill web distribution; plugin identity; release workflow | PSD-01; PSD-02; PSD-03 |
+| [Planning skill web distribution](planning-skill-web-distribution.md) | plugin identity; release workflow | PSD-02; PSD-03 |
 | [Planning skill Waza workflow](planning-skill-waza-workflow.md) | portfolio suite; workflow suite; skill CI | PWZ-02; PWZ-03; PWZ-04 |
 | [Scoop Extras](scoop-extra-publication.md) | release workflow; Scoop bucket manifest | SC-01; SC-02 |
 | [WinGet](winget-publication.md) | WinGet package identity; WinGet submission | WG-01; WG-02 |

@@ -14,6 +14,12 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 
 ## Portfolio currency review
 
+- 2026-11-01 — Reviewed all seven executable plans at `0c4e097` against current code, tests,
+  documentation, recent history, published `v0.0.1` evidence, and recorded external prerequisites.
+  PSD-01 then completed with stable raw, ZIP, and OpenCode artifacts; PSD-02/03 are ready. TD-03,
+  LX-02, WG-01/02, SC-01/02, and HB-01/02 still require interactive hosts or credentials;
+  PWZ-02/03 require authorized model access and PWZ-04 requires an observed workflow run. No plan
+  is newly obsolete, and the reconciled dependency network and execution lanes remain current.
 - 2026-10-29 — Reviewed all executable plans at `9dc909d` against current code, tests,
   documentation, and repository changes since the plans were created in `a0d17bd`. AX-01/02
   and DL-01/02 subsequently landed and their plans were retired. The remaining outcomes at that

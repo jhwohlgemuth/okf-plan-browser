@@ -7,9 +7,9 @@
 - [Linux release exports](linux-release-exports.md): LX-01 is complete; LX-02 requires an
   interactive Linux host for the published `.deb` and `.AppImage`. Its folder-import observation supplies the
   Linux evidence for TD-03.
-- [Planning skill web distribution](planning-skill-web-distribution.md): PSD-01 publishes the
-  latest raw tree, ZIP, and OpenCode HTTP catalog; PSD-02 packages that source as a Codex plugin.
-  PSD-03 requires PSD-01 before it edits and externally validates the release workflow; LX-01 is complete.
+- [Planning skill web distribution](planning-skill-web-distribution.md): The latest raw tree, ZIP,
+  and OpenCode HTTP catalog are published by the build. PSD-02 packages that source as a Codex
+  plugin; PSD-03 attaches the same ZIP to releases. Both remaining phases are ready and LX-01 is complete.
 - [Planning skill Waza workflow](planning-skill-waza-workflow.md): The offline runner and both
   suites are implemented. PWZ-02/03 await authorized model-backed trials; PWZ-04 awaits a
   GitHub Actions run of the new offline workflow.
