@@ -24,5 +24,8 @@ test('install page covers desktop downloads and planning skill setup', async ({ 
   await expect(page.getByText('.agents/skills/planning/SKILL.md')).toBeVisible();
   await page.getByRole('link', { name: 'Open Planning Skill page' }).click();
   await expect(page).toHaveURL(/\/planning$/);
-  await expect(page.getByRole('button', { name: 'Download skill folder' })).toBeVisible();
+  await expect(page.locator('[data-tour="planning-install"]').getByRole('link', { name: 'Download stable ZIP' })).toHaveAttribute(
+    'href',
+    '/planning-skill.zip',
+  );
 });

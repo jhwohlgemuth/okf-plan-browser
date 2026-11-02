@@ -46,7 +46,7 @@ Every authored planning-skill file is available from the raw web tree, included 
 
 - Status: in-progress
 - Budget: 5 active hours maximum
-- Prerequisites: none; use a tagged draft release for external validation.
+- Prerequisites: none; the browser gate is repaired, and a tagged draft release remains required.
 - Exact write set: `.github/workflows/release.yml`, `CONTRIBUTING.md`.
 - Primary integration lock: release workflow.
 - Outcome: Every tagged release uploads `planning-skill.zip` and its `.sha256` sidecar before publication, alongside the desktop artifacts.

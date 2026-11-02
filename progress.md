@@ -110,11 +110,11 @@
 
 ## Implementation — Planning skill web distribution
 
-- Plan: `.wiki/planning-skill-web-distribution.md`; active phase: PSD-03; state: PSD-02 complete, PSD-03 in progress.
+- Plan: `.wiki/planning-skill-web-distribution.md`; active phase: PSD-03; state: PSD-02 and PSD-04 complete, PSD-03 in progress.
 - Authorized scope and decisions: Publish the canonical planning skill as a discovered raw tree, deterministic repository-ready ZIP, OpenCode v2 catalog, portable Codex plugin, and immutable release asset. Execute PSD-02 then PSD-03 under their separate locks.
 - Baseline and local work: `0c4e097`; PSD-01 remains uncommitted in the worktree and passed its recorded checks; no CodeGraph index is present. PSD-02/03 will preserve those changes and stay within their declared write sets plus required wiki and progress reconciliation.
 - Verified state: PSD-01 evidence remains current. PSD-02 adds portable `.agents/plugin.json` and repo marketplace metadata synchronized at version `0.0.1`. `jq` manifest checks and `node scripts/sync-version.mjs --check` passed. In an isolated Codex CLI 0.166.0 profile, `codex plugin marketplace add <repository>`, `codex plugin add planning@okf-plan-browser`, and a new ephemeral session all succeeded; the session loaded the installed skill and returned `5 hours — planning` without modifying its temporary repository.
-- Remaining work: PSD-03 must build and upload the deterministic ZIP plus checksum, preserve the desktop release gate, and validate a tagged draft release.
+- Remaining work: Retry PSD-03's tagged draft release at the repaired commit and verify its planning-skill assets.
 - Budget: PSD-01 and PSD-02 completed within their budgets; PSD-03 has its full budget.
-- Blockers / failed approaches: The first clean-session invocation could not load cloud policy inside the network sandbox; the approved retry passed. No PSD-02 product blocker remains.
-- Next action: Add a release packaging job that uploads `planning-skill.zip` and its checksum before the existing publish gate.
+- Blockers / failed approaches: Release run 41366382617 stopped because all three viewport variants of `e2e/install.spec.ts` still expected the removed “Download skill folder” control; unit, audit, build, and native checks passed, and no release asset job ran. PSD-04 updated that assertion; all 3 focused viewport tests and the exact CI browser command now pass (82 passed, 50 expected skips). The first clean-session invocation could not load cloud policy inside the network sandbox; the approved retry passed.
+- Next action: Commit PSD-04, move `v0.0.1-psd03` to the repaired commit with a lease, and monitor the draft release.
