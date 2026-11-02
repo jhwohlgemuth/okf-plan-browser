@@ -4,11 +4,10 @@
 |---|---|---|---|---|
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
 | 2 | [linux-release-exports.md](linux-release-exports.md) | medium | high | Verified Debian and AppImage release downloads |
-| 3 | [planning-skill-web-distribution.md](planning-skill-web-distribution.md) | medium | high | Web-installable planning skill for OpenCode and Codex |
-| 4 | [planning-skill-waza-workflow.md](planning-skill-waza-workflow.md) | medium | high | Waza development and behavioral testing for the planning skill |
-| 5 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
-| 6 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
-| 7 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
+| 3 | [planning-skill-waza-workflow.md](planning-skill-waza-workflow.md) | medium | high | Waza development and behavioral testing for the planning skill |
+| 4 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
+| 5 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
+| 6 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
@@ -16,10 +15,15 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 
 - 2026-11-01 — Reviewed all seven executable plans at `0c4e097` against current code, tests,
   documentation, recent history, published `v0.0.1` evidence, and recorded external prerequisites.
-  PSD-01 then completed with stable raw, ZIP, and OpenCode artifacts; PSD-02/03 are ready. TD-03,
+  The planning-skill distribution plan subsequently completed and was retired. TD-03,
   LX-02, WG-01/02, SC-01/02, and HB-01/02 still require interactive hosts or credentials;
   PWZ-02/03 require authorized model access and PWZ-04 requires an observed workflow run. No plan
-  is newly obsolete, and the reconciled dependency network and execution lanes remain current.
+  is newly obsolete; six executable plans remain, and the reconciled dependency network and
+  execution lanes remain current.
+- 2026-11-01 — PSD-01/02/03 completed: deterministic web and release artifacts, the OpenCode
+  catalog, and the portable Codex marketplace install all passed. Validation run 41374458325
+  re-downloaded the draft ZIP and checksum, verified their bytes and digest, compared the extracted
+  authored files with the tagged source, and passed the complete desktop gate. Retired the plan.
 - 2026-10-29 — Reviewed all executable plans at `9dc909d` against current code, tests,
   documentation, and repository changes since the plans were created in `a0d17bd`. AX-01/02
   and DL-01/02 subsequently landed and their plans were retired. The remaining outcomes at that

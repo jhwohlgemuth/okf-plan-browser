@@ -7,7 +7,6 @@ sets intersect, even when their named locks differ.
 |---|---|---|
 | [Desktop ingest](tauri-desktop-ingest.md) | desktop application packaging | TD-03 |
 | [Linux release exports](linux-release-exports.md) | Linux installer validation | LX-02 |
-| [Planning skill web distribution](planning-skill-web-distribution.md) | plugin identity; release workflow | PSD-02; PSD-03 |
 | [Planning skill Waza workflow](planning-skill-waza-workflow.md) | portfolio suite; workflow suite; skill CI | PWZ-02; PWZ-03; PWZ-04 |
 | [Scoop Extras](scoop-extra-publication.md) | release workflow; Scoop bucket manifest | SC-01; SC-02 |
 | [WinGet](winget-publication.md) | WinGet package identity; WinGet submission | WG-01; WG-02 |
@@ -16,8 +15,7 @@ sets intersect, even when their named locks differ.
 ## Write collisions
 
 - TD-03 requires external artifacts and platform access. Do not interpret that waiting as active execution time.
-- PSD-03, SC-01, and HB-01 all edit `.github/workflows/release.yml`; serialize these phases.
-- PSD-03 and PWZ-04 edit `CONTRIBUTING.md`; serialize those documentation updates.
+- SC-01 and HB-01 both edit `.github/workflows/release.yml`; serialize these phases.
 - TD-03, LX-02, and the Windows package-manager validations may share interactive smoke evidence,
   but each must verify its own distribution artifact and installation path.
 - Bucket and catalog review waits are external prerequisites, not active phase time.
