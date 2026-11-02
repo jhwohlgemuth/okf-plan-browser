@@ -23,9 +23,11 @@ OpenAI's plugin documentation supports portable `plugin.json` packages with a `s
 
 OpenCode v2 natively accepts an HTTP skill-catalog base URL in the `skills` array of `opencode.json`. The base must serve `index.json`; each entry lists safe same-origin files beneath `<base>/<skill>/` and changes its string `version` whenever content changes. Publish a catalog at `/opencode/skills/` with the full SHA-256 digest of the sorted runtime paths and bytes as the `planning` version. OpenCode 1 remains supported through its existing `.agents/skills/` discovery after extracting the repository-ready ZIP.
 
-PSD-01 completed at `0c4e097` plus the current worktree. Its 11-file catalog version is `e1cf7c5ee7876ece76a38f22deef981ea3f85aa59c0c161f054512deb2dbf479`; the deterministic ZIP SHA-256 is `2d38f3504f96d5786ad93818acd4db6189eba79cdccf1b5d34b7efc39bf5bea2`. Unit, type, lint, desktop browser, development-server, and GitHub Pages-base build validation passed. PSD-02 and PSD-03 are ready; LX-01 already freed the release-workflow lock.
+PSD-01 completed at `0c4e097` plus the current worktree. Its 11-file catalog version is `e1cf7c5ee7876ece76a38f22deef981ea3f85aa59c0c161f054512deb2dbf479`; the deterministic ZIP SHA-256 is `2d38f3504f96d5786ad93818acd4db6189eba79cdccf1b5d34b7efc39bf5bea2`. Unit, type, lint, desktop browser, development-server, and GitHub Pages-base build validation passed. PSD-02 is complete, and PSD-03 owns the release-workflow lock; LX-01 already freed it.
 
 PSD-02 completed with Codex CLI 0.166.0. A clean profile added the local repository marketplace, installed `planning@okf-plan-browser` version `0.0.1`, started an ephemeral read-only session against a temporary repository, loaded the installed `skills/planning/SKILL.md`, and returned `5 hours — planning`. PSD-03 now holds the release-workflow lock.
+
+PSD-03 release run 41369592304 built and uploaded `planning-skill.zip` plus its checksum successfully. All checks and three desktop packaging legs passed; the unchanged Intel packaging leg exited generically during the Tauri build, so the release gate correctly skipped publication. The prior stable release run 41144436883 passed that Intel leg. Retry the validation tag before classifying the failure as persistent.
 
 ## Public interfaces
 
