@@ -1,6 +1,7 @@
 # Desktop folder ingest
 
-Verified 2026-10-30 from `bd33614` plus the uncommitted TD-02 implementation.
+Verified initially on 2026-10-30 from `bd33614` plus the TD-02 implementation; Linux packaged
+interaction evidence updated on 2026-11-02 against `v0.0.2`.
 
 ## TD-01 baseline
 
@@ -58,9 +59,9 @@ Focused validation:
 | Target | Artifact | Launch | Native folder import | Status |
 |---|---|---|---|---|
 | macOS, Apple Silicon | `OKF Plan Browser_1.0.0_aarch64.dmg` | Launched from the mounted DMG | Native `Open .wiki Folder` dialog loaded this repository as 3 plans and 1 Epic with 0 warnings | Verified |
-| Windows | Published `v0.0.1` `okf-plan-browser_0.0.1_windows-x64.msi` | Not run | Not run | Blocked on interactive Windows host |
-| Linux | Published `v0.0.1` `okf-plan-browser_0.0.1_linux-x64.deb` and `.AppImage` | Not run | Not run | Blocked on interactive Linux host |
+| Windows | Published `v0.0.2` `okf-plan-browser_0.0.2_windows-x64.msi` | Not run | Not run | Blocked on interactive Windows host |
+| Linux, x86_64 Ubuntu 22.04 / glibc 2.35 | Published `v0.0.2` `okf-plan-browser_0.0.2_linux-x64.deb` and `.AppImage` | AppImage and installed `.deb` binary launched on Oklahoma through trusted X11 forwarding to XQuartz | AppImage native dialog loaded the prepared project as 5 Plans and 0 Epics with 0 warnings; persisted packaged-app state confirmed the counts, and the installed binary reopened that active project | Verified; `.deb` installed and removed cleanly |
 
 Intel macOS is not supported and is omitted from the validation matrix. The release workflow still
 contains a legacy `x86_64-apple-darwin` job, but that job does not make Intel a supported TD-03 target.
-The Windows, AppImage, and Debian packages are available from the [v0.0.1 release](https://github.com/jhwohlgemuth/okf-plan-browser/releases/tag/v0.0.1). A passing build job is not a substitute for launching each artifact and exercising its folder dialog.
+The Windows, AppImage, and Debian packages are available from the [v0.0.2 release](https://github.com/jhwohlgemuth/okf-plan-browser/releases/tag/v0.0.2). A passing build job is not a substitute for launching each artifact and exercising its folder dialog.

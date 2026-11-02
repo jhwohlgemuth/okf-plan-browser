@@ -3,15 +3,20 @@
 | Order | Plan | Difficulty | Impact | Outcome |
 |---|---|---|---|---|
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
-| 2 | [linux-release-exports.md](linux-release-exports.md) | medium | high | Verified Debian and AppImage release downloads |
-| 3 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
-| 4 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
-| 5 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
+| 2 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
+| 3 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
+| 4 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
 ## Portfolio currency review
 
+- 2026-11-02 — Reconciled the Linux validation lane against the latest public `v0.0.2` assets.
+  Oklahoma is x86_64 Ubuntu 22.04 with glibc 2.35 and working trusted X11 forwarding into
+  XQuartz. Both checksum sidecars passed; the AppImage native import loaded 5 Plans and 0 Epics
+  with 0 warnings; and the `.deb` installed, launched the persisted active project, and was removed
+  cleanly. Retired the completed Linux release-export plan. Four executable plans remain, and
+  TD-03 is blocked only on an interactive Windows host.
 - 2026-11-02 — Completed and retired the planning-skill Waza outcome at `097d187`. CI run
   41383771234 passed the offline gate; authorized `grok-4.7` trials pass all seven artifact
   cases and natural routing, and the explicit no-skill baseline records zero skill invocations.
@@ -19,9 +24,8 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 - 2026-11-01 — Reviewed all seven executable plans at `0c4e097` against current code, tests,
   documentation, recent history, published `v0.0.1` evidence, and recorded external prerequisites.
   The planning-skill distribution and Waza outcomes subsequently completed and were retired. TD-03,
-  LX-02, WG-01/02, SC-01/02, and HB-01/02 still require interactive hosts or credentials;
-  no remaining plan is newly obsolete, and the reconciled dependency network and execution lanes
-  remain current.
+  the catalog plans, and the cask plan then still required interactive hosts or credentials; later
+  Linux validation is recorded in the current review above.
 - 2026-11-01 — PSD-01/02/03 completed: deterministic web and release artifacts, the OpenCode
   catalog, and the portable Codex marketplace install all passed. Validation run 41374458325
   re-downloaded the draft ZIP and checksum, verified their bytes and digest, compared the extracted
@@ -70,6 +74,5 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
   `index.json`, safe same-origin file paths, and a changed version for cache refresh. This does not
   change phase readiness or the release-workflow lock.
 - 2026-10-30 — LX-01 completed in published `v0.0.1` (run 41144436883): five canonical
-  installers and matching checksum sidecars are public. Pruned LX-01; LX-02 and TD-03 now wait
-  on interactive Linux and Windows hosts. The release-workflow lock is free for the remaining
-  distribution phases.
+  installers and matching checksum sidecars are public. The release-workflow lock became free for
+  the remaining distribution phases; later Linux interaction validation is recorded above.

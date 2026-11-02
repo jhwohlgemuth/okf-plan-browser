@@ -25,8 +25,10 @@ tree and lazy-load its assets. TypeScript, lint, focused ingest tests, native te
 
 The mounted Apple Silicon DMG launches and imports this repository as 3 plans plus 1 Epic with no
 warnings. [The durable platform record](../docs/desktop-ingest.md) names the artifact and distinguishes
-observed results from the Windows and Linux installer rows that now have published `v0.0.1` artifacts
-but still need interactive hosts.
+observed results from the Windows and Linux installer rows. The published Linux `v0.0.2` AppImage
+launches on Oklahoma and imports the prepared project as 5 Plans and 0 Epics with 0 warnings; the
+`.deb` installs, launches that persisted active project, and removes cleanly. Windows still needs
+an interactive host.
 
 # Boundaries
 
@@ -39,8 +41,8 @@ but still need interactive hosts.
 
 - TD-01 and TD-02 are complete and pruned after preserving their evidence in code, tests, and
   `docs/desktop-ingest.md`.
-- TD-03 is blocked on interactive hosts for Windows and Linux. The `v0.0.1` release artifacts are published; Apple
-  Silicon is complete.
+- TD-03 remains blocked on an interactive Windows host. Linux `.deb` and AppImage interaction is
+  verified on Oklahoma. The `v0.0.2` release artifacts are published and Apple Silicon is complete.
 
 # Decisions
 
@@ -51,8 +53,8 @@ but still need interactive hosts.
 
 # Validation
 
-Launch the published release installers on Windows and Linux; load a real project folder
-containing `.wiki`; and record the rendered counts in `docs/desktop-ingest.md`.
+Launch the published MSI on Windows, load a real project folder containing `.wiki`, and record the
+rendered counts in `docs/desktop-ingest.md`. Linux and Apple Silicon evidence is already recorded.
 
 # Acceptance criteria
 
@@ -67,11 +69,11 @@ containing `.wiki`; and record the rendered counts in `docs/desktop-ingest.md`.
 
 - Status: blocked
 - Budget: 3 hours maximum
-- Prerequisites: interactive Windows and Linux hosts; `v0.0.1` artifacts are published
+- Prerequisites: interactive Windows host; Linux evidence is recorded in `docs/desktop-ingest.md`; `v0.0.2` artifacts are published
 - Exact write set: `docs/desktop-ingest.md`
 - Primary integration lock: desktop application packaging
-- Outcome: Complete the actual installer launch and native folder-import matrix for Windows and
-  Linux; Apple Silicon is already verified.
+- Outcome: Complete the Windows installer launch and native folder-import row; Linux and Apple
+  Silicon are already verified.
 - Focused validation: Launch each remaining published release installer, select a project folder that
   contains `.wiki`, and confirm the expected plan and Epic counts render without warnings.
 - Handoff: Record the artifact names and the smoke result, then delete this plan once its criteria hold.

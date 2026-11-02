@@ -66,14 +66,14 @@
 
 ## Implementation — Desktop folder ingest
 
-- Plan: `.wiki/tauri-desktop-ingest.md`; active phase: TD-03; state: blocked on remaining external installer validation.
+- Plan: `.wiki/tauri-desktop-ingest.md`; active phase: TD-03; state: blocked on remaining Windows installer validation.
 - Authorized scope and decisions: Execute TD-01, TD-02, then TD-03; preserve browser ingest and Tauri 1.x; use the native route only when the Tauri bridge is present.
 - Baseline and local work: `bd33614`; clean worktree at phase start; no CodeGraph index. The Apple Silicon WKWebView lacked `showDirectoryPicker`, and its directory-input fallback omitted the hidden `.wiki` child from a selected project folder.
 - Verified state: Tauri 1.8.3 now opens a recursively scoped native directory dialog, reads only the selected wiki tree, and lazy-loads scope-checked assets. Typecheck and lint passed; all 116 unit tests, 6 native tests, and the integrity browser suite (26 passed, 16 expected viewport skips) passed; `npm run tauri:build` produced the Apple Silicon app and DMG. Launching `OKF Plan Browser_1.0.0_aarch64.dmg` and importing the repository produced 3 plans plus 1 Epic with no warnings. Evidence: `docs/desktop-ingest.md`.
-- Remaining work: Launch and exercise the published `v0.0.1` artifacts on Windows and Linux, record host details and results, then retire the plan. Intel macOS is not supported.
+- Remaining work: Launch and exercise the published `v0.0.2` MSI on Windows, record that row, then retire the plan. Intel macOS is not supported; Linux `.deb` and AppImage validation is complete in `docs/desktop-ingest.md`.
 - Budget: TD-01 and TD-02 completed within their phase budgets; TD-03 retains its external-host validation budget.
-- Blockers / failed approaches: The packages are published, but no interactive Windows or Linux hosts are available in this workspace. CI compilation does not prove installer interaction.
-- Next action: Download the published packages to Windows and Linux hosts and run the TD-03 smoke matrix.
+- Blockers / failed approaches: No interactive Windows host is available. CI compilation does not prove installer interaction.
+- Next action: Run the `v0.0.2` MSI smoke on an interactive Windows host.
 
 ## Implementation — Portfolio persistence and refresh coordination
 
@@ -85,17 +85,6 @@
 - Budget: Both phases completed within their five-hour active-time budgets.
 - Blockers / failed approaches: The first all-project browser run could not bind the sandboxed preview port; the approved local-server run passed. No implementation blocker remains.
 - Next action: Review and commit the implementation when desired.
-
-## Implementation — Standalone release artifacts
-
-- Plan: `.wiki/linux-release-exports.md`; active phase: LX-02; state: blocked on interactive Linux host validation.
-- Authorized scope and decisions: Require both Linux exports and every existing desktop installer on GitHub Releases before publication; generate release checksums. Preserve the existing release targets, including the legacy Intel DMG.
-- Baseline and local work: `8e9287a`; the four distribution plans and portfolio index edits were pre-existing uncommitted work from the planning request. This implementation changed `.github/workflows/release.yml`, `CONTRIBUTING.md`, this progress section, and LX-01 evidence.
-- Verified state: [run 41144436883](https://github.com/jhwohlgemuth/okf-plan-browser/actions/runs/41144436883) at `346ce14` passed CI, all four packaging/upload jobs, and publication. The public [`v0.0.1` release](https://github.com/jhwohlgemuth/okf-plan-browser/releases/tag/v0.0.1) has five canonical installers plus five `.sha256` sidecars; each sidecar's checksum matches the corresponding GitHub asset digest. LX-01 is complete. Acorn-style `version`, `check-version`, and `release-version` Make targets are on `main`. The Tauri action also uploaded redundant default-named bundles; a follow-up workflow change uses the CLI directly on future releases.
-- Remaining work: Run Linux installation, AppImage launch, and native folder-import smoke tests on an interactive host, and record the observed distribution and support floor for LX-02.
-- Budget: LX-01 completed within its five-hour active-time budget; LX-02 retains its five-hour budget. External CI waiting did not count as active work.
-- Blockers / failed approaches: No interactive Linux host is available in this workspace. Earlier API and draft download gates failed before publication; per-platform checksum sidecars resolved the release gate.
-- Next action: Download the two canonical Linux packages and sidecars to a supported interactive Linux host, verify checksums, install and remove the `.deb`, launch the AppImage, and exercise folder import.
 
 ## Implementation — Planning skill Waza workflow
 
