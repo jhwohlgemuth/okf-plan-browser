@@ -92,6 +92,17 @@ async function storedHandleKeys(page: Page) {
   });
 }
 
+test('repository refresh labels expose their full names as titles', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sidebar is a drawer on small screens');
+  const label = 'github.com/research-enablement/okf-plan-browser (main)';
+  await page.goto('/home');
+  await seedRemoteRepos(page, [{ id: 'long-remote', label, project: 'research-enablement/okf-plan-browser' }]);
+  await page.reload();
+
+  await expect(page.getByRole('complementary', { name: 'Primary navigation' })
+    .getByText(label, { exact: true })).toHaveAttribute('title', label);
+});
+
 test('refresh re-reads a stored folder handle', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'sidebar is a drawer on small screens');
   await page.goto('/home');

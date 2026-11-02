@@ -42,7 +42,7 @@ Write the note after each phase and before an expected handoff; checkpoint withi
 - Recheck changed behavior and affected dependencies. Run broader checks at integration boundaries or when risk justifies them; do not skip required validation for token savings or rerun successful checks without a relevant change.
 - Before retrying a failed approach, state what changed and why the next attempt can succeed. If two consecutive attempts produce the same failure with no new evidence, stop that approach, record it, and use a materially different approach or expose the blocker. Do not busy-poll unavailable prerequisites.
 - Continue until the authorized outcome is complete, all eligible work is blocked, the user stops work, or an actual execution limit requires a handoff. Save a checkpoint at limits; do not imply that another run has been scheduled.
-- Report substantive progress and newly discovered risks concisely. At handoff, return the progress path, completed outcome, validation results, remaining work, and exact next action.
+- Report substantive progress and newly discovered risks concisely. At handoff, return the progress path, completed outcome, validation results, remaining work, and exact next action. After executing any plan phase or group of phases, also include `Git commit message: <summary>` on one physical line. Write the summary in sentence case and make it cover the completed work across all phases executed in that handoff.
 
 ## Resume prompt
 

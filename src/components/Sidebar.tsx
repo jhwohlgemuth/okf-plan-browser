@@ -157,7 +157,7 @@ export function Sidebar({ variant = 'desktop', homeRef, onNavigate }: SidebarPro
           {repos.map(r => (
             <div key={r.id} className="group flex items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: r.color }} />
-              <span className="truncate font-mono">{r.label}</span>
+              <span title={r.label} className="truncate font-mono">{r.label}</span>
               <span className="ml-auto text-od-muted">{r.planCount}</span>
               {!isDemoData && (
                 <button

@@ -75,6 +75,12 @@ const PROMPTS = ([
     command: 'Use $planning to execute phase <PHASE-ID> in .wiki/<plan>.md or .wiki/<plan>/index.md.',
   },
   {
+    category: 'Implement', icon: GitMerge,
+    title: 'Write a commit message',
+    description: 'Summarize completed plan or phase work as one sentence-case line ready to paste into Git.',
+    command: 'Use $planning to inspect the completed plan or phase work in the current worktree and its validation evidence. Return only a one-line Git commit message in sentence case that summarizes all completed work.',
+  },
+  {
     category: 'Review', icon: Network,
     title: 'Review the portfolio',
     description: 'Rank remaining work and reconcile dependencies, indexes, and parallel execution lanes.',

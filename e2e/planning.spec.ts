@@ -101,6 +101,15 @@ test('copies an ordered portfolio briefing prompt', async ({ page, context }, in
   expect(copied).toContain('/planning-skill/SKILL.md');
   expect(copied).toContain('/planning-skill.zip');
   expect(copied).toContain('start a new agent session');
+
+  const commitPrompt = page.getByRole('article').filter({
+    has: page.getByRole('heading', { name: 'Write a commit message' }),
+  });
+  await commitPrompt.getByRole('button', { name: 'Copy write a commit message command' }).click();
+  const commitMessagePrompt = await page.evaluate(() => navigator.clipboard.readText());
+  expect(commitMessagePrompt).toContain('Return only a one-line Git commit message in sentence case');
+  expect(commitMessagePrompt).toContain('summarizes all completed work');
+  expect(commitMessagePrompt).toContain('Official planning skill guide and download:');
 });
 
 test('filters planning prompts by category', async ({ page }, info) => {
@@ -108,13 +117,13 @@ test('filters planning prompts by category', async ({ page }, info) => {
   await page.goto('/planning');
 
   const filters = page.getByRole('group', { name: 'Filter planning prompts' });
-  await expect(page.getByRole('article')).toHaveCount(10);
+  await expect(page.getByRole('article')).toHaveCount(11);
   await filters.getByRole('button', { name: 'Write 2' }).click();
   await expect(filters.getByRole('button', { name: 'Write 2' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('article')).toHaveCount(2);
   await expect(page.getByRole('heading', { name: 'Write a draft' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Resume a draft' })).toBeVisible();
 
-  await filters.getByRole('button', { name: 'All 10' }).click();
-  await expect(page.getByRole('article')).toHaveCount(10);
+  await filters.getByRole('button', { name: 'All 11' }).click();
+  await expect(page.getByRole('article')).toHaveCount(11);
 });
