@@ -4,22 +4,24 @@
 |---|---|---|---|---|
 | 1 | [tauri-desktop-ingest.md](tauri-desktop-ingest.md) | high | critical | Packaged desktop ingest verification |
 | 2 | [linux-release-exports.md](linux-release-exports.md) | medium | high | Verified Debian and AppImage release downloads |
-| 3 | [planning-skill-waza-workflow.md](planning-skill-waza-workflow.md) | medium | high | Waza development and behavioral testing for the planning skill |
-| 4 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
-| 5 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
-| 6 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
+| 3 | [winget-publication.md](winget-publication.md) | medium | high | Windows Package Manager catalog entry |
+| 4 | [homebrew-cask-publication.md](homebrew-cask-publication.md) | high | high | Apple Silicon Homebrew cask |
+| 5 | [scoop-extra-publication.md](scoop-extra-publication.md) | medium | medium | Scoop Extras manifest and Windows asset |
 
 See [dependency network](plan-network.md) and [execution lanes](parallel-execution.md).
 
 ## Portfolio currency review
 
+- 2026-11-02 — Completed and retired the planning-skill Waza outcome at `097d187`. CI run
+  41383771234 passed the offline gate; authorized `grok-4.7` trials pass all seven artifact
+  cases and natural routing, and the explicit no-skill baseline records zero skill invocations.
+  Five executable plans remain; their blockers and execution lanes are unchanged.
 - 2026-11-01 — Reviewed all seven executable plans at `0c4e097` against current code, tests,
   documentation, recent history, published `v0.0.1` evidence, and recorded external prerequisites.
-  The planning-skill distribution plan subsequently completed and was retired. TD-03,
+  The planning-skill distribution and Waza outcomes subsequently completed and were retired. TD-03,
   LX-02, WG-01/02, SC-01/02, and HB-01/02 still require interactive hosts or credentials;
-  PWZ-02/03 require authorized model access and PWZ-04 requires an observed workflow run. No plan
-  is newly obsolete; six executable plans remain, and the reconciled dependency network and
-  execution lanes remain current.
+  no remaining plan is newly obsolete, and the reconciled dependency network and execution lanes
+  remain current.
 - 2026-11-01 — PSD-01/02/03 completed: deterministic web and release artifacts, the OpenCode
   catalog, and the portable Codex marketplace install all passed. Validation run 41374458325
   re-downloaded the draft ZIP and checksum, verified their bytes and digest, compared the extracted
@@ -67,15 +69,7 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 - 2026-10-30 — Extended PSD-01 after verifying OpenCode v2's native HTTP catalog contract:
   `index.json`, safe same-origin file paths, and a changed version for cache refresh. This does not
   change phase readiness or the release-workflow lock.
-- 2026-10-30 — Added the planning-skill Waza outcome after checking the canonical skill, all 16
-  passing validator tests, absent Waza files and local binary, the `my-shell-setup` development
-  pattern, and the official v0.39.1 separated-workspace guidance. PWZ-01 is ready; model-backed
-  validation remains explicit and credential-dependent. No existing phase completed; seven
-  executable outcomes remain.
 - 2026-10-30 — LX-01 completed in published `v0.0.1` (run 41144436883): five canonical
   installers and matching checksum sidecars are public. Pruned LX-01; LX-02 and TD-03 now wait
   on interactive Linux and Windows hosts. The release-workflow lock is free for the remaining
   distribution phases.
-- 2026-10-30 — PWZ-01 completed in the current worktree: Waza v0.39.1 passed schema, strict
-  coverage, preflight, and mock fixture wiring; 16 validator tests passed. PWZ-02/03 await
-  authorized model-backed trials; PWZ-04 awaits a GitHub Actions run of the new workflow.

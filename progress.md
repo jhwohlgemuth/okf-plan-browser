@@ -99,14 +99,14 @@
 
 ## Implementation — Planning skill Waza workflow
 
-- Plan: `.wiki/planning-skill-waza-workflow.md`; active phase: none; state: blocked on external prerequisites.
-- Authorized scope and decisions: Implement the separated Waza workspace and credential-free gates. The plan requires explicit authorization for model-backed trials; the CI run requires a committed branch.
-- Baseline and local work: `35c2eab` was clean at start. The Waza files, Make targets, documentation, and CI workflow are uncommitted. `src/pages/PlanningPage.tsx` and `e2e/planning.spec.ts` changed independently during this session and were left untouched.
-- Verified state: Waza v0.39.1 at `/tmp/waza-v0.39.1` matched the official SHA-256. `make planning-skill-test WAZA=/tmp/waza-v0.39.1` passed, including 10/10 static requirement coverage, both preflights, and a 1/1 mock fixture task. `python3 -m unittest discover -s .agents/skills/planning/scripts -p 'test_*.py'` passed 16 tests. A temporary broken mock task exited 1; a temporary program-grader fixture passed. These are harness checks, not observed planning-skill behavior.
-- Remaining work: PWZ-02 and PWZ-03 require model-backed task trials, artifact/diff review, and preserved results. PWZ-04 requires an observed GitHub Actions run of the new workflow. A planning-specific 1,500-token limit makes Waza readiness pass at 1,333 tokens; the 500-token soft warning remains.
-- Budget: PWZ-01 implementation completed within the five-hour ceiling; no active time spent on blocked external validation.
-- Blockers / failed approaches: No model-backed trial was started because the plan requires explicit authorization. The workflow has not been committed, so no GitHub Actions run exists. The first negative-injection attempt omitted HOME and tested startup failure; the corrected attempt failed on the intended broken fixture pattern.
-- Next action: After model-run authorization and provider access, run `make planning-skill-test-real WAZA=/tmp/waza-v0.39.1`, inspect every task result and file diff, and update PWZ-02/03. After the workflow is committed, inspect its GitHub Actions run for PWZ-04.
+- Plan: retired after PWZ-01/02/03/04/05/06; active phase: none; state: complete.
+- Authorized scope and decisions: Run one model-backed trial per task through GitHub Copilot SDK with CLI model override `grok-4.7`, including provider usage. Keep routing, injected behavior, and truly skill-free baselines distinct; repair validation defects in bounded phases.
+- Baseline and local work: `097d187`; the Waza evaluation contracts, real-run interface, contributor documentation, plan surfaces, and durable handoff were updated. Real JSON and retained-workspace paths are preserved under ignored `results/planning/`.
+- Verified state: Waza v0.39.1 with GitHub Copilot model `grok-4.7` passed all three portfolio cases and all four implementation/drafting cases after two grader-contract repairs. Focused repair results are at `results/planning/2026-11-02T151459.570/`. The narrowed implicit-routing case passed at 1.00 in `results/planning/routing/2026-11-02T153132.559/`; the explicit `--no-skills` review baseline passed with zero recorded skill invocations in `results/planning/baseline/2026-11-02T153205.369/`. GitHub Actions run 41383771234 passed the pinned offline gate. Final local validation passed readiness, 10/10 strict coverage, both preflights, mock wiring, 18 planning-validator tests, four grader regression tests, wiki validation, and diff checks.
+- Remaining work: None; the plan was retired from the portfolio, dependency network, and execution lanes.
+- Budget: All phases and bounded repairs completed within their five-hour active-time ceilings; provider and CI waiting were external time.
+- Blockers / failed approaches: Built-in Waza `--baseline` still discovered planning in this separated workspace, so the real target now records explicit `--no-skills` and injected runs separately. The original implicit routing prompt timed out after both 300 and 600 seconds despite a passing invocation grader; the repaired read-only routing prompt finished in 1m40s. Program graders verify final artifacts, not transient edits.
+- Next action: None; review and commit the completed Waza evaluation workflow when desired.
 
 ## Implementation — Planning skill web distribution
 

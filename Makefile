@@ -41,8 +41,10 @@ build: ## Production web build into dist/
 ci: audit lint typecheck test build ## Run everything CI runs, locally
 
 WAZA ?= waza
+WAZA_MODEL ?=
 PLANNING_SKILL := .agents/skills/planning
 PLANNING_EVAL := evals/planning
+PLANNING_MODEL_FLAG := $(if $(WAZA_MODEL),--model $(WAZA_MODEL),)
 
 planning-skill-check: ## Check planning skill and all Waza specs without model calls
 	$(WAZA) check $(PLANNING_SKILL)
@@ -51,6 +53,7 @@ planning-skill-check: ## Check planning skill and all Waza specs without model c
 	$(WAZA) preflight $(PLANNING_EVAL)/routing.yaml
 
 planning-skill-test: planning-skill-check ## Run credential-free Waza harness check
+	python3 -m unittest evals.planning.graders.test_graders
 	@set -eu; tmp=$$(mktemp -d /tmp/planning-waza.XXXXXX); \
 	  TMPDIR=/tmp $(WAZA) run $(PLANNING_EVAL)/mock.yaml --output-dir "$$tmp"; \
 	  echo "Mock harness results: $$tmp (wiring only)"
@@ -59,8 +62,9 @@ planning-skill-dev: ## Open Waza interactive development for planning skill
 	$(WAZA) dev $(PLANNING_SKILL)/SKILL.md
 
 planning-skill-test-real: ## Run opt-in model-backed planning evals
-	$(WAZA) run $(PLANNING_EVAL)/routing.yaml --no-cache --output-dir results/planning
-	$(WAZA) run $(PLANNING_EVAL)/eval.yaml --baseline --no-cache --output-dir results/planning
+	$(WAZA) run $(PLANNING_EVAL)/routing.yaml $(PLANNING_MODEL_FLAG) --no-cache --output-dir results/planning/routing
+	$(WAZA) run $(PLANNING_EVAL)/eval.yaml $(PLANNING_MODEL_FLAG) --no-skills --no-cache --output-dir results/planning/baseline
+	$(WAZA) run $(PLANNING_EVAL)/eval.yaml $(PLANNING_MODEL_FLAG) --no-cache --output-dir results/planning/skills
 
 visual: ## Run visual regression tests (PW_CHANNEL=msedge to use Edge)
 	npm run test:visual

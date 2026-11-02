@@ -7,7 +7,6 @@ sets intersect, even when their named locks differ.
 |---|---|---|
 | [Desktop ingest](tauri-desktop-ingest.md) | desktop application packaging | TD-03 |
 | [Linux release exports](linux-release-exports.md) | Linux installer validation | LX-02 |
-| [Planning skill Waza workflow](planning-skill-waza-workflow.md) | portfolio suite; workflow suite; skill CI | PWZ-02; PWZ-03; PWZ-04 |
 | [Scoop Extras](scoop-extra-publication.md) | release workflow; Scoop bucket manifest | SC-01; SC-02 |
 | [WinGet](winget-publication.md) | WinGet package identity; WinGet submission | WG-01; WG-02 |
 | [Homebrew cask](homebrew-cask-publication.md) | macOS release signing; Homebrew cask definition | HB-01; HB-02 |

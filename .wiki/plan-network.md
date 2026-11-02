@@ -7,9 +7,6 @@
 - [Linux release exports](linux-release-exports.md): LX-01 is complete; LX-02 requires an
   interactive Linux host for the published `.deb` and `.AppImage`. Its folder-import observation supplies the
   Linux evidence for TD-03.
-- [Planning skill Waza workflow](planning-skill-waza-workflow.md): The offline runner and both
-  suites are implemented. PWZ-02/03 await authorized model-backed trials; PWZ-04 awaits a
-  GitHub Actions run of the new offline workflow.
 - [Scoop Extras](scoop-extra-publication.md): SC-01 needs a Windows host for the published MSI; SC-02 needs a
   working Scoop asset and Windows native-ingest smoke evidence from TD-03.
 - [WinGet](winget-publication.md): WG-01 needs Windows native-ingest smoke

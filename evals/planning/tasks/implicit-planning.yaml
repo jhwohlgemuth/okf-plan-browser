@@ -1,7 +1,7 @@
 id: implicit-planning
 name: Implicit planning and drafting routing
 inputs:
-  prompt: "Continue the article draft from progress.md, checking each source claim and recording what remains unresolved."
+  prompt: "Read progress.md for the article draft and report its recorded next action only. Do not edit files or continue the draft."
 expected:
   should_trigger: true
 graders:

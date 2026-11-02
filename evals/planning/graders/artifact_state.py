@@ -20,7 +20,7 @@ require(read("guard.txt") == "leave this alone\n", "guard changed")
 if mode == "implementation":
     code = read("calc.py")
     progress = read("progress.md")
-    require("def sub(" in code and "return a - b" in code, "subtraction absent")
+    require("def subtract(" in code and "return a - b" in code, "subtraction absent")
     require("## Unrelated work\nKeep this section." in progress, "unrelated progress removed")
     require("CALC-02" in progress and "test" in progress.lower(), "handoff incomplete")
     result = subprocess.run(["python3", "-m", "unittest", "discover", "-s", "tests"], cwd=root, capture_output=True, text=True)

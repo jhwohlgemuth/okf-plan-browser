@@ -57,11 +57,11 @@ Install [Waza v0.39.1](https://github.com/microsoft/waza/releases/tag/v0.39.1) o
 | Target | Purpose |
 |---|---|
 | `make planning-skill-check` | Readiness, strict trigger coverage, and preflight for behavior and routing specs; no model calls. |
-| `make planning-skill-test` | The above plus a mock fixture-copy task; this proves harness wiring only. |
+| `make planning-skill-test` | The above plus program-grader regressions and a mock fixture-copy task; the mock result proves harness wiring only. |
 | `make planning-skill-dev` | Interactive development for the canonical `SKILL.md`. |
-| `make planning-skill-test-real` | Opt-in Copilot SDK routing and baseline/skill artifact suites; requires authentication, model access, and awareness of provider usage. |
+| `make planning-skill-test-real WAZA_MODEL=<model-id>` | Opt-in Copilot SDK routing, explicit no-skill baseline, and injected-skill artifact suites; requires authentication, model access, and awareness of provider usage. |
 
-The behavior suite injects the skill body and grades final artifacts in isolated miniature workspaces. The routing suite disables body injection and checks natural skill invocation. Real results are written under ignored `results/planning/`; record the Waza version, model, per-task results, file diffs, and limitations when reviewing them. Program graders inspect final files and do not prove that transient forbidden edits never occurred. Preflight warns about unavailable runtime prerequisites and does not execute those graders. CI runs only the offline target and validator unit tests with a checksum-verified v0.39.1 binary.
+The behavior suite injects the skill body and grades final artifacts in isolated miniature workspaces. The routing suite disables body injection and checks natural skill invocation. The real target records routing, explicit `--no-skills` baseline, and injected-skill runs separately under ignored `results/planning/`; use `WAZA_MODEL` to override the specs' default model, and verify that baseline results contain no planning-skill invocation. Record the Waza version, model, per-task results, file diffs, and limitations when reviewing them. Program graders inspect final files and do not prove that transient forbidden edits never occurred. Preflight warns about unavailable runtime prerequisites and does not execute those graders. CI runs only the offline target and validator unit tests with a checksum-verified v0.39.1 binary.
 
 ## Deploy to GitHub Pages
 

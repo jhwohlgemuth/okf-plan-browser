@@ -1,7 +1,7 @@
 id: resume-implementation
 name: Resume a bounded implementation phase
 inputs:
-  prompt: "Resume and execute the phased implementation from progress.md. Complete only CALC-02 in the miniature project, run the focused unittest, and update progress.md with verified state and next action. Preserve guard.txt and the unrelated progress section."
+  prompt: "Resume and execute the phased implementation from progress.md. Complete only CALC-02 by adding subtract(a, b) in calc.py with focused unittest coverage, run the focused unittest, and update progress.md with verified state and next action. Preserve guard.txt and the unrelated progress section."
   files:
     - path: progress.md
       content: "## Unrelated work\nKeep this section.\n\n## Implementation — Calculator\n- Plan: .wiki/calculator.md; active phase: CALC-02; state: in progress.\n- Verified state: CALC-01 helper exists.\n- Remaining work: Add a subtraction operation.\n- Next action: Edit calc.py and run tests.\n"
