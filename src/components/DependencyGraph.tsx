@@ -268,6 +268,26 @@ export function DependencyGraph({
     const viewport = mini.append('rect').attr('fill', 'none').attr('stroke', 'hsl(var(--ring))').attr('stroke-width', 1);
 
     draw = () => {
+      // Keep interactive nodes out from under the overlaid graph controls and minimap.
+      const nodeInset = 42;
+      const controlsRight = Math.min(width - nodeInset, 235);
+      const controlsBottom = 82;
+      const minimapLeft = Math.max(nodeInset, width - 190);
+      const minimapTop = Math.max(nodeInset, height - 125);
+      for (const item of nodes) {
+        item.x = Math.max(nodeInset, Math.min(width - nodeInset, item.x ?? width / 2));
+        item.y = Math.max(nodeInset, Math.min(height - nodeInset, item.y ?? height / 2));
+        if (item.x < controlsRight && item.y < controlsBottom) {
+          const moveRight = controlsRight - item.x;
+          const moveDown = controlsBottom - item.y;
+          if (moveRight < moveDown) item.x = controlsRight; else item.y = controlsBottom;
+        }
+        if (item.x > minimapLeft && item.y > minimapTop) {
+          const moveLeft = item.x - minimapLeft;
+          const moveUp = item.y - minimapTop;
+          if (moveLeft < moveUp) item.x = minimapLeft; else item.y = minimapTop;
+        }
+      }
       link.attr('x1', edge => (edge.source as Node).x!).attr('y1', edge => (edge.source as Node).y!)
         .attr('x2', edge => (edge.target as Node).x!).attr('y2', edge => (edge.target as Node).y!);
       edgeLabels.attr('x', edge => ((edge.source as Node).x! + (edge.target as Node).x!) / 2)
