@@ -17,6 +17,10 @@ test('graph nodes and zoom controls work from the keyboard', async ({ page }, in
   expect(names.length).toBeGreaterThan(1);
   expect(names.every(Boolean)).toBe(true);
   expect(new Set(names).size).toBe(names.length);
+  await expect(nodes.first().locator('.plan-id')).toHaveText('API');
+  const planIds = await nodes.locator('.plan-id').allTextContents();
+  expect(planIds.every(id => /^[A-Z]{3}$/.test(id))).toBe(true);
+  expect(names.every(name => / — ID [A-Z]{3}$/.test(name ?? ''))).toBe(true);
   const accessibilityTree = await graph.ariaSnapshot();
   expect(accessibilityTree).toContain('button "Zoom in"');
   expect(accessibilityTree).toContain('button "Open plan:');
@@ -58,8 +62,15 @@ test('resolved relationships remain readable in light and dark themes', async ({
   await expect(keyboardLegend).toContainText(/Tab\s*\/\s*Shift\+Tab\s*Move focus/);
   await expect(keyboardLegend).toContainText(/Enter\s*\/\s*Space\s*Open or activate/);
   await expect(keyboardLegend).toContainText(/Escape\s*Close navigation or details/);
-  await expect(relationships.getByRole('listitem').first()).toBeVisible();
+  const firstRelationship = relationships.getByRole('listitem').first();
+  await expect(firstRelationship).toBeVisible();
   await expect(relationships.getByText('depends on', { exact: true }).first()).toBeVisible();
+  await expect(firstRelationship).toContainText(/Plan|Epic/);
+  await expect(firstRelationship.getByLabel(/Estimated time remaining/)
+    .or(firstRelationship.getByText(/Coordination record/))).toBeVisible();
+  await expect(firstRelationship).toContainText(/No blocked phases|blocked phase/);
+  await expect(firstRelationship).toContainText(/impact/);
+  await expect(firstRelationship).toContainText(/acorn-/);
   const darkStyles = await relationships.evaluate(element => {
     const style = getComputedStyle(element);
     return { background: style.backgroundColor, color: style.color };
@@ -77,4 +88,66 @@ test('resolved relationships remain readable in light and dark themes', async ({
 
   await page.reload();
   await expect(page.getByText('No resolved dependencies or references.', { exact: true })).toBeVisible();
+});
+
+test('graph search, local controls, preview, and URL state work together', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'interactive graph coverage runs on the desktop layout');
+  await loadDemoGraph(page);
+
+  const graph = page.getByRole('group', { name: 'Plan dependency graph' });
+  const search = page.getByRole('textbox', { name: 'Search graph' });
+  await search.fill('API Versioning Strategy');
+  await expect(graph.locator('[role="button"]')).toHaveCount(1);
+  await search.press('Enter');
+
+  const selected = graph.locator('[role="button"]').first();
+  await expect(selected).toBeFocused();
+  const preview = page.getByRole('region', { name: 'Plan preview' });
+  await expect(preview).toContainText('Implement API Versioning Strategy');
+  const previewStyles = await preview.evaluate(element => {
+    const styles = getComputedStyle(element);
+    return { position: styles.position, border: styles.borderBottomStyle, shadow: styles.boxShadow };
+  });
+  expect(previewStyles.position).toBe('sticky');
+  expect(previewStyles.border).toBe('solid');
+  expect(previewStyles.shadow).not.toBe('none');
+  await expect(selected.locator('.selection-ring')).toHaveAttribute('opacity', '1');
+  await expect.poll(() => new URL(page.url()).searchParams.get('gq')).toBe('API Versioning Strategy');
+  await expect.poll(() => new URL(page.url()).searchParams.get('gplan')).toContain('api-versioning-strategy.md');
+
+  await page.getByRole('button', { name: 'Clear graph search' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('gq')).toBeNull();
+  await expect(graph.locator('[role="button"]')).toHaveCount(7);
+  await page.getByLabel('Neighborhood focus').selectOption('1');
+  await expect.poll(() => new URL(page.url()).searchParams.get('ghops')).toBe('1');
+  await expect(graph.locator('[role="button"][opacity="0.16"]').first()).toBeVisible();
+
+  const beforeArrow = new URL(page.url()).searchParams.get('gplan');
+  await selected.focus();
+  await selected.press('ArrowRight');
+  await expect.poll(() => new URL(page.url()).searchParams.get('gplan')).not.toBe(beforeArrow);
+  await expect(page.locator('header [role="status"]')).toContainText('Selected');
+
+  await page.getByLabel('Graph layout').selectOption('repository');
+  await expect.poll(() => new URL(page.url()).searchParams.get('glayout')).toBe('repository');
+  await page.getByLabel('Graph layout').selectOption('status');
+  await page.goBack();
+  await expect(page.getByLabel('Graph layout')).toHaveValue('repository');
+
+  await page.getByLabel('Show references').click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('gedges')).toBe('dep');
+  await expect(page.getByRole('button', { name: 'Fit graph from minimap' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fit graph from minimap' }).click();
+
+  await page.locator('summary').filter({ hasText: /^Status/ }).click();
+  await page.getByRole('checkbox', { name: 'Status: blocked' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('gstatus')).toBe('blocked');
+  await expect(page.locator('header [role="status"]')).toContainText(/1 of \d+ nodes visible/);
+  await page.getByRole('button', { name: /Clear filters/ }).click();
+
+  await page.getByRole('button', { name: 'Blocked paths' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('gblocked')).toBe('1');
+  await page.reload();
+  await expect(page.getByLabel('Graph layout')).toHaveValue('repository');
+  await expect(page.getByRole('button', { name: 'Blocked paths' })).toHaveAttribute('aria-pressed', 'true');
 });

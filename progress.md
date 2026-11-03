@@ -107,3 +107,14 @@
 - Budget: All three phases completed within their five-hour active-time budgets; workflow queue and execution time were external waiting.
 - Blockers / failed approaches: Run 41366382617 exposed a stale install-page browser assertion; bounded repair PSD-04 updated it, and the exact CI browser command passed 82 tests with 50 expected skips. Run 41369592304 uploaded the planning assets but an unchanged Intel Tauri build exited 1; run 41372691386 then passed the complete gate. Public unauthenticated draft URLs correctly returned 404, so the final workflow verifies its own downloaded draft assets with its scoped token. A local comparison initially included generated `__pycache__`; matching the collector's exclusion fixed the validation scope. The first clean Codex session could not load cloud policy inside the network sandbox; the approved retry passed.
 - Next action: None; review the completed distribution implementation when desired.
+
+## Implementation — Searchable dependency graph
+
+- Plan: retired after GRA-01/02/03; active phase: none; state: complete.
+- Authorized scope and decisions: Implement all eight requested graph improvements while retaining D3, bounded animation frames, graph-local filters, and existing plan-detail behavior.
+- Baseline and local work: `5109e60`; no CodeGraph index. Incorporated the pre-existing entrypoint-derived three-letter graph IDs and their tests.
+- Verified state: Pure transforms cover search, metadata and blocked-path filters, edge filtering, neighborhoods, connections, and stable layouts. The UI adds search cycling, graph-local status/repository/kind/tag/OS filters, edge toggles, one/two-hop emphasis, force/dependency/repository/status/OS layouts, fit/center/minimap navigation, directional edges, previews, URL history, arrow-key relationship movement, live announcements, and an ordered relationship list. Typecheck, lint, all 133 unit tests, production build, and all three desktop graph Playwright scenarios passed. Evidence: `docs/dependency-graph.md`.
+- Remaining work: None.
+- Budget: GRA-01/02/03 each completed within its five-hour active-time budget.
+- Blockers / failed approaches: Node selection initially replaced the SVG trigger before detail focus restoration; explicit ID-based restoration fixed it. A controlled-checkbox Playwright assertion was changed to await URL state after activation. The final sandboxed preview-server bind returned `EPERM`; the authorized rerun passed. No current blocker.
+- Next action: Review and commit the completed graph usability implementation when desired.

@@ -11,6 +11,11 @@ See [dependency network](plan-network.md) and [execution lanes](parallel-executi
 
 ## Portfolio currency review
 
+- 2026-11-03 — GRA-01/02/03 completed: the graph now has stable three-letter IDs, local search and
+  filters, focused neighborhoods, edge controls, five layouts, fit/center/minimap navigation,
+  previews, shareable URL state, and accessible relationship navigation. Unit, type, lint, build,
+  and desktop graph browser checks passed; durable behavior is in `docs/dependency-graph.md` and the
+  plan was retired. The four pre-existing plans and their external prerequisites are unchanged.
 - 2026-11-02 — Reconciled the Linux validation lane against the latest public `v0.0.2` assets.
   Oklahoma is x86_64 Ubuntu 22.04 with glibc 2.35 and working trusted X11 forwarding into
   XQuartz. Both checksum sidecars passed; the AppImage native import loaded 5 Plans and 0 Epics
