@@ -51,7 +51,7 @@ function buildSteps({ hasPlan, hasPhases, hasRelationships, hasRepos, isDemoData
     step('/phases', '[data-tour="phase-board"]', 'Track phases and Epics', hasPhases ? 'The board groups executable phases by status. Epics appear separately above the board and link to their plans.' : 'Epics appear separately from the phase board. When plans contain phases, the board groups them by status.'),
     step('/graph', '[data-tour="dependency-graph"]', 'Explore relationships', 'Nodes represent plans. Use the controls to zoom, drag nodes, and select one to open its details.'),
     ...(hasRelationships ? [step('/graph', '[data-tour="graph-relationships"]', 'Resolved links', 'This list explains the dependency and reference lines in the graph. Select a relationship to open its target plan.')] : []),
-    step('/search', '[data-tour="search-controls"]', 'Search plans and assets', 'Search plan text, tags, images, and PDFs. Switch categories to choose what you are looking for.'),
+    step('/search', '[data-tour="search-controls"]', 'Search plans and assets', 'Search plan text, tags, images, PDFs, and Pikchr diagrams. Switch categories to choose what you are looking for.'),
     step('/planning', '[data-tour="planning-install"]', 'Install the planning skill', 'Download the complete skill folder and place it in your repository so an agent can use the planning workflows.'),
     step('/planning', '[data-tour="planning-prompts"]', 'Choose a planning prompt', 'Filter by task, then copy a prompt to create plans, implement phases, write drafts, or review evidence.'),
     step('/planning', '[data-tour="planning-package"]', 'Inspect the skill package', 'Download the ZIP or inspect the bundled instructions, references, and validator before using the skill.'),

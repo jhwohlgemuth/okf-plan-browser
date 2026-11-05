@@ -73,7 +73,7 @@ export interface WikiRepo {
   label:     string;
   color:     RepoColor;
   planCount: number;
-  assets?:   string[];     // image and PDF paths relative to .wiki
+  assets?:   string[];     // image, PDF, and diagram paths relative to .wiki
   remote?:   RemoteWikiRef;
 }
 

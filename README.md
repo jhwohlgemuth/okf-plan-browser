@@ -150,7 +150,7 @@ Open `http://localhost:5173` in Chrome or Edge. Click **Open Folder** and pick a
 
 Select **Take a tour** on Home or About for a guided walkthrough. If no plans are loaded, the tour offers to load demo plans first.
 
-Plan details display images inline and let you open image and PDF links. The **Images & PDFs** tab on Search lists viewable assets from the entire `.wiki`, including shared files in `.wiki/_assets/`. Browser folder uploads cache these assets for viewing after reload.
+Plan details display images and Pikchr diagrams inline and let you open image, PDF, and `.pikchr` links. Fenced `pikchr` blocks render directly inside plans. The **Assets** tab on Search lists viewable assets from the entire `.wiki`, including shared files in `.wiki/_assets/`. Browser folder uploads cache these assets for viewing after reload.
 
 Private GitHub repositories should use an expiring fine-grained token limited to the selected repositories with **Contents: read**, saved under **Settings → GitHub**. GitLab tokens are stored per exact host; prefer an expiring project token or a personal token with only `read_repository`. Web tokens are session-only and are disabled on insecure HTTP. The desktop app stores credentials in the operating system credential store and performs authenticated requests outside the webview.
 

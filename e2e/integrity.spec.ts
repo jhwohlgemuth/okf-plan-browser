@@ -356,7 +356,7 @@ test('search options also apply to image and PDF paths', async ({ page }) => {
     { name: 'sample.pdf', text: 'pdf' },
   ]);
   await page.goto('/search');
-  await page.getByRole('tab', { name: 'Images & PDFs' }).click();
+  await page.getByRole('tab', { name: 'Assets' }).click();
   const input = page.getByRole('textbox', { name: 'Search query' });
   const matchCase = page.getByRole('button', { name: 'Match case' });
   const regex = page.getByRole('button', { name: 'Use regular expression' });
@@ -459,7 +459,7 @@ test('wiki extensions become canonical file-type search tags', async ({ page }) 
   await expect(page.getByRole('button', { name: 'PNG', pressed: true })).toHaveAttribute('data-file-type', 'PNG');
   await expect(page.getByRole('button', { name: 'PNG', pressed: true }).locator('svg')).toBeVisible();
   await expect(page.getByRole('button', { name: 'SVG', pressed: false }).locator('svg')).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Images & PDFs', selected: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Assets', selected: true })).toBeVisible();
   await expect(page.getByText('image.png', { exact: true })).toBeVisible();
   await expect(page.getByText('diagram.svg', { exact: true })).toHaveCount(0);
 

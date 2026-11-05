@@ -132,6 +132,7 @@ describe('fetchRemoteWiki GitHub', () => {
           { path: '.wiki/notes.md', type: 'blob', sha: 's3' },
           { path: '.wiki/image-review/_assets/sample.png', type: 'blob', sha: 'image' },
           { path: '.wiki/image-review/_assets/sample.pdf', type: 'blob', sha: 'pdf' },
+          { path: '.wiki/image-review/_assets/sample.pikchr', type: 'blob', sha: 'pikchr' },
           { path: '.wiki/node_modules/skip.md', type: 'blob', sha: 's4' },
           { path: 'README.md', type: 'blob', sha: 's5' },
         ],
@@ -148,7 +149,11 @@ describe('fetchRemoteWiki GitHub', () => {
       forge: 'github', host: 'github.com', project: 'acme/widgets', ref: 'main',
     });
     expect(wiki.files.map(f => f.path).sort()).toEqual(['notes.md', 'plan-one.md', 'sub/plan-two.md']);
-    expect(wiki.assets).toEqual(['image-review/_assets/sample.png', 'image-review/_assets/sample.pdf']);
+    expect(wiki.assets).toEqual([
+      'image-review/_assets/sample.png',
+      'image-review/_assets/sample.pdf',
+      'image-review/_assets/sample.pikchr',
+    ]);
     const parsed = await parseRemoteWiki('acme/widgets', wiki.files);
     expect(parsed.plans.map(p => p.id).sort()).toEqual(['acme/widgets:plan-one.md', 'acme/widgets:sub/plan-two.md']);
   });
@@ -262,6 +267,7 @@ describe('fetchRemoteWiki GitLab', () => {
       'sub/plan-two.md': planTwo,
       'image-review/_assets/sample.webp': 'test webp',
       'image-review/_assets/sample.pdf': 'test pdf',
+      'image-review/_assets/sample.pikchr': 'box "Remote"',
     });
     const requested: string[] = [];
     const tokens: string[] = [];
@@ -282,7 +288,11 @@ describe('fetchRemoteWiki GitLab', () => {
       { path: 'plan-one.md', text: planOne },
       { path: 'sub/plan-two.md', text: planTwo },
     ]);
-    expect(wiki.assets).toEqual(['image-review/_assets/sample.webp', 'image-review/_assets/sample.pdf']);
+    expect(wiki.assets).toEqual([
+      'image-review/_assets/sample.webp',
+      'image-review/_assets/sample.pdf',
+      'image-review/_assets/sample.pikchr',
+    ]);
   });
 
   it('loads a custom-host public project', async () => {

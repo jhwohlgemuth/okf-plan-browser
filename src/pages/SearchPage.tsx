@@ -259,7 +259,7 @@ export function SearchPage() {
         <h1 className="text-base font-semibold text-foreground mb-3">Search</h1>
         <div className="flex gap-1 mb-3" role="tablist" aria-label="Search category">
           <button type="button" role="tab" aria-selected={mode === 'plans'} onClick={() => changeMode('plans')} className={`rounded px-3 py-1.5 text-xs ${mode === 'plans' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Plans</button>
-          <button type="button" role="tab" aria-selected={mode === 'assets'} onClick={() => changeMode('assets')} className={`rounded px-3 py-1.5 text-xs ${mode === 'assets' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Images &amp; PDFs</button>
+          <button type="button" role="tab" aria-selected={mode === 'assets'} onClick={() => changeMode('assets')} className={`rounded px-3 py-1.5 text-xs ${mode === 'assets' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>Assets</button>
         </div>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
@@ -268,7 +268,7 @@ export function SearchPage() {
             aria-invalid={!!searchMatchers.error}
             aria-describedby={searchMatchers.error ? 'search-query-error' : undefined}
             className="pl-10 pr-24 h-10"
-            placeholder={useRegex ? 'Search with a regular expression…' : mode === 'plans' ? 'Search plans… (use + for multiple terms)' : 'Search image and PDF paths…'}
+            placeholder={useRegex ? 'Search with a regular expression…' : mode === 'plans' ? 'Search plans… (use + for multiple terms)' : 'Search asset paths…'}
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
@@ -403,7 +403,7 @@ export function SearchPage() {
 
         {mode === 'assets' && assets.length === 0 && !searchMatchers.error && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <p className="text-sm">No images or PDFs found{activeSearch ? ` for “${activeSearch}”` : ''}</p>
+            <p className="text-sm">No assets found{activeSearch ? ` for “${activeSearch}”` : ''}</p>
           </div>
         )}
         {mode === 'assets' && assets.map(({ repo, path }) => (

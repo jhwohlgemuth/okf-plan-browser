@@ -6,7 +6,8 @@ vi.mock('@/store/planStore', () => ({
   usePlanStore: { getState: () => ({ repos: [] }) },
 }));
 
-import { forgetAllAssets, getAssetUrl, registerAssetFiles } from './wikiAssets';
+import { File as NodeFile } from 'node:buffer';
+import { forgetAllAssets, getAssetText, getAssetUrl, registerAssetFiles } from './wikiAssets';
 
 describe('native wiki assets', () => {
   afterEach(() => {
@@ -26,5 +27,12 @@ describe('native wiki assets', () => {
       rootPath: '/selected/.wiki',
       assetPath: '_assets/diagram.svg',
     });
+  });
+
+  it('reads registered Pikchr assets as source text', async () => {
+    const FileCtor = NodeFile as unknown as typeof File;
+    registerAssetFiles('repo', [{ path: '_assets/diagram.pikchr', file: new FileCtor(['box "Plan"'], 'diagram.pikchr') }]);
+
+    await expect(getAssetText('repo', '_assets/diagram.pikchr')).resolves.toBe('box "Plan"');
   });
 });

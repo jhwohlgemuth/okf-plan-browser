@@ -124,12 +124,13 @@ describe('ingest paths', () => {
     expect(ids(fromTexts)).toEqual(ids(fromList));
   });
 
-  it('imports a folder plan, sibling Markdown, and real image and PDF fixtures', async () => {
+  it('imports a folder plan, sibling Markdown, and viewable asset fixtures', async () => {
     const paths = [
       'index.md', 'image-review/index.md', 'image-review/notes.md',
       '_assets/overview.svg', 'image-review/_assets/sample.svg',
       'image-review/_assets/sample.png', 'image-review/_assets/sample.webp',
       'image-review/_assets/sample.jpg', 'image-review/_assets/sample.pdf',
+      'image-review/_assets/sample.pikchr',
     ];
     const FileCtor = NodeFile as unknown as typeof File;
     const files = paths.map(path => {

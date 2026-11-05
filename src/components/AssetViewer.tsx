@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { createPortal } from 'react-dom';
 import { Image as ImageIcon, X } from 'lucide-react';
 import { getAssetUrl } from '@/lib/wikiAssets';
+import { isPikchrPath } from '@/lib/pikchr';
+import { PikchrAssetDiagram } from './PikchrDiagram';
 
 export interface AssetTarget { repoId: string; path: string }
 
@@ -34,16 +36,27 @@ export function AssetThumbnail({ target }: { target: AssetTarget }) {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  const { url, error } = useAssetUrl(target, visible);
+  const pikchr = isPikchrPath(target.path);
+  const { url, error } = useAssetUrl(target, visible && !pikchr);
   return (
     <span ref={ref} className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-secondary/40" title={error}>
-      {url ? <img src={url} alt="" loading="lazy" className="h-full w-full object-contain" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
+      {pikchr
+        ? <PikchrAssetDiagram target={target} enabled={visible} alt="" compact className="h-full w-full" />
+        : url ? <img src={url} alt="" loading="lazy" className="h-full w-full object-contain" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
     </span>
   );
 }
 
 export function InlineWikiImage({ target, alt, onOpen }: { target: AssetTarget; alt: string; onOpen: () => void }) {
-  const { url, error } = useAssetUrl(target);
+  const pikchr = isPikchrPath(target.path);
+  const { url, error } = useAssetUrl(target, !pikchr);
+  if (pikchr) {
+    return (
+      <button type="button" onClick={onOpen} className="block max-w-full rounded border border-border overflow-hidden p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Open diagram: ${alt || target.path}`}>
+        <PikchrAssetDiagram target={target} alt={alt} className="max-h-96" />
+      </button>
+    );
+  }
   if (error) return <span className="md-broken-link" title={error}>{alt || target.path}</span>;
   if (!url) return <span className="text-xs text-muted-foreground">Loading image…</span>;
   return (
@@ -54,7 +67,8 @@ export function InlineWikiImage({ target, alt, onOpen }: { target: AssetTarget; 
 }
 
 export function AssetViewer({ target, onClose }: { target: AssetTarget; onClose: () => void }) {
-  const { url, error } = useAssetUrl(target);
+  const pikchr = isPikchrPath(target.path);
+  const { url, error } = useAssetUrl(target, !pikchr);
   const pdf = target.path.toLowerCase().endsWith('.pdf');
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -86,7 +100,8 @@ export function AssetViewer({ target, onClose }: { target: AssetTarget; onClose:
         <button ref={closeRef} type="button" onClick={onClose} aria-label="Close asset viewer" className="shrink-0 rounded p-2 hover:bg-accent"><X className="h-4 w-4" /></button>
       </div>
       <div className="flex-1 min-h-0 flex items-center justify-center p-4">
-        {error ? <p className="text-sm text-destructive">{error}</p> : !url ? <p className="text-sm text-muted-foreground">Loading…</p> : pdf
+        {pikchr ? <PikchrAssetDiagram target={target} alt={target.path} className="max-h-full" />
+          : error ? <p className="text-sm text-destructive">{error}</p> : !url ? <p className="text-sm text-muted-foreground">Loading…</p> : pdf
           ? <iframe src={url} title={target.path} className="h-full w-full max-w-6xl bg-white rounded" />
           : <img src={url} alt={target.path} className="max-h-full max-w-full object-contain" />}
       </div>

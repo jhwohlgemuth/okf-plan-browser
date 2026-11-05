@@ -12,6 +12,7 @@ import typescript from 'highlight.js/lib/languages/typescript';
 import yaml from 'highlight.js/lib/languages/yaml';
 import { Check, Clipboard } from 'lucide-react';
 import { InlineWikiImage, type AssetTarget } from './AssetViewer';
+import { PikchrDiagram } from './PikchrDiagram';
 import { planAnchor } from '@/lib/planLinks';
 
 interface Props {
@@ -70,6 +71,20 @@ function CodeBlock({ children }: { children?: ReactNode }) {
   );
 }
 
+function MarkdownPre({ children }: { children?: ReactNode }) {
+  const code = isValidElement<{ className?: string; children?: ReactNode }>(children) ? children : null;
+  const language = /(?:^|\s)language-([^\s]+)/.exec(code?.props.className ?? '')?.[1]?.toLowerCase();
+  if (language === 'pikchr') {
+    const source = nodeText(code?.props.children).replace(/\n$/, '');
+    return (
+      <figure className="pikchr-block flex min-h-24 items-center justify-center overflow-auto rounded-md border border-border bg-background p-4">
+        <PikchrDiagram source={source} alt="Pikchr diagram" className="max-h-[32rem]" />
+      </figure>
+    );
+  }
+  return <CodeBlock>{children}</CodeBlock>;
+}
+
 export function Markdown({ children, resolveLink, resolveImage, openAsset, headingId }: Props) {
   return (
     <div className="md-body">
@@ -78,7 +93,7 @@ export function Markdown({ children, resolveLink, resolveImage, openAsset, headi
         rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true, languages,
           aliases: { js: 'javascript', ts: 'typescript', sh: 'bash', yml: 'yaml', py: 'python', md: 'markdown' } }]]}
         components={{
-          pre: ({ children: c }) => <CodeBlock>{c}</CodeBlock>,
+          pre: ({ children: c }) => <MarkdownPre>{c}</MarkdownPre>,
           h1: ({ children: c }) => <MarkdownHeading level={1} headingId={headingId}>{c}</MarkdownHeading>,
           h2: ({ children: c }) => <MarkdownHeading level={2} headingId={headingId}>{c}</MarkdownHeading>,
           h3: ({ children: c }) => <MarkdownHeading level={3} headingId={headingId}>{c}</MarkdownHeading>,

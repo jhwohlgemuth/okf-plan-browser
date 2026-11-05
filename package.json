@@ -39,6 +39,7 @@
     "highlight.js": "~11.11.0",
     "js-yaml": "^4.1.1",
     "lucide-react": "^0.562.0",
+    "pikchr-wasm": "^2.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",

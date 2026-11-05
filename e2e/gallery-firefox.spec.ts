@@ -3,7 +3,7 @@ import path from 'node:path';
 
 test.use({ browserName: 'firefox' });
 
-test('renders a local wiki image in the Firefox search viewer', async ({ page }, info) => {
+test('renders local wiki images and Pikchr diagrams in Firefox', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'Firefox asset rendering is covered on desktop');
   await page.goto('/home');
   await page.locator('input[type=file]').setInputFiles(path.resolve('e2e/fixtures/gallery-project/.wiki'));
@@ -14,7 +14,7 @@ test('renders a local wiki image in the Firefox search viewer', async ({ page },
   await expect(page.getByText('Loaded 1 plan', { exact: true })).toBeVisible();
 
   await page.getByRole('link', { name: 'Search' }).click();
-  await page.getByRole('tab', { name: 'Images & PDFs' }).click();
+  await page.getByRole('tab', { name: 'Assets' }).click();
   const result = page.getByRole('button', { name: /image-review\/_assets\/sample\.png/ });
   await expect.poll(() => result.locator('img').evaluate(node => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await result.click();
@@ -23,8 +23,15 @@ test('renders a local wiki image in the Firefox search viewer', async ({ page },
   await expect.poll(() => image.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Close asset viewer' }).click();
 
+  const diagramResult = page.getByRole('button', { name: /image-review\/_assets\/sample\.pikchr/ });
+  await expect(diagramResult.locator('[data-pikchr-diagram]')).toBeVisible();
+  await diagramResult.click();
+  const diagram = page.getByRole('dialog', { name: /sample\.pikchr/ }).locator('[data-pikchr-diagram]');
+  await expect.poll(() => diagram.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'Close asset viewer' }).click();
+
   await page.reload();
-  await page.getByRole('tab', { name: 'Images & PDFs' }).click();
+  await page.getByRole('tab', { name: 'Assets' }).click();
   await page.getByRole('button', { name: /image-review\/_assets\/sample\.png/ }).click();
   const restoredImage = page.getByRole('dialog', { name: /sample\.png/ }).getByRole('img');
   await expect.poll(() => restoredImage.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);

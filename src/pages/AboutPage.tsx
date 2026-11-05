@@ -23,6 +23,7 @@ const TECH: Tech[] = [
   { name: 'Lucide',         url: 'https://lucide.dev',                 icon: siLucide,      note: 'Icons' },
   { name: 'Tauri',          url: 'https://tauri.app',                  icon: siTauri,       note: 'Desktop wrapper' },
   { name: 'Markdown',       url: 'https://commonmark.org',             icon: siMarkdown,    note: 'Wiki content format' },
+  { name: 'Pikchr WASM',    url: 'https://pikchr.org',                                      note: 'Local diagram rendering' },
   { name: 'YAML',           url: 'https://yaml.org',                   icon: siYaml,        note: 'Frontmatter' },
 ];
 

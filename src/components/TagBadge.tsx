@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { FileImage, FileText } from 'lucide-react';
+import { FileImage, FileText, Workflow } from 'lucide-react';
 import { getOsLabel, type OsLabelId } from '@/lib/osLabels';
 import {
   siAndroid,
@@ -45,7 +45,7 @@ const ICONS: Partial<Record<OsLabelId, SimpleIcon>> = {
 
 type FileTypeStyle = {
   icon?: SimpleIcon;
-  fallback?: 'image' | 'document';
+  fallback?: 'image' | 'document' | 'diagram';
   className: string;
 };
 
@@ -53,6 +53,7 @@ const FILE_TYPE_STYLES: Record<string, FileTypeStyle> = {
   MD: { icon: siMarkdown, className: 'border-slate-500/45 bg-slate-500/10 text-slate-800 dark:text-slate-200' },
   PDF: { fallback: 'document', className: 'border-red-500/45 bg-red-500/10 text-red-700 dark:text-red-300' },
   PNG: { fallback: 'image', className: 'border-blue-500/45 bg-blue-500/10 text-blue-700 dark:text-blue-300' },
+  PIKCHR: { fallback: 'diagram', className: 'border-emerald-500/45 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' },
   SVG: { icon: siSvg, className: 'border-orange-500/45 bg-orange-500/10 text-orange-700 dark:text-orange-300' },
   JPG: { icon: siJpeg, className: 'border-amber-500/45 bg-amber-500/10 text-amber-800 dark:text-amber-300' },
   JPEG: { icon: siJpeg, className: 'border-amber-500/45 bg-amber-500/10 text-amber-800 dark:text-amber-300' },
@@ -86,7 +87,7 @@ function FileTypeLogo({ style }: { style: FileTypeStyle }) {
       </svg>
     );
   }
-  const Icon = style.fallback === 'image' ? FileImage : FileText;
+  const Icon = style.fallback === 'image' ? FileImage : style.fallback === 'diagram' ? Workflow : FileText;
   return <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />;
 }
 

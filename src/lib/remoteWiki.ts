@@ -500,7 +500,7 @@ export async function fetchRemoteAsset(remote: RemoteWikiRef, path: string, toke
   if (binary.length > 20 * 1024 * 1024) throw new RemoteLimitError('Asset exceeds 20 MB.');
   const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
   const ext = path.split('.').pop()?.toLowerCase();
-  const mime: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp', svg: 'image/svg+xml', ico: 'image/x-icon', pdf: 'application/pdf' };
+  const mime: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp', svg: 'image/svg+xml', ico: 'image/x-icon', pdf: 'application/pdf', pikchr: 'text/plain' };
   return new Blob([bytes], { type: mime[ext ?? ''] ?? 'application/octet-stream' });
 }
 

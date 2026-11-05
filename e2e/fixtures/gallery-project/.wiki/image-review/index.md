@@ -22,5 +22,13 @@ Review the [notes](notes.md) and [sample PDF](_assets/sample.pdf).
 
 ![SVG sample](_assets/sample.svg)
 
+![Pikchr asset](_assets/sample.pikchr)
+
 ![Shared SVG](../_assets/overview.svg)
+
+```pikchr
+box "Plan"
+arrow
+box "Rendered diagram"
+```
 

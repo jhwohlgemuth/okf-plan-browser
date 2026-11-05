@@ -2,7 +2,7 @@ import { parseWikiFile } from './wikiParser';
 import type { ParsedPlan } from '@/types/wiki';
 import { registerAssetFiles } from './wikiAssets';
 
-const DEMO_ASSET_FILES = import.meta.glob('../../e2e/fixtures/gallery-project/.wiki/**/*.{png,jpg,jpeg,webp,svg,pdf}', {
+const DEMO_ASSET_FILES = import.meta.glob('../../e2e/fixtures/gallery-project/.wiki/**/*.{png,jpg,jpeg,webp,svg,pdf,pikchr}', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -290,7 +290,7 @@ const DEMO_GALLERY_ASSETS = Object.entries(DEMO_ASSET_FILES).map(([source, url])
 const galleryPlan = parseWikiFile(DEMO_GALLERY_ID, 'image-review/index.md', `---
 type: Plan
 title: Image review gallery
-description: Demo image and PDF assets in the embedded sample wiki.
+description: Demo image, PDF, and Pikchr assets in the embedded sample wiki.
 difficulty: low
 impact: low
 package: [demo-gallery]
@@ -311,7 +311,15 @@ Browse the sample [image notes](notes.md), [PDF](_assets/sample.pdf), and images
 
 ![SVG sample](_assets/sample.svg)
 
+![Pikchr asset](_assets/sample.pikchr)
+
 ![Shared SVG](../_assets/overview.svg)
+
+\`\`\`pikchr
+box "Plan"
+arrow
+box "Rendered diagram"
+\`\`\`
 `);
 galleryPlan.documents = [{ fileName: 'image-review/notes.md', text: 'This adjacent demo document links to its [plan](index.md) and [sample PDF](_assets/sample.pdf).' }];
 DEMO_PLANS.push(galleryPlan);

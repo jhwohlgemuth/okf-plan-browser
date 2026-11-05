@@ -82,7 +82,7 @@ export async function getAssetUrl(repoId: string, path: string): Promise<string>
   if (current) return current;
   const task = readAsset(repoId, path).then(blob => {
     const ext = path.split('.').pop()?.toLowerCase();
-    const mime: Record<string, string> = { pdf: 'application/pdf', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif', bmp: 'image/bmp', ico: 'image/x-icon' };
+    const mime: Record<string, string> = { pdf: 'application/pdf', pikchr: 'text/plain', svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif', bmp: 'image/bmp', ico: 'image/x-icon' };
     const typed = blob.type === mime[ext ?? ''] ? blob : new Blob([blob], { type: mime[ext ?? ''] ?? blob.type });
     const url = URL.createObjectURL(typed);
     urls.set(key, url);
@@ -90,6 +90,10 @@ export async function getAssetUrl(repoId: string, path: string): Promise<string>
   }).finally(() => pending.delete(key));
   pending.set(key, task);
   return task;
+}
+
+export async function getAssetText(repoId: string, path: string): Promise<string> {
+  return (await readAsset(repoId, path)).text();
 }
 
 export function resolveWikiPath(source: string, href: string): string | null {

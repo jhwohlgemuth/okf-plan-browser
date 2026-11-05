@@ -140,7 +140,7 @@ export function FolderPicker({ label = 'Open .wiki Folder', compact = false, car
     if (!nativeFolderPicker && !('showDirectoryPicker' in window)) {
       toast({
         title: 'Choose a folder or Markdown files',
-        description: 'Pick the project or .wiki folder. The browser reads plans, related Markdown, images, and PDFs.',
+        description: 'Pick the project or .wiki folder. The browser reads plans, related Markdown, images, PDFs, and Pikchr diagrams.',
       });
       awaitingDialog.current = true;
       cancelled.current = false;

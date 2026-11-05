@@ -26,7 +26,8 @@ The desktop shell now always takes one native route behind the existing `useFile
 1. Tauri's built-in `dialog.open` selects one directory with recursive scope.
 2. `read_wiki_folder` verifies that the selected path is in the picker-granted filesystem scope.
 3. The Rust reader selects a nested `.wiki` directory when present, walks at most six levels,
-   skips `.git` and `node_modules`, and returns Markdown plus the paths of supported image/PDF assets.
+   skips `.git` and `node_modules`, and returns Markdown plus the paths of supported image, PDF,
+   and Pikchr assets.
 4. Existing `parseWikiTexts`, project naming, commit, and progress behavior parse the returned files.
 5. `read_wiki_asset` loads an asset only when it is viewed, after scope, containment, extension,
    and regular-file checks.

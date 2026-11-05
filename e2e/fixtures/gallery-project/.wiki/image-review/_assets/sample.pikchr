@@ -1,0 +1,3 @@
+box rad 8px "Pikchr" "source" fit
+arrow right 150%
+box rad 8px "Rendered" "locally" fit

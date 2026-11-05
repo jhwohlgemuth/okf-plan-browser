@@ -47,7 +47,19 @@ fn is_viewable_asset(path: &Path) -> bool {
             .and_then(|extension| extension.to_str())
             .map(str::to_ascii_lowercase)
             .as_deref(),
-        Some("png" | "jpg" | "jpeg" | "gif" | "webp" | "avif" | "bmp" | "svg" | "ico" | "pdf")
+        Some(
+            "png"
+                | "jpg"
+                | "jpeg"
+                | "gif"
+                | "webp"
+                | "avif"
+                | "bmp"
+                | "svg"
+                | "ico"
+                | "pdf"
+                | "pikchr"
+        )
     )
 }
 
@@ -471,13 +483,14 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        append_response, normalized_host, perform_forge_request, safe_asset_path,
-        same_origin_redirect, selected_wiki, MAX_RESPONSE_BYTES,
+        append_response, is_viewable_asset, normalized_host, perform_forge_request,
+        safe_asset_path, same_origin_redirect, selected_wiki, MAX_RESPONSE_BYTES,
     };
     use reqwest::Url;
     use std::{
         collections::HashMap,
         fs,
+        path::Path,
         time::{SystemTime, UNIX_EPOCH},
     };
 
@@ -560,6 +573,7 @@ mod tests {
         )
         .unwrap();
         fs::write(wiki.join("plan/_assets/diagram.svg"), "<svg/>").unwrap();
+        fs::write(wiki.join("plan/_assets/flow.pikchr"), "box \"Plan\"").unwrap();
         fs::write(project.join("outside.md"), "not part of the wiki").unwrap();
 
         let result = selected_wiki(&project).unwrap();
@@ -571,7 +585,10 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["index.md", "plan/index.md"]
         );
-        assert_eq!(result.assets, ["plan/_assets/diagram.svg"]);
+        assert_eq!(
+            result.assets,
+            ["plan/_assets/diagram.svg", "plan/_assets/flow.pikchr"]
+        );
         assert_eq!(
             result.folder_name,
             project.file_name().unwrap().to_string_lossy()
@@ -589,5 +606,6 @@ mod tests {
         assert!(safe_asset_path(&root, "../secret.pdf").is_err());
         assert!(safe_asset_path(&root, "/secret.pdf").is_err());
         assert!(safe_asset_path(&root, "notes.md").is_err());
+        assert!(is_viewable_asset(Path::new("diagram.pikchr")));
     }
 }

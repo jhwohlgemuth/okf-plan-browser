@@ -185,7 +185,7 @@ function ingestText(result: ParseResult, repoId: string, path: string, text: str
 const SKIP_DIRS = new Set(['node_modules', '.git']);
 const MAX_DEPTH = 6;
 
-export const isViewableAsset = (path: string) => /\.(?:png|jpe?g|gif|webp|avif|bmp|svg|ico|pdf)$/i.test(path);
+export const isViewableAsset = (path: string) => /\.(?:png|jpe?g|gif|webp|avif|bmp|svg|ico|pdf|pikchr)$/i.test(path);
 export type WikiAsset = { path: string; file?: File };
 type ParseResult = { plans: ParsedPlan[]; errors: Array<{ name: string; error: string }>; assets?: WikiAsset[] };
 
