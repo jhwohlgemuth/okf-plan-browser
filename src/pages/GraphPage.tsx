@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RotateCcw, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { DependencyGraph } from '@/components/DependencyGraph';
 import { PlanStatusBadge } from '@/components/PlanStatusBadge';
@@ -13,6 +13,7 @@ import {
 import { getOsLabel } from '@/lib/osLabels';
 import { buildPlanEdges, type PlanEdge } from '@/lib/planLinks';
 import { formatPlanCounts } from '@/lib/planKind';
+import { clearGraphState, GRAPH_STATE_KEYS, hasGraphState, readGraphState, saveGraphState } from '@/lib/graphState';
 import { usePlanStore } from '@/store/planStore';
 
 const VALID_LAYOUTS = new Set<GraphLayoutMode>(['force', 'dependency', 'repository', 'status', 'os']);
@@ -24,6 +25,35 @@ export function GraphPage() {
   const openPlan = usePlanStore(state => state.selectPlan);
   const [searchParams, setSearchParams] = useSearchParams();
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [graphResetKey, setGraphResetKey] = useState(0);
+  const restoredState = useRef(false);
+  const restorePending = useRef(false);
+
+  useEffect(() => {
+    if (!restoredState.current) {
+      restoredState.current = true;
+      if (!hasGraphState(searchParams)) {
+        const saved = readGraphState();
+        if (saved) {
+          restorePending.current = true;
+          setSearchParams(current => {
+            const next = new URLSearchParams(current);
+            for (const key of GRAPH_STATE_KEYS) {
+              const value = saved.get(key);
+              if (value) next.set(key, value);
+            }
+            return next;
+          }, { replace: true });
+          return;
+        }
+      }
+    }
+    if (restorePending.current) {
+      if (!hasGraphState(searchParams)) return;
+      restorePending.current = false;
+    }
+    saveGraphState(searchParams);
+  }, [searchParams, setSearchParams]);
 
   const allEdges = useMemo(() => buildPlanEdges(plans), [plans]);
   const allNodes = useMemo(() => buildGraphNodeViews(plans, repos), [plans, repos]);
@@ -110,6 +140,17 @@ export function GraphPage() {
     });
   };
 
+  const resetGraphState = () => {
+    clearGraphState();
+    setPreviewId(null);
+    setGraphResetKey(key => key + 1);
+    setSearchParams(current => {
+      const next = new URLSearchParams(current);
+      for (const key of GRAPH_STATE_KEYS) next.delete(key);
+      return next;
+    }, { replace: true });
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="shrink-0 border-b border-border bg-background px-5 py-3">
@@ -121,6 +162,10 @@ export function GraphPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
+            <button type="button" onClick={resetGraphState} title="Clear saved filters, selection, layout, and viewport"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <RotateCcw className="h-3.5 w-3.5" /> Reset graph state
+            </button>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Layout</span>
               <select aria-label="Graph layout" value={layout} onChange={event => updateParam('glayout', event.target.value === 'force' ? null : event.target.value)}
@@ -180,7 +225,7 @@ export function GraphPage() {
 
       <div className="flex-1 min-h-0 overflow-auto lg:flex">
         <div className="min-h-[500px] flex-1 overflow-hidden" data-tour="dependency-graph">
-          <DependencyGraph nodes={visibleNodes} edges={visibleEdges} repos={repos} layout={layout}
+          <DependencyGraph key={graphResetKey} nodes={visibleNodes} edges={visibleEdges} repos={repos} layout={layout}
             selectedId={selectedId} neighborhood={neighborhood} matchingIds={matchingIds}
             onSelect={selectNode} onActivate={activateNode} onPreview={previewNode} />
         </div>

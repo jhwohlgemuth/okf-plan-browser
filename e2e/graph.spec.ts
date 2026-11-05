@@ -147,7 +147,21 @@ test('graph search, local controls, preview, and URL state work together', async
 
   await page.getByRole('button', { name: 'Blocked paths' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('gblocked')).toBe('1');
+  await page.getByRole('link', { name: 'Search' }).click();
+  await page.getByRole('link', { name: 'Dependency Graph' }).click();
+  await expect(page.getByLabel('Graph layout')).toHaveValue('repository');
+  await expect(page.getByLabel('Neighborhood focus')).toHaveValue('1');
+  await expect(page.getByRole('button', { name: 'Blocked paths' })).toHaveAttribute('aria-pressed', 'true');
   await page.reload();
   await expect(page.getByLabel('Graph layout')).toHaveValue('repository');
   await expect(page.getByRole('button', { name: 'Blocked paths' })).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Reset graph state' }).click();
+  await expect(page.getByLabel('Graph layout')).toHaveValue('force');
+  await expect(page.getByLabel('Neighborhood focus')).toHaveValue('0');
+  await expect(page.getByRole('button', { name: 'Blocked paths' })).toHaveAttribute('aria-pressed', 'false');
+  expect([...new URL(page.url()).searchParams.keys()].filter(key => key.startsWith('g'))).toEqual([]);
+  await page.getByRole('link', { name: 'Search' }).click();
+  await page.getByRole('link', { name: 'Dependency Graph' }).click();
+  await expect(page.getByLabel('Graph layout')).toHaveValue('force');
 });

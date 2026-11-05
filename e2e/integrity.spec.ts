@@ -456,6 +456,9 @@ test('wiki extensions become canonical file-type search tags', async ({ page }) 
   await expect(page.getByRole('button', { name: 'PNG', pressed: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'PDF', pressed: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'SVG', pressed: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'PNG', pressed: true })).toHaveAttribute('data-file-type', 'PNG');
+  await expect(page.getByRole('button', { name: 'PNG', pressed: true }).locator('svg')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'SVG', pressed: false }).locator('svg')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Images & PDFs', selected: true })).toBeVisible();
   await expect(page.getByText('image.png', { exact: true })).toBeVisible();
   await expect(page.getByText('diagram.svg', { exact: true })).toHaveCount(0);

@@ -6,6 +6,9 @@ export default defineConfig({
   testDir: './e2e',
   snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}',
   fullyParallel: true,
+  // Cold-starting more browser contexts than this can starve lazy route chunks and
+  // file-upload controls long enough to exhaust an otherwise healthy test timeout.
+  workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',

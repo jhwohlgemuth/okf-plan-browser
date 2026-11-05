@@ -367,15 +367,14 @@ export function SearchPage() {
                     <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">File types</p>
                     <div className="flex flex-wrap gap-1.5" role="group" aria-label="File types">
                       {extensionTags.map(extension => (
-                        <button
+                        <TagBadge
                           key={extension}
-                          type="button"
-                          aria-pressed={selectedExtensions.includes(extension)}
+                          tag={extension}
+                          category="file-type"
+                          selected={selectedExtensions.includes(extension)}
+                          showHash={false}
                           onClick={() => toggleExtension(extension)}
-                          className={`rounded-full border px-2.5 py-0.5 font-mono text-xs transition-colors ${selectedExtensions.includes(extension) ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-border hover:text-foreground'}`}
-                        >
-                          {extension}
-                        </button>
+                        />
                       ))}
                     </div>
                   </div>
