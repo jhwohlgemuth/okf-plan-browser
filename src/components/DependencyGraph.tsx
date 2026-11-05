@@ -4,6 +4,7 @@ import { Crosshair, Maximize2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import type { GraphLayoutMode, GraphNodeView } from '@/lib/graphView';
 import { connectedNodeIds, graphLayoutPositions } from '@/lib/graphView';
 import { advanceGraphLayout } from '@/lib/graphLayout';
+import type { GraphCanvasState } from '@/lib/graphState';
 import type { PlanEdge } from '@/lib/planLinks';
 import { usePlanStore } from '@/store/planStore';
 import type { WikiRepo } from '@/types/wiki';
@@ -27,12 +28,15 @@ interface DependencyGraphProps {
   edges: PlanEdge[];
   repos: WikiRepo[];
   layout: GraphLayoutMode;
+  scope: string;
+  initialState: GraphCanvasState | null;
   selectedId: string | null;
   neighborhood: Set<string>;
   matchingIds: Set<string>;
   onSelect: (id: string) => void;
   onActivate: (id: string) => void;
   onPreview: (id: string | null) => void;
+  onStateChange: (state: GraphCanvasState) => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -47,17 +51,21 @@ const STATUS_COLORS: Record<string, string> = {
 const nodeId = (value: string | Node) => typeof value === 'string' ? value : value.id;
 
 export function DependencyGraph({
-  nodes: nodeViews, edges, repos, layout, selectedId, neighborhood, matchingIds,
-  onSelect, onActivate, onPreview,
+  nodes: nodeViews, edges, repos, layout, scope, initialState, selectedId, neighborhood, matchingIds,
+  onSelect, onActivate, onPreview, onStateChange,
 }: DependencyGraphProps) {
+  const restoredState = initialState?.scope === scope ? initialState : null;
   const svgRef = useRef<SVGSVGElement>(null);
   const miniRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
-  const positionsRef = useRef(new Map<string, { x: number; y: number }>());
-  const transformRef = useRef(d3.zoomIdentity);
+  const positionsRef = useRef(new Map<string, { x: number; y: number }>(Object.entries(restoredState?.positions ?? {})));
+  const transformRef = useRef(restoredState
+    ? d3.zoomIdentity.translate(restoredState.transform.x, restoredState.transform.y).scale(restoredState.transform.k)
+    : d3.zoomIdentity);
   const centerRef = useRef<(id: string, focus?: boolean) => void>(() => undefined);
   const fitRef = useRef<() => void>(() => undefined);
   const previousSelectionRef = useRef<string | null>(null);
+  const restoredSelectionRef = useRef(restoredState?.selectedId ?? null);
   const lastActivatedRef = useRef<string | null>(null);
   const wasDetailOpenRef = useRef(false);
   const detailOpen = usePlanStore(state => state.detailOpen);
@@ -83,6 +91,16 @@ export function DependencyGraph({
         y: grouped?.y ?? saved?.y ?? height / 2 + 100 * Math.sin(angle),
       };
     });
+    const restoredAllForceNodes = layout === 'force' && nodes.every(node => positionsRef.current.has(node.id));
+    const saveCanvas = () => {
+      const transform = transformRef.current;
+      onStateChange({
+        scope,
+        transform: { x: transform.x, y: transform.y, k: transform.k },
+        positions: Object.fromEntries(positionsRef.current),
+        selectedId,
+      });
+    };
     const nodeById = new Map(nodes.map(node => [node.id, node]));
     const links: Link[] = edges.map(edge => ({ ...edge }));
     const sel = d3.select(svg);
@@ -96,7 +114,8 @@ export function DependencyGraph({
         transformRef.current = event.transform;
         g.attr('transform', event.transform);
         draw();
-      });
+      })
+      .on('end', saveCanvas);
     zoomRef.current = zoom;
     sel.call(zoom).call(zoom.transform, transformRef.current);
 
@@ -178,7 +197,7 @@ export function DependencyGraph({
       frame = 0;
       const more = layout === 'force' && advanceGraphLayout(sim, () => performance.now());
       draw();
-      if (more) schedule();
+      if (more) schedule(); else saveCanvas();
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(runFrame); };
 
@@ -196,6 +215,7 @@ export function DependencyGraph({
           if (!event.active) sim.alphaTarget(0);
           node.fx = null; node.fy = null; schedule();
         }
+        saveCanvas();
       });
 
     const node = g.append('g')
@@ -324,7 +344,8 @@ export function DependencyGraph({
       applyTransform(d3.zoomIdentity.translate(width / 2 - ((minX + maxX) / 2) * scale, height / 2 - ((minY + maxY) / 2) * scale).scale(scale));
     };
 
-    sim.stop(); draw(); schedule();
+    sim.stop(); draw();
+    if (restoredAllForceNodes) { sim.alpha(0); saveCanvas(); } else schedule();
     const observer = new ResizeObserver(() => {
       const nextWidth = svg.clientWidth || width;
       const nextHeight = svg.clientHeight || height;
@@ -355,14 +376,18 @@ export function DependencyGraph({
     });
     observer.observe(svg);
     return () => {
+      saveCanvas();
       observer.disconnect(); cancelAnimationFrame(frame); sim.stop();
       if (zoomRef.current === zoom) zoomRef.current = null;
     };
-  }, [nodeViews, edges, repos, layout, selectedId, neighborhood, matchingIds, onSelect, onActivate, onPreview]);
+  }, [nodeViews, edges, repos, layout, scope, selectedId, neighborhood, matchingIds, onSelect, onActivate, onPreview, onStateChange]);
 
   useEffect(() => {
     if (!selectedId || previousSelectionRef.current === selectedId) return;
     previousSelectionRef.current = selectedId;
+    const restoredSelection = restoredSelectionRef.current === selectedId;
+    restoredSelectionRef.current = null;
+    if (restoredSelection) return;
     const timer = window.setTimeout(() => centerRef.current(selectedId, true), 30);
     return () => window.clearTimeout(timer);
   }, [selectedId, nodeViews]);

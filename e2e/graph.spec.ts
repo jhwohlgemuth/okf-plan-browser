@@ -45,12 +45,58 @@ test('graph nodes and zoom controls work from the keyboard', async ({ page }, in
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   const graphLayer = graph.locator('svg#dependency-graph > g').first();
+  // Node activation recenters with a short D3 transition. Establish a settled
+  // baseline before asserting exact zoom factors so the test cannot sample an
+  // interpolated scale and wait until its timeout.
+  await page.getByRole('button', { name: 'Reset zoom' }).click();
+  await expect(graphLayer).toHaveAttribute('transform', 'translate(0,0) scale(1)');
   await page.getByRole('button', { name: 'Zoom in' }).click();
   await expect(graphLayer).toHaveAttribute('transform', /scale\(1\.25\)/);
   await page.getByRole('button', { name: 'Zoom out' }).click();
   await expect(graphLayer).toHaveAttribute('transform', /scale\(1\)/);
   await page.getByRole('button', { name: 'Reset zoom' }).click();
   await expect(graphLayer).toHaveAttribute('transform', 'translate(0,0) scale(1)');
+});
+
+test('graph viewport, node positions, and selection survive site navigation', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'canvas persistence coverage runs on the desktop layout');
+  await loadDemoGraph(page);
+
+  const graph = page.getByRole('group', { name: 'Plan dependency graph' });
+  const svg = graph.locator('svg#dependency-graph');
+  const layer = svg.locator(':scope > g').first();
+  const firstNode = graph.locator('[role="button"]').first();
+  await firstNode.click();
+  await page.getByRole('button', { name: 'Close plan details' }).click();
+  const selectedId = new URL(page.url()).searchParams.get('gplan');
+  expect(selectedId).toBeTruthy();
+
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  const box = await svg.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box!.x + box!.width * 0.72, box!.y + box!.height * 0.72);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + box!.width * 0.72 + 64, box!.y + box!.height * 0.72 - 38, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+
+  const transform = await layer.getAttribute('transform');
+  expect(transform).toMatch(/translate\((?!0,0)/);
+  expect(transform).toMatch(/scale\((?!1\))/);
+  const positions = await graph.locator('[data-node-id]').evaluateAll(nodes => Object.fromEntries(nodes.map(node => [
+    node.getAttribute('data-node-id'), node.getAttribute('transform'),
+  ])));
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('okf-plan-browser:graph-canvas-v1'))).not.toBeNull();
+
+  await page.getByRole('link', { name: 'Search' }).click();
+  await page.getByRole('link', { name: 'Dependency Graph' }).click();
+  const restoredGraph = page.getByRole('group', { name: 'Plan dependency graph' });
+  await expect(restoredGraph.locator('svg#dependency-graph > g').first()).toHaveAttribute('transform', transform!);
+  await expect.poll(() => new URL(page.url()).searchParams.get('gplan')).toBe(selectedId);
+  await expect(restoredGraph.locator(`[data-node-id="${selectedId}"] .selection-ring`)).toHaveAttribute('opacity', '1');
+  await expect.poll(() => restoredGraph.locator('[data-node-id]').evaluateAll(nodes => Object.fromEntries(nodes.map(node => [
+    node.getAttribute('data-node-id'), node.getAttribute('transform'),
+  ])))).toEqual(positions);
 });
 
 test('resolved relationships remain readable in light and dark themes', async ({ page }, info) => {

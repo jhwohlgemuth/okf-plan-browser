@@ -13,7 +13,11 @@ import {
 import { getOsLabel } from '@/lib/osLabels';
 import { buildPlanEdges, type PlanEdge } from '@/lib/planLinks';
 import { formatPlanCounts } from '@/lib/planKind';
-import { clearGraphState, GRAPH_STATE_KEYS, hasGraphState, readGraphState, saveGraphState } from '@/lib/graphState';
+import {
+  clearGraphState, graphCanvasScope, GRAPH_STATE_KEYS, hasGraphState,
+  readGraphCanvasState, readGraphState, saveGraphCanvasState, saveGraphState,
+  type GraphCanvasState,
+} from '@/lib/graphState';
 import { usePlanStore } from '@/store/planStore';
 
 const VALID_LAYOUTS = new Set<GraphLayoutMode>(['force', 'dependency', 'repository', 'status', 'os']);
@@ -28,6 +32,7 @@ export function GraphPage() {
   const [graphResetKey, setGraphResetKey] = useState(0);
   const restoredState = useRef(false);
   const restorePending = useRef(false);
+  const ignoreCanvasSave = useRef(false);
 
   useEffect(() => {
     if (!restoredState.current) {
@@ -57,6 +62,19 @@ export function GraphPage() {
 
   const allEdges = useMemo(() => buildPlanEdges(plans), [plans]);
   const allNodes = useMemo(() => buildGraphNodeViews(plans, repos), [plans, repos]);
+  const canvasScope = useMemo(() => graphCanvasScope(allNodes.map(node => node.id)), [allNodes]);
+  const canvasScopeRef = useRef('');
+  const canvasStateRef = useRef<GraphCanvasState | null>(null);
+  if (canvasScopeRef.current !== canvasScope) {
+    canvasScopeRef.current = canvasScope;
+    canvasStateRef.current = readGraphCanvasState(canvasScope);
+  }
+  const persistCanvasState = useCallback((state: GraphCanvasState) => {
+    if (ignoreCanvasSave.current || state.scope !== canvasScopeRef.current) return;
+    canvasStateRef.current = state;
+    saveGraphCanvasState(state);
+  }, []);
+  useEffect(() => { ignoreCanvasSave.current = false; }, [graphResetKey]);
   const query = searchParams.get('gq') ?? '';
   const statusParam = searchParams.get('gstatus');
   const repoParam = searchParams.get('grepo');
@@ -84,6 +102,7 @@ export function GraphPage() {
     setSearchParams(current => {
       const next = new URLSearchParams(current);
       if (value) next.set(key, value); else next.delete(key);
+      saveGraphState(next);
       return next;
     }, { replace });
   }, [setSearchParams]);
@@ -141,7 +160,9 @@ export function GraphPage() {
   };
 
   const resetGraphState = () => {
+    ignoreCanvasSave.current = true;
     clearGraphState();
+    canvasStateRef.current = null;
     setPreviewId(null);
     setGraphResetKey(key => key + 1);
     setSearchParams(current => {
@@ -225,7 +246,8 @@ export function GraphPage() {
 
       <div className="flex-1 min-h-0 overflow-auto lg:flex">
         <div className="min-h-[500px] flex-1 overflow-hidden" data-tour="dependency-graph">
-          <DependencyGraph key={graphResetKey} nodes={visibleNodes} edges={visibleEdges} repos={repos} layout={layout}
+          <DependencyGraph key={`${canvasScope}:${graphResetKey}`} nodes={visibleNodes} edges={visibleEdges} repos={repos} layout={layout}
+            scope={canvasScope} initialState={canvasStateRef.current} onStateChange={persistCanvasState}
             selectedId={selectedId} neighborhood={neighborhood} matchingIds={matchingIds}
             onSelect={selectNode} onActivate={activateNode} onPreview={previewNode} />
         </div>

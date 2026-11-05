@@ -52,7 +52,10 @@ export function Layout() {
     return usePlanStore.subscribe((state, previous) => {
       if (syncingFromUrl.current) return;
       if (state.selectedPlanId === previous.selectedPlanId && state.selectedAnchor === previous.selectedAnchor) return;
-      const search = new URLSearchParams(location.search);
+      // Read the browser's current query so synchronous actions (for example,
+      // selecting a graph node and immediately opening its detail) do not drop
+      // a search-param update that landed after this subscription was created.
+      const search = new URLSearchParams(window.location.search);
       if (state.selectedPlanId) search.set('plan', state.selectedPlanId);
       else search.delete('plan');
       const query = search.toString();
