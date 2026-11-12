@@ -53,6 +53,15 @@ describe('parseFrontmatter', () => {
     const r = parseFrontmatter('---\n\n---\nbody');
     expect(r.fm.title).toBe('Untitled');
   });
+
+  it.each([
+    '[api, api, linux, os:linux, platform:linux, darwin, os:macos, " api ", ""]',
+    'api, api linux os:linux platform:linux darwin os:macos',
+  ])('deduplicates tags and OS aliases from %s', tags => {
+    const { fm, errors } = parseFrontmatter(`---\ntitle: T\ntags: ${tags}\n---\n`);
+    expect(errors).toEqual([]);
+    expect(fm.tags).toEqual(['api', 'os:linux', 'os:macos']);
+  });
 });
 
 describe('extractSections', () => {

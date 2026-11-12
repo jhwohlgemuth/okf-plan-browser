@@ -1,4 +1,5 @@
 import type { Frontmatter } from '@/types/wiki';
+import { getOsLabel } from '@/lib/osLabels';
 
 /** Treat YAML and persisted JSON as untrusted data at the application boundary. */
 export function validateFrontmatter(value: unknown): { fm: Frontmatter; errors: string[] } {
@@ -19,6 +20,9 @@ export function validateFrontmatter(value: unknown): { fm: Frontmatter; errors: 
     if (typeof v === 'string') fm[key] = v.split(/[,\s]+/).filter(Boolean);
     else if (Array.isArray(v) && v.every(x => typeof x === 'string')) fm[key] = v;
     else { fm[key] = []; errors.push(`${key} must be a list of strings`); }
+    if (key === 'tags') {
+      fm.tags = [...new Set(fm.tags!.map(tag => getOsLabel(tag)?.canonicalTag ?? tag.trim()).filter(Boolean))];
+    }
   }
   const enums = {
     status: ['planned', 'ready', 'in-progress', 'waiting-on-validation', 'blocked'],
