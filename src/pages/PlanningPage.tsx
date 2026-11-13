@@ -147,6 +147,7 @@ const SKILL_FILES = (discoveredSkillFiles as DiscoveredSkillFile[]).map(file => 
 
 const PLANNING_SKILL_ZIP_PATH = `${import.meta.env.BASE_URL}planning-skill.zip`;
 const PLANNING_SKILL_ENTRY_PATH = `${import.meta.env.BASE_URL}planning-skill/SKILL.md`;
+const PLANNING_SETUP_PROMPT = `Set up the planning skill in the project open in this agent session. Read the project's existing agent instructions and review ${PLANNING_SKILL_ENTRY_URL}. Download the complete skill package from ${PLANNING_SKILL_ZIP_URL} and install it at the project root so .agents/skills/planning/SKILL.md exists alongside its references/, scripts/, and agents/ folders. If a planning skill is already installed, compare it with the downloaded version and preserve local customizations when updating. Read the installed SKILL.md and follow its setup guidance. Preserve existing project instructions and .wiki content. Verify that the complete skill is installed, run its validator if the project has a .wiki portfolio, and report the installation path and validation results. Explain how to invoke the skill and whether a new agent session is needed. Official guide: ${PLANNING_SITE_URL}`;
 const OPENCODE_CONFIG = JSON.stringify({
   $schema: 'https://opencode.ai/config.json',
   skills: [OPENCODE_SKILL_CATALOG_URL],
@@ -206,6 +207,14 @@ export function PlanningPage() {
           installing. The stable ZIP contains the complete <code>.agents/skills/planning/</code> folder, including its
           references and scripts.
         </p>
+        <div className="rounded-lg border border-border bg-background/60 p-3 space-y-2">
+          <h3 className="text-sm font-medium text-foreground">Set up with an agent</h3>
+          <p className="text-xs text-muted-foreground">Copy this prompt into an agent session opened in the project where you want to use the planning skill.</p>
+          <div className="flex items-start gap-2">
+            <code className="min-w-0 flex-1 whitespace-pre-wrap break-words text-xs text-foreground">{PLANNING_SETUP_PROMPT}</code>
+            <AgentCommandButton command={PLANNING_SETUP_PROMPT} label="Copy planning skill setup prompt" successTitle="Setup prompt copied" />
+          </div>
+        </div>
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-muted-foreground">
             <p className="font-medium text-foreground">Generic Agent Skills</p>
