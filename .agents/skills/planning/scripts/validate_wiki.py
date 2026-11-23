@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +43,7 @@ REQUIRED_PHASE_FIELDS = {
     "Status",
 }
 REQUIRED_PLAN_FIELDS = {
+    "created",
     "description",
     "difficulty",
     "execution",
@@ -51,7 +53,9 @@ REQUIRED_PLAN_FIELDS = {
     "tags",
     "title",
     "type",
+    "updated",
 }
+TIMESTAMP_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}Z)?$")
 
 
 @dataclass(frozen=True)
@@ -182,6 +186,21 @@ def _validate_phase(plan: Plan, phase: Phase, root: Path) -> list[str]:
 def _validate_plan(plan: Plan, root: Path, wiki: Path) -> list[str]:
     label = str(plan.path.relative_to(root))
     errors = [f"{label}: missing frontmatter `{field}`" for field in sorted(REQUIRED_PLAN_FIELDS - plan.fields.keys())]
+    timestamps = {}
+    for field in ("created", "updated"):
+        raw = plan.fields.get(field)
+        if raw is None:
+            continue
+        if not isinstance(raw, str) or not TIMESTAMP_PATTERN.fullmatch(raw):
+            errors.append(f"{label}: `{field}` must be a UTC date or timestamp (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ)")
+            continue
+        try:
+            format_string = "%Y-%m-%dT%H:%M:%SZ" if "T" in raw else "%Y-%m-%d"
+            timestamps[field] = datetime.strptime(raw, format_string).replace(tzinfo=timezone.utc)
+        except ValueError:
+            errors.append(f"{label}: `{field}` is not a valid UTC date or timestamp")
+    if len(timestamps) == 2 and timestamps["updated"] < timestamps["created"]:
+        errors.append(f"{label}: `updated` cannot precede `created`")
     parent_entrypoint = plan.path.parent / "index.md"
     if plan.path.name != "index.md" and parent_entrypoint.exists() and _frontmatter(parent_entrypoint.read_text(encoding="utf-8")).get("type") == "Plan":
         errors.append(f"{label}: adjacent Markdown in a folder-format plan cannot be a second Plan entrypoint")

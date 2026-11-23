@@ -63,7 +63,21 @@ export function HomePage() {
             <Layers className="h-6 w-6 text-od-blue" />
           </div>
           <h1 className="text-xl font-bold text-foreground">OKF Plan Browser</h1>
-          <div className="mt-4"><WalkthroughButton prominent /></div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <WalkthroughButton prominent />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-od-purple bg-od-purple/10 hover:bg-od-purple/20 border border-od-purple/30"
+              onClick={() => {
+                loadDemoData();
+                toast({ title: 'Demo data loaded', description: 'Synthetic plans are ready to explore' });
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-2" />
+              Load Demo Data
+            </Button>
+          </div>
           <div className="w-full mt-4"><PlanningLink /></div>
           <p className="text-xs text-muted-foreground mt-2 mb-6">
             Load a .wiki folder, or a GitHub / GitLab repo
@@ -72,19 +86,6 @@ export function HomePage() {
           <div className="w-full" data-tour="home-overview">
             <FolderPicker cards />
           </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            className="mt-5 text-od-purple bg-od-purple/10 hover:bg-od-purple/20 border border-od-purple/30"
-            onClick={() => {
-              loadDemoData();
-              toast({ title: 'Demo data loaded', description: 'Synthetic plans are ready to explore' });
-            }}
-          >
-            <Sparkles className="h-3.5 w-3.5 mr-2" />
-            Load Demo Data
-          </Button>
 
           <p className="text-[10px] text-muted-foreground mt-5">
             Supports the .wiki markdown format — YAML frontmatter, H1 sections, H2 phases. GitHub owner/repo or a public GitLab URL also works.
@@ -222,6 +223,8 @@ export function HomePage() {
 type: Plan
 title: "My Plan"
 description: "What this is about"
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 difficulty: medium        # easy | medium | hard
 impact: critical          # low | medium | high | critical
 package: [pkg-a, pkg-b]

@@ -1,5 +1,7 @@
 ---
 type: Plan
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 title: Publish an Apple Silicon Homebrew cask
 description: Prepare a Gatekeeper-compatible macOS release and submit a cask for the desktop app.
 difficulty: high

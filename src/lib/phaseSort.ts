@@ -1,10 +1,12 @@
 import type { ParsedPlan, Phase, PlanImpact, PlanPriority } from '@/types/wiki';
 
 export interface PhaseCard { plan: ParsedPlan; phase: Phase }
-export type PhaseSortKey = 'source' | 'priority' | 'impact' | 'phase-id' | 'phase-title' | 'plan-title';
+export type PhaseSortKey = 'source' | 'recent' | 'created' | 'priority' | 'impact' | 'phase-id' | 'phase-title' | 'plan-title';
 
 export const PHASE_SORT_OPTIONS: ReadonlyArray<{ value: PhaseSortKey; label: string }> = [
   { value: 'source', label: 'Source order' },
+  { value: 'recent', label: 'Recent (updated)' },
+  { value: 'created', label: 'Created' },
   { value: 'priority', label: 'Priority' },
   { value: 'impact', label: 'Impact' },
   { value: 'phase-id', label: 'Phase ID' },
@@ -20,6 +22,17 @@ export function sortPhaseCards(cards: PhaseCard[], key: PhaseSortKey, reversed: 
 
   return [...cards].sort((a, b) => {
     let comparison = 0;
+    if (key === 'recent' || key === 'created') {
+      const field = key === 'created' ? 'created' : 'updated';
+      const aValue = a.plan.frontmatter[field], bValue = b.plan.frontmatter[field];
+      const aTime = aValue ? Date.parse(aValue) : NaN;
+      const bTime = bValue ? Date.parse(bValue) : NaN;
+      if (!Number.isFinite(aTime) || !Number.isFinite(bTime)) {
+        if (!Number.isFinite(aTime) && !Number.isFinite(bTime)) return 0;
+        return Number.isFinite(aTime) ? -1 : 1;
+      }
+      return (reversed ? 1 : -1) * (aTime - bTime);
+    }
     if (key === 'priority' || key === 'impact') {
       const rank = (card: PhaseCard) => {
         if (key === 'priority') {

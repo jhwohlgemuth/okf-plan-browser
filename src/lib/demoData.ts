@@ -18,6 +18,8 @@ const DEMO_RAW: Array<{ repo: string; name: string; md: string }> = [
 type: Plan
 title: "Implement API Versioning Strategy"
 description: "Design and roll out a versioned REST API layer with semver routing, deprecation headers, and migration guides."
+created: "2026-08-04T09:00:00Z"
+updated: "2026-11-21T14:30:00Z"
 difficulty: hard
 impact: critical
 package: [acorn-core, acorn-cli, acorn-schema]
@@ -63,6 +65,8 @@ Chose header-based versioning over URL path (\`/v1/\`) to keep URLs stable and a
 type: Plan
 title: "Schema Contract Freeze v1"
 description: "Lock all v1 field names and types before the versioning router ships."
+created: "2026-08-01"
+updated: "2026-09-10"
 difficulty: medium
 impact: high
 package: [acorn-schema]
@@ -103,6 +107,8 @@ No external dependencies. This plan is a prerequisite for [API versioning strate
 type: Plan
 title: "Build Internal Telemetry Pipeline"
 description: "Ship structured event logging from CLI and daemon, route to a local aggregator, and expose a metrics endpoint for Grafana."
+created: "2026-09-12T10:15:00Z"
+updated: "2026-10-03T16:45:00Z"
 difficulty: hard
 impact: high
 package: [acorn-core, acorn-cli]
@@ -149,6 +155,8 @@ JSON dashboard definition committed to the repo. Import instructions in README.
 type: Plan
 title: "CLI Consumer Audit Before v2"
 description: "Enumerate all public CLI commands and flags consumed by external scripts and CI pipelines before any breaking API changes land."
+created: "2026-07-18T08:00:00Z"
+updated: "2026-10-17T12:00:00Z"
 difficulty: easy
 impact: medium
 package: [acorn-cli]
@@ -189,6 +197,8 @@ For each command: document default output, \`--json\` flag behaviour, exit codes
 type: Plan
 title: "Migrate to Semantic Design Tokens"
 description: "Replace hardcoded hex colours and pixel values with a token system compatible with both light and dark themes and the upcoming brand refresh."
+created: "2026-10-02T11:30:00Z"
+updated: "2026-11-22T11:00:00Z"
 difficulty: medium
 impact: medium
 package: [acorn-ui, acorn-storybook]
@@ -234,6 +244,8 @@ Replace hardcoded values component-by-component. Storybook visual regression tes
 type: Plan
 title: "Storybook Visual Regression Testing"
 description: "Add Chromatic-based visual regression snapshots for all UI components, integrated into the PR review workflow."
+created: "2026-09-28T13:00:00Z"
+updated: "2026-09-28T13:00:00Z"
 difficulty: medium
 impact: medium
 package: [acorn-ui, acorn-storybook]
@@ -291,6 +303,8 @@ const galleryPlan = parseWikiFile(DEMO_GALLERY_ID, 'image-review/index.md', `---
 type: Plan
 title: Image review gallery
 description: Demo image, PDF, and Pikchr assets in the embedded sample wiki.
+created: "2026-11-23"
+updated: "2026-11-23"
 difficulty: low
 impact: low
 package: [demo-gallery]

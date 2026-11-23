@@ -66,12 +66,14 @@ export function FilterBar({ statusLabel = 'Status' }: { statusLabel?: string }) 
     filters.impact.length || filters.difficulty.length ||
     filters.tags.length   || filters.packages.length  ||
     filters.repos.length;
+  const hasDateFilters = filters.createdAfter || filters.createdBefore || filters.updatedAfter || filters.updatedBefore;
 
   const activeFilterCount =
     filters.kinds.length + filters.status.length + filters.priority.length +
     filters.impact.length + filters.difficulty.length +
     filters.tags.length + filters.packages.length +
-    filters.repos.length;
+    filters.repos.length + Number(!!filters.createdAfter) + Number(!!filters.createdBefore) +
+    Number(!!filters.updatedAfter) + Number(!!filters.updatedBefore);
 
   return (
     <div className="border-b border-border bg-card px-5 py-3">
@@ -123,6 +125,23 @@ export function FilterBar({ statusLabel = 'Status' }: { statusLabel?: string }) 
             selected={filters.difficulty}
             onChange={v => setFilter('difficulty', v)}
           />
+
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            {(['created', 'updated'] as const).map(field => (
+              <div key={field} className="flex flex-wrap items-center gap-2">
+                <span className="w-20 shrink-0 text-xs font-medium capitalize text-muted-foreground">{field}</span>
+                {(['After', 'Before'] as const).map(bound => {
+                  const key = `${field}${bound}` as 'createdAfter' | 'createdBefore' | 'updatedAfter' | 'updatedBefore';
+                  return <label key={key} className="flex items-center gap-1 text-xs text-muted-foreground">
+                    {bound === 'After' ? 'From' : 'Through'}
+                    <input type="date" aria-label={`${field} ${bound === 'After' ? 'from' : 'through'}`} value={filters[key]}
+                      onChange={event => setFilter(key, event.target.value)}
+                      className="h-7 rounded-md border border-border bg-background px-1.5 text-xs text-foreground" />
+                  </label>;
+                })}
+              </div>
+            ))}
+          </div>
 
           {/* Repos */}
           {repos.length > 1 && (
@@ -196,7 +215,7 @@ export function FilterBar({ statusLabel = 'Status' }: { statusLabel?: string }) 
           )}
 
           {/* Clear */}
-          {hasFilters ? (
+          {hasFilters || hasDateFilters ? (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs text-muted-foreground">
               <X className="h-3 w-3 mr-1" /> Clear filters
             </Button>

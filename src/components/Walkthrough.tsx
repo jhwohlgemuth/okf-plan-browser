@@ -46,7 +46,7 @@ function buildSteps({ hasPlan, hasPhases, hasRelationships, hasRepos, isDemoData
     step('/home', '[data-tour="planning-link"]', 'Planning workflows', 'The Planning Skill page explains how to create and work through the plans shown here. The tour visits it near the end.'),
     step('/portfolio', '[data-tour="portfolio-search"]', 'Find a plan quickly', 'Quick search narrows the portfolio by plan text.'),
     step('/portfolio', '[data-tour="portfolio-filters"]', 'Narrow the portfolio', 'Filter by status, priority, impact, difficulty, repository, tags, or package. Your current filters will stay unchanged during this tour.'),
-    ...(hasPlan ? [step('/portfolio', '[data-tour="plan-table"]', 'Compare plans', 'Sort the table by priority, status, impact, difficulty, or remaining time. Select a row to read the full plan.'),
+    ...(hasPlan ? [step('/portfolio', '[data-tour="plan-table"]', 'Compare plans', 'Sort the table by recent updates, creation date, priority, status, impact, difficulty, or remaining time. Select a row to read the full plan.'),
       step('/portfolio', '[data-tour="plan-detail"]', 'Read plan details', 'The detail panel shows the summary, metadata, dependencies, sections, phases, and related files. Links can open other plans.', true)] : []),
     step('/phases', '[data-tour="phase-board"]', 'Track phases and Epics', hasPhases ? 'The board groups executable phases by status. Epics appear separately above the board and link to their plans.' : 'Epics appear separately from the phase board. When plans contain phases, the board groups them by status.'),
     step('/graph', '[data-tour="dependency-graph"]', 'Explore relationships', 'Nodes represent plans. Use the controls to zoom, drag nodes, and select one to open its details.'),

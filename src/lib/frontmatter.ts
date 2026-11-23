@@ -14,6 +14,17 @@ export function validateFrontmatter(value: unknown): { fm: Frontmatter; errors: 
     if (typeof v === 'string') fm[key] = v;
     else errors.push(`${key} must be text`);
   }
+  for (const key of ['created', 'updated'] as const) {
+    const value = obj[key];
+    if (value === undefined) continue;
+    if (value instanceof Date && Number.isFinite(value.getTime())) {
+      fm[key] = value.toISOString();
+    } else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value) {
+      fm[key] = value;
+    } else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value))) {
+      fm[key] = value;
+    } else errors.push(`${key} must be a YYYY-MM-DD date or ISO 8601 timestamp with a time zone`);
+  }
   for (const key of ['tags', 'package'] as const) {
     const v = obj[key];
     if (v === undefined) { fm[key] = []; continue; }

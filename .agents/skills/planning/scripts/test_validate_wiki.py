@@ -14,6 +14,8 @@ PLAN = """---
 type: Plan
 title: Example
 description: Example plan.
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 difficulty: low
 impact: medium
 package: [workspace]
@@ -45,6 +47,8 @@ COORDINATION = """---
 type: Plan
 title: Coordination
 description: Coordination record.
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 difficulty: high
 impact: critical
 package: [workspace]
@@ -149,6 +153,29 @@ class ValidatorTests(unittest.TestCase):
     def test_missing_metadata_is_rejected(self) -> None:
         root = self._repository(PLAN.replace("impact: medium\n", ""))
         self.assertTrue(any("missing frontmatter `impact`" in error for error in validate_repository(root)))
+
+    def test_missing_and_invalid_timestamps_are_rejected(self) -> None:
+        root = self._repository(PLAN.replace('created: "2026-11-23T21:07:56Z"\n', '').replace('updated: "2026-11-23T21:07:56Z"', 'updated: "2026-02-30T21:07:56Z"'))
+        errors = validate_repository(root)
+        self.assertTrue(any("missing frontmatter `created`" in error for error in errors))
+        self.assertTrue(any("`updated` is not a valid UTC date or timestamp" in error for error in errors))
+
+    def test_date_only_values_are_accepted_and_compared_with_timestamps(self) -> None:
+        plan = PLAN.replace('created: "2026-11-23T21:07:56Z"', 'created: "2026-11-23"')
+        self.assertEqual(validate_repository(self._repository(plan)), [])
+
+        plan = plan.replace('updated: "2026-11-23T21:07:56Z"', 'updated: "2026-11-22"')
+        self.assertTrue(any("`updated` cannot precede `created`" in error for error in validate_repository(self._repository(plan))))
+
+    def test_invalid_calendar_date_is_rejected(self) -> None:
+        plan = PLAN.replace('created: "2026-11-23T21:07:56Z"', 'created: "2026-02-30"')
+        self.assertTrue(any("`created` is not a valid UTC date or timestamp" in error for error in validate_repository(self._repository(plan))))
+
+    def test_updated_must_not_precede_created_for_epics(self) -> None:
+        root = self._repository()
+        epic = root / ".wiki" / "coordination.md"
+        epic.write_text(COORDINATION.replace('updated: "2026-11-23T21:07:56Z"', 'updated: "2026-11-22T21:07:56Z"'), encoding="utf-8")
+        self.assertTrue(any("`updated` cannot precede `created`" in error for error in validate_repository(root)))
 
     def test_missing_phase_field_is_rejected(self) -> None:
         root = self._repository(PLAN.replace("- Handoff: Record the result.\n", ""))

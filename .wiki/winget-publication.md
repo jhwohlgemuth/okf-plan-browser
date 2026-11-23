@@ -1,5 +1,7 @@
 ---
 type: Plan
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 title: Publish OKF Plan Browser to WinGet
 description: Submit a validated Windows installer manifest to the community catalog.
 difficulty: medium

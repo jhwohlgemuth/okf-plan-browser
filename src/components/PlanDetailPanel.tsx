@@ -14,6 +14,7 @@ import { useWalkthrough } from './Walkthrough';
 import { PlanKindBadge } from './PlanKindBadge';
 import { isEpic, linkedPlans } from '@/lib/planKind';
 import { TagBadge } from './TagBadge';
+import { planDateLabel } from '@/lib/planDates';
 
 const IMPACT_CLASSES: Record<string, string> = {
   critical: 'text-od-red',
@@ -236,6 +237,11 @@ export function PlanDetailPanel() {
               </div>
 
               <div><TimeRemaining plans={[plan]} /></div>
+
+              {(fm?.created || fm?.updated) && <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+                {fm.created && <span title={fm.created}>Created {planDateLabel(plan, 'created')}</span>}
+                {fm.updated && <span title={fm.updated}>Updated {planDateLabel(plan, 'updated')}</span>}
+              </div>}
 
               {/* phase_budget_hours */}
               {!isEpic(plan) && fm?.phase_budget_hours != null && (

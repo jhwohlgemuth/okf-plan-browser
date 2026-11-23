@@ -2,13 +2,15 @@
 
 ## Add
 
-Create one Markdown concept for one atomic outcome. Use either `some-plan.md` or `some-plan/index.md` as the Plan entrypoint. A folder-format plan may contain any number of adjacent Markdown files for supporting material. Keep non-Markdown plan assets in `some-plan/_assets/` and wiki-wide assets in `.wiki/_assets/`; use relative links from the file that contains them. Add the required Plan frontmatter, current evidence, boundaries, dependencies, decisions, validation, acceptance criteria, and five-hour execution phases. Link the entrypoint from the root and nearest indexes plus any existing dependency-network or parallel-scheduling guide.
+Create one Markdown concept for one atomic outcome. Use either `some-plan.md` or `some-plan/index.md` as the Plan entrypoint. A folder-format plan may contain any number of adjacent Markdown files for supporting material. Keep non-Markdown plan assets in `some-plan/_assets/` and wiki-wide assets in `.wiki/_assets/`; use relative links from the file that contains them. Add the required Plan frontmatter, current evidence, boundaries, dependencies, decisions, validation, acceptance criteria, and five-hour execution phases. Set `created` and `updated` to the same current UTC timestamp or date in the new entrypoint. Link the entrypoint from the root and nearest indexes plus any existing dependency-network or parallel-scheduling guide.
 
 ## Review and maintain
 
 At each planning session, check the plans in scope for currency. Follow the monthly portfolio-wide cadence in [portfolio-review.md](portfolio-review.md), including when no last-review date is known.
 
 Verify claims against current code and tests before editing. Reconcile all affected surfaces in one change:
+
+- Preserve `created` and refresh `updated` in each changed Plan or Epic entrypoint, including when its plan-owned supporting files change. When adopting timestamps in an existing entrypoint, set both fields to the current UTC time.
 
 - metadata and status;
 - current and implementation evidence;

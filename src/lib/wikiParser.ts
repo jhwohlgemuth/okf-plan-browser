@@ -132,7 +132,7 @@ export function buildSearchText(p: Pick<ParsedPlan, 'frontmatter' | 'sections'>)
   const fm = p.frontmatter;
   return [
     isEpic(p) ? 'epic' : 'phased plan',
-    fm.title, fm.description,
+    fm.title, fm.description, fm.created, fm.updated,
     ...(fm.tags ?? []), ...(fm.package ?? []),
     ...p.sections.map(s => s.heading + ' ' + s.body),
     ...p.sections.flatMap(s => s.phases.map(ph => ph.title)),

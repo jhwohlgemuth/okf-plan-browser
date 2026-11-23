@@ -22,6 +22,8 @@ When moving `some-plan.md` to `some-plan/index.md`, update inbound links and ind
 type: Plan
 title: Short outcome
 description: One-sentence remaining outcome.
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 difficulty: low | medium | high | mixed | not-assessed
 impact: low | medium | high | critical | mixed | not-assessed
 package: [non-empty, owners]
@@ -31,6 +33,8 @@ execution: phased
 phase_budget_hours: 5
 ---
 ```
+
+Replace the example timestamps with the actual current UTC time, or use the current UTC date in `YYYY-MM-DD` form. On creation, use the same value for both fields. Keep `created` unchanged and refresh `updated` whenever the plan or its supporting material changes. Date-only values count as midnight UTC when compared with timestamps.
 
 Use `in-progress` only while at least one remaining execution phase has `- Status: in-progress`. A plan with only `ready`, `planned`, or `blocked` phases is not in progress; keep its plan status `planned` unless validation is genuinely pending.
 
@@ -46,6 +50,12 @@ An Epic is a non-executable plan of plans. Use `execution: coordination`, omit `
 type: Plan
 title: Shared outcome
 description: One-sentence outcome across linked plans.
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
+difficulty: high
+impact: critical
+package: [workspace]
+tags: [coordination]
 status: planned
 execution: coordination
 ---

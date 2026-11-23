@@ -72,10 +72,10 @@ The [draft workflow](.agents/skills/planning/references/write-draft.md) saves `d
 
 | View | What it does |
 |---|---|
-| **Portfolio** | Sortable, filterable table of all plans — by status, priority, impact, difficulty, tags, packages, repo |
+| **Portfolio** | Sortable, filterable table of all plans — by status, priority, impact, difficulty, tags, packages, repo, and created/updated dates; Recent sorts by latest update |
 | **Phase Tracker** | Kanban board for executable phases, with Epics in a separate overview |
 | **Dependency Graph** | D3 graph of plans and Epics; edges are `.md` links and phase cross-references |
-| **Search** | Full-text across titles, descriptions, section content, tags, packages, and phase titles |
+| **Search** | Full-text across titles, descriptions, section content, tags, packages, timestamps, and phase titles |
 | **Planning Skill** | Official skill source and download, with prompts for portfolio maintenance, resumable implementation, drafting, and evidence review |
 | **Install** | Desktop release downloads and setup steps for the app and planning skill |
 
@@ -102,6 +102,8 @@ The app reads plain markdown files with YAML frontmatter:
 type: Plan
 title: "My Plan Title"
 description: "What this is about"
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 difficulty: medium          # easy | medium | hard
 impact: critical            # low | medium | high | critical
 package: [workspace, acorn-lib]
@@ -127,6 +129,7 @@ Phase body with cross-references like PA-02, PA-03...
 ```
 
 **Notes:**
+- For new plans and Epics, set both fields to the current UTC time (`YYYY-MM-DDTHH:MM:SSZ`) or UTC date (`YYYY-MM-DD`). Date-only values count as midnight UTC. Preserve `created` and refresh `updated` after changes. Existing plans can start both fields at the time dates are adopted. Older portfolios without these fields still load; date filters omit entries without the selected date.
 - Canonical `os:<name>` tags are rendered as colored platform labels with OS logos. Use them for
   genuine platform conditions (for example `os:windows`, `os:macos`, `os:linux`, or `os:ubuntu`);
   keep architecture and package formats as separate ordinary tags.

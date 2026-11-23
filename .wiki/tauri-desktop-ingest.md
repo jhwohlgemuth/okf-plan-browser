@@ -1,5 +1,7 @@
 ---
 type: Plan
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 title: Desktop builds can load a wiki folder
 description: Verify folder ingest on each Tauri webview and repair the desktop load path where platform evidence requires it.
 difficulty: high

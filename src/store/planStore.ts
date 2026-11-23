@@ -7,6 +7,7 @@ import { restorePortfolio } from '@/lib/restorePortfolio';
 import { forgetAllAssets, forgetAssets } from '@/lib/wikiAssets';
 import { isEpic, planStatus } from '@/lib/planKind';
 import { clearHandles, deleteHandle } from '@/lib/handleStore';
+import { dateInRange, planDateMs } from '@/lib/planDates';
 
 export type CleanupOutcome =
   | { ok: true }
@@ -95,6 +96,10 @@ const EMPTY_FILTERS: PlanFilters = {
   packages:   [],
   repos:      [],
   search:     '',
+  createdAfter: '',
+  createdBefore: '',
+  updatedAfter: '',
+  updatedBefore: '',
 };
 
 const cleanupOutcome = async (cleanup: Promise<unknown>): Promise<CleanupOutcome> => {
@@ -230,6 +235,8 @@ export function selectFilteredPlans(s: PlanStore): ParsedPlan[] {
     if (f.repos.length      && !f.repos.includes(p.repoId))            return false;
     if (f.tags.length       && !f.tags.some(t => fm.tags?.includes(t))) return false;
     if (f.packages.length   && !f.packages.some(pk => fm.package?.includes(pk))) return false;
+    if (!dateInRange(planDateMs(p, 'created'), f.createdAfter, f.createdBefore)) return false;
+    if (!dateInRange(planDateMs(p, 'updated'), f.updatedAfter, f.updatedBefore)) return false;
     if (f.search) {
       const q = f.search.toLowerCase();
       if (!(p.searchText ?? buildSearchText(p)).includes(q)) return false;

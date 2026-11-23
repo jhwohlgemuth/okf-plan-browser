@@ -3,6 +3,35 @@ import { parseFrontmatter, extractSections, isPlanFile, parseWikiFile } from '@/
 import { isEpic, planStatus } from '@/lib/planKind';
 
 describe('parseFrontmatter', () => {
+  it('preserves valid created and updated timestamps', () => {
+    const { fm, errors } = parseFrontmatter('---\ntitle: Dated\ncreated: "2026-11-01T10:00:00Z"\nupdated: "2026-11-23T12:00:00Z"\n---\n');
+    expect(errors).toEqual([]);
+    expect(fm.created).toBe('2026-11-01T10:00:00Z');
+    expect(fm.updated).toBe('2026-11-23T12:00:00Z');
+  });
+
+  it('normalizes unquoted YAML timestamps', () => {
+    const { fm, errors } = parseFrontmatter('---\ntitle: Dated\ncreated: 2026-11-01T10:00:00Z\n---\n');
+    expect(errors).toEqual([]);
+    expect(fm.created).toBe('2026-11-01T10:00:00.000Z');
+  });
+
+  it('accepts quoted and unquoted date-only values', () => {
+    const quoted = parseFrontmatter('---\ntitle: Dated\ncreated: "2026-11-01"\nupdated: "2026-11-23"\n---\n');
+    expect(quoted.errors).toEqual([]);
+    expect(quoted.fm.created).toBe('2026-11-01');
+    expect(quoted.fm.updated).toBe('2026-11-23');
+
+    const unquoted = parseFrontmatter('---\ntitle: Dated\ncreated: 2026-11-01\n---\n');
+    expect(unquoted.errors).toEqual([]);
+    expect(unquoted.fm.created).toBe('2026-11-01T00:00:00.000Z');
+  });
+
+  it('rejects an invalid date-only value', () => {
+    const result = parseFrontmatter('---\ntitle: Dated\ncreated: "2026-02-30"\n---\n');
+    expect(result.errors).toContain('created must be a YYYY-MM-DD date or ISO 8601 timestamp with a time zone');
+  });
+
   it('parses a basic block', () => {
     const { fm, body, errors } = parseFrontmatter('---\ntitle: Hello\nstatus: planned\n---\n# Goal\nx\n');
     expect(errors).toEqual([]);

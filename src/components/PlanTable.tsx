@@ -13,15 +13,17 @@ import { planAgentCommand } from '@/lib/agentCommand';
 import { isEpic, planStatus } from '@/lib/planKind';
 import { PlanKindBadge } from './PlanKindBadge';
 import { TagBadge } from './TagBadge';
+import { planDateLabel, planDateMs } from '@/lib/planDates';
 
-type SortKey = 'title' | 'kind' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining';
+type SortKey = 'title' | 'kind' | 'status' | 'priority' | 'impact' | 'difficulty' | 'remaining' | 'created' | 'updated' | 'recent';
 
 const PRIORITY_ORDER: Record<string, number> = { next: 0, high: 1, medium: 2, low: 3 };
 const IMPACT_ORDER:   Record<string, number>  = { critical: 0, high: 1, medium: 2, low: 3 };
 const STATUS_ORDER:   Record<string, number>  = { 'in-progress': 0, 'waiting-on-validation': 1, blocked: 2, ready: 3, planned: 4 };
 const DIFF_ORDER:     Record<string, number>  = { hard: 0, medium: 1, easy: 2 };
 
-function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
+// eslint-disable-next-line react-refresh/only-export-components -- pure sorter is tested independently
+export function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
   return [...plans].sort((a, b) => {
     let diff = 0;
     if (key === 'remaining') {
@@ -32,6 +34,15 @@ function sortPlans(plans: ParsedPlan[], key: SortKey, dir: 'asc' | 'desc') {
       return (dir === 'asc' ? 1 : -1) * (ae.hours - be.hours);
     }
     const afm = a.frontmatter, bfm = b.frontmatter;
+    if (key === 'created' || key === 'updated' || key === 'recent') {
+      const field = key === 'created' ? 'created' : 'updated';
+      const ams = planDateMs(a, field), bms = planDateMs(b, field);
+      if (ams === undefined || bms === undefined) {
+        if (ams === undefined && bms === undefined) return afm.title.localeCompare(bfm.title);
+        return ams === undefined ? 1 : -1;
+      }
+      return (dir === 'asc' ? 1 : -1) * (ams - bms) || afm.title.localeCompare(bfm.title);
+    }
     switch (key) {
       case 'title':      diff = (afm.title ?? '').localeCompare(bfm.title ?? ''); break;
       case 'kind':       diff = Number(isEpic(a)) - Number(isEpic(b)); break;
@@ -69,7 +80,7 @@ export function PlanTable() {
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('asc'); }
+    else { setSortKey(key); setSortDir(['recent', 'created', 'updated'].includes(key) ? 'desc' : 'asc'); }
   }
 
   if (sorted.length === 0) {
@@ -99,6 +110,23 @@ export function PlanTable() {
 
   return (
     <div className="overflow-x-auto">
+      <div className="flex items-center justify-end gap-2 border-b border-border px-3 py-2">
+        <label htmlFor="plan-sort" className="text-xs text-muted-foreground">Sort by</label>
+        <select id="plan-sort" aria-label="Sort plans by" value={sortKey}
+          onChange={event => handleSort(event.target.value as SortKey)}
+          className="h-7 rounded-md border border-border bg-background px-2 text-xs text-foreground">
+          <option value="recent">Recent (updated)</option>
+          <option value="created">Created</option>
+          <option value="updated">Updated</option>
+          <option value="priority">Priority</option>
+          <option value="title">Title</option>
+          <option value="kind">Kind</option>
+          <option value="status">Status</option>
+          <option value="impact">Impact</option>
+          <option value="difficulty">Difficulty</option>
+          <option value="remaining">Time remaining</option>
+        </select>
+      </div>
       <table className="w-full text-sm border-collapse">
         <thead className="bg-card border-b border-border sticky top-0">
           <tr>
@@ -109,6 +137,8 @@ export function PlanTable() {
             {col('impact', 'Impact')}
             {col('difficulty', 'Difficulty')}
             {col('remaining', 'Time remaining')}
+            {col('created', 'Created')}
+            {col('updated', 'Updated')}
             <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Repo</th>
             <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Tags</th>
             <th className="w-12 px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Agent</th>
@@ -161,6 +191,8 @@ export function PlanTable() {
                 </td>
 
                 <td className="px-3 py-2.5 whitespace-nowrap"><TimeRemaining plans={[plan]} label={false} /></td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground" title={fm.created}>{planDateLabel(plan, 'created')}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-xs text-muted-foreground" title={fm.updated}>{planDateLabel(plan, 'updated')}</td>
 
                 {/* Repo */}
                 <td className="px-3 py-2.5 whitespace-nowrap">

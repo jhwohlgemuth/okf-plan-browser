@@ -1,5 +1,7 @@
 ---
 type: Plan
+created: "2026-11-23T21:07:56Z"
+updated: "2026-11-23T21:07:56Z"
 title: Publish OKF Plan Browser to Scoop Extras
 description: Provide a Scoop-compatible Windows release and submit a verified Extras manifest.
 difficulty: medium

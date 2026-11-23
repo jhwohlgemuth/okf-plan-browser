@@ -102,12 +102,13 @@ const PROMPTS = ([
     category: 'Review', icon: RotateCcw,
     title: 'Upgrade wiki to current skill',
     description: 'Reconcile an existing .wiki portfolio with the current planning skill contract and validator.',
-    command: 'Use $planning to review and update the entire .wiki portfolio so it complies with the current planning skill version. Read the active planning skill\'s SKILL.md and every reference it routes this task to before editing. Inspect current repository evidence; preserve valid intent and stable IDs for unfinished phases; reconcile frontmatter, phase budgets and statuses, indexes, dependency network, and parallel lanes; migrate deprecated conventions; prune completed or obsolete work; and retire finished plans only after preserving durable evidence. Run the planning skill validator against the repository root, then report the changes, remaining blockers, and any uncertainty.',
+    command: 'Use $planning to review and update the entire .wiki portfolio so it complies with the current planning skill version. Read the active planning skill\'s SKILL.md and every reference it routes this task to before editing. Inspect current repository evidence; preserve valid intent and stable IDs for unfinished phases; reconcile frontmatter including created/updated dates, phase budgets and statuses, indexes, dependency network, and parallel lanes; migrate deprecated conventions; prune completed or obsolete work; and retire finished plans only after preserving durable evidence. Run the planning skill validator against the repository root, then report the changes, remaining blockers, and any uncertainty.',
   },
 ] as const).map(prompt => ({ ...prompt, command: withPlanningReference(prompt.command) }));
 
 const RULES = [
   { icon: Layers3, title: 'Epics coordinate plans', text: 'Use execution: coordination and link executable child plans. Epics have no phases or independent effort estimate.' },
+  { icon: CalendarCheck2, title: 'Plan and Epic dates', text: 'Set created and updated together on creation; preserve created and refresh updated after every change to the plan or its supporting files. Use a UTC date (YYYY-MM-DD) or timestamp (YYYY-MM-DDTHH:MM:SSZ). When adopting dates for existing entries, set both to the current date.' },
   { icon: ListChecks, title: 'Status follows active phases', text: 'A phased plan is in progress only while a remaining phase is in progress. Reconcile plan status when that phase ends.' },
   { icon: Clock3, title: 'Five-hour slices', text: 'Every executable phase fits at most five active agent hours.' },
   { icon: GitMerge, title: 'Mergeable handoffs', text: 'Each phase names one write set, one primary lock, focused validation, and a clean handoff.' },

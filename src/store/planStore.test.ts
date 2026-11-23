@@ -114,6 +114,18 @@ describe('selectFilteredPlans', () => {
     expect(run({ status: ['planned'], tags: ['db'] })).toEqual(['gamma']);
   });
 
+  it('filters created and updated UTC dates independently and includes boundary days', () => {
+    const dated = [
+      mk('old', 'created: "2026-11-01T23:00:00Z"\nupdated: "2026-11-20T00:00:00Z"'),
+      mk('new', 'created: "2026-11-20T00:00:00Z"\nupdated: "2026-11-23T23:59:59Z"'),
+      mk('undated', ''),
+    ];
+    usePlanStore.setState(s => ({ plans: dated, filters: { ...s.filters, createdAfter: '2026-11-20', updatedBefore: '2026-11-23' } }));
+    expect(selectFilteredPlans(usePlanStore.getState()).map(p => p.fileName)).toEqual(['new']);
+    usePlanStore.getState().clearFilters();
+    expect(selectFilteredPlans(usePlanStore.getState())).toHaveLength(3);
+  });
+
   it('searches titles, section bodies and phase titles case-insensitively', () => {
     expect(run({ search: 'ALPHA' })).toEqual(['alpha']);
     expect(run({ search: 'render speed' })).toEqual(['alpha']);

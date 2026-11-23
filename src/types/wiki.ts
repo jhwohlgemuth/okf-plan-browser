@@ -13,6 +13,8 @@ export interface Frontmatter {
   type?:               string;
   title:               string;
   description?:        string;
+  created?:            string;
+  updated?:            string;
   difficulty?:         PlanDifficulty;
   impact?:             PlanImpact;
   package?:            string[];
@@ -89,6 +91,10 @@ export interface PlanFilters {
   packages:   string[];
   repos:      string[];
   search:     string;
+  createdAfter: string;
+  createdBefore: string;
+  updatedAfter: string;
+  updatedBefore: string;
 }
 
 // ─── Warning ─────────────────────────────────────────────────────────────────
