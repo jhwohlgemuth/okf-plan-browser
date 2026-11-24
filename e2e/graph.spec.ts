@@ -78,7 +78,7 @@ test('graph viewport, node positions, and selection survive site navigation', as
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width * 0.72 + 64, box!.y + box!.height * 0.72 - 38, { steps: 4 });
   await page.mouse.up();
-  await page.waitForTimeout(250);
+  await expect(svg).toHaveAttribute('data-layout-settled', 'true');
 
   const transform = await layer.getAttribute('transform');
   expect(transform).toMatch(/translate\((?!0,0)/);

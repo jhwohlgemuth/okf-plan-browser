@@ -76,6 +76,7 @@ export function DependencyGraph({
 
     let width = svg.clientWidth || 900;
     let height = svg.clientHeight || 600;
+    svg.dataset.layoutSettled = 'false';
     const groupedPositions = graphLayoutPositions(nodeViews, edges, layout, width, height);
     const nodes: Node[] = nodeViews.map((view, index) => {
       const saved = positionsRef.current.get(view.id);
@@ -197,9 +198,9 @@ export function DependencyGraph({
       frame = 0;
       const more = layout === 'force' && advanceGraphLayout(sim, () => performance.now());
       draw();
-      if (more) schedule(); else saveCanvas();
+      if (more) schedule(); else { svg.dataset.layoutSettled = 'true'; saveCanvas(); }
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(runFrame); };
+    const schedule = () => { svg.dataset.layoutSettled = 'false'; if (!frame) frame = requestAnimationFrame(runFrame); };
 
     const drag = d3.drag<SVGGElement, Node>()
       .on('start', (event, node) => {
@@ -345,7 +346,7 @@ export function DependencyGraph({
     };
 
     sim.stop(); draw();
-    if (restoredAllForceNodes) { sim.alpha(0); saveCanvas(); } else schedule();
+    if (restoredAllForceNodes) { sim.alpha(0); svg.dataset.layoutSettled = 'true'; saveCanvas(); } else schedule();
     const observer = new ResizeObserver(() => {
       const nextWidth = svg.clientWidth || width;
       const nextHeight = svg.clientHeight || height;
