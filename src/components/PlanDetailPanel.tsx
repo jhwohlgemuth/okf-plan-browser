@@ -1,7 +1,7 @@
 import { TimeRemaining } from '@/components/TimeRemaining';
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useLocation } from 'react-router-dom';
-import { X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
+import { ArrowDown, X, Package, Tag, Clock, GitBranch, Quote } from 'lucide-react';
 import { usePlanStore } from '@/store/planStore';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { StatusBadge } from './StatusBadge';
@@ -39,12 +39,21 @@ export function PlanDetailPanel() {
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<AssetTarget | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const phaseSectionRef = useRef<HTMLElement>(null);
   const relatedRef = useRef<HTMLElement>(null);
   const location = useLocation();
 
   const repo = repos.find(r => r.id === plan?.repoId);
   const fm   = plan?.frontmatter;
   const linked = plan ? linkedPlans(plan, plans) : [];
+  const firstPhaseSection = plan?.sections.find(section => section.phases.length > 0);
+
+  const jumpToPhases = () => {
+    const section = phaseSectionRef.current;
+    if (!section) return;
+    section.scrollIntoView({ block: 'start' });
+    (section.querySelector<HTMLElement>('h3') ?? section).focus({ preventScroll: true });
+  };
 
   useEffect(() => { setSelectedDocument(null); setSelectedAsset(null); }, [selectedPlanId]);
 
@@ -190,6 +199,15 @@ export function PlanDetailPanel() {
                 <h2 id="plan-detail-title" className="text-base font-semibold text-foreground leading-tight">
                   {fm?.title ?? 'Plan not loaded'}
                 </h2>
+                {firstPhaseSection && (
+                  <button
+                    type="button"
+                    onClick={jumpToPhases}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-od-blue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    Jump to phases <ArrowDown className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                )}
               </div>
               <button
                 onClick={closeDetail}
@@ -305,7 +323,12 @@ export function PlanDetailPanel() {
 
               {/* Sections */}
               {plan.sections.filter(s => s.heading || s.body.trim() || s.phases.length).map((section, si) => (
-                <section key={si} className="space-y-3">
+                <section
+                  key={si}
+                  ref={section === firstPhaseSection ? phaseSectionRef : undefined}
+                  tabIndex={section === firstPhaseSection && !section.heading ? -1 : undefined}
+                  className="scroll-mt-32 space-y-3"
+                >
                   {section.heading && (
                     <h3
                       id={planAnchor(section.heading)}
