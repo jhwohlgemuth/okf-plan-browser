@@ -4,6 +4,7 @@ import { useThemeStore, type Theme } from '@/store/themeStore';
 import { usePlanStore, PLAN_STORAGE_KEY } from '@/store/planStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AgentCommandButton } from '@/components/AgentCommandButton';
 import { cn } from '@/lib/utils';
 import { isEpic } from '@/lib/planKind';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,6 +22,10 @@ const THEMES: { value: Theme; label: string; icon: React.ComponentType<{ classNa
 export function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
   const warnings       = usePlanStore(s => s.warnings);
+  const warningText = warnings.map(w => [
+    `${w.repoId}/${w.fileName}`,
+    ...w.errors.map(error => `  - ${error}`),
+  ].join('\n')).join('\n\n');
   const clearAll       = usePlanStore(s => s.clearAll);
   const clearSavedData = usePlanStore(s => s.clearSavedData);
   const removeRepo     = usePlanStore(s => s.removeRepo);
@@ -379,19 +384,18 @@ export function SettingsPage() {
       {/* Warnings detail */}
       {warnings.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Parse Warnings
-          </h2>
-          <div className="bg-od-yellow/10 border border-od-yellow/30 rounded-xl p-4 space-y-2">
-            {warnings.map((w, i) => (
-              <div key={i} className="text-xs">
-                <span className="font-mono text-od-yellow">{w.repoId}/{w.fileName}</span>
-                <ul className="text-muted-foreground mt-0.5 space-y-0.5 pl-3">
-                  {w.errors.map((e, j) => <li key={j}>• {e}</li>)}
-                </ul>
-              </div>
-            ))}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Parse Warnings
+            </h2>
+            <AgentCommandButton
+              command={warningText}
+              label="Copy parse warnings"
+              successTitle="Parse warnings copied"
+              failureTitle="Could not copy parse warnings"
+            />
           </div>
+          <pre className="select-text whitespace-pre-wrap break-words rounded-xl border border-od-yellow/30 bg-od-yellow/10 p-4 font-mono text-xs leading-relaxed text-foreground">{warningText}</pre>
         </section>
       )}
 

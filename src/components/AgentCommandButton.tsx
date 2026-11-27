@@ -8,6 +8,7 @@ interface Props {
   label: string;
   className?: string;
   successTitle?: string;
+  failureTitle?: string;
 }
 
 async function copyText(text: string): Promise<void> {
@@ -34,7 +35,7 @@ async function copyText(text: string): Promise<void> {
   }
 }
 
-export function AgentCommandButton({ command, label, className, successTitle = 'Agent command copied' }: Props) {
+export function AgentCommandButton({ command, label, className, successTitle = 'Agent command copied', failureTitle = 'Could not copy agent command' }: Props) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const { toast } = useToast();
@@ -50,7 +51,7 @@ export function AgentCommandButton({ command, label, className, successTitle = '
       timer.current = setTimeout(() => setCopied(false), 1500);
       toast({ title: successTitle });
     } catch (error) {
-      toast({ title: 'Could not copy agent command', description: (error as Error).message });
+      toast({ title: failureTitle, description: (error as Error).message });
     }
   };
 
