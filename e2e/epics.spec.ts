@@ -17,7 +17,7 @@ test('zero-phase records stay Epics across portfolio, tracker, search, graph, an
   await expect(page.getByRole('button', { name: /phase Plan$/ })).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Search' }).click();
-  await page.getByRole('textbox').first().fill('epic');
+  await page.getByRole('textbox', { name: 'Search query' }).fill('epic');
   await expect(page.getByRole('button', { name: /^Open Epic:/ })).toHaveCount(3);
 
   await page.getByRole('link', { name: 'Dependency Graph' }).click();

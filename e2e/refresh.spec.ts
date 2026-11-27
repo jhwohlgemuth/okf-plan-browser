@@ -145,7 +145,7 @@ test('refresh re-reads a stored folder handle', async ({ page }, info) => {
   await page.goto('/search');
   await btn.click();
   await expect(page.getByRole('region', { name: 'Notifications (F8)' }).getByText('Refreshed 1 wiki').last()).toBeVisible();
-  await page.getByRole('textbox').first().fill('Changed');
+  await page.getByRole('textbox', { name: 'Search query' }).fill('Changed');
   await expect(page.getByText('Changed title').first()).toBeVisible();
 });
 

@@ -303,10 +303,10 @@ test('imports same-name portfolios independently and safely searches malformed f
   await expect(page.getByRole('button', { name: 'Open Epic: First' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open Epic: Second' })).toBeVisible();
   await page.goto('/search');
-  await page.getByRole('textbox').fill('First');
+  await page.getByRole('textbox', { name: 'Search query' }).fill('First');
   await expect(page.getByRole('button', { name: 'Open Epic: First', exact: true })).toBeVisible();
   await page.reload();
-  await page.getByRole('textbox').fill('First');
+  await page.getByRole('textbox', { name: 'Search query' }).fill('First');
   await expect(page.getByRole('button', { name: 'Open Epic: First', exact: true })).toBeVisible();
 });
 

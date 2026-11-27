@@ -63,7 +63,7 @@ test.describe('with demo data', () => {
 
   test('plan detail panel', async ({ page }) => {
     await goTo(page, '/search');
-    await page.getByRole('textbox').first().fill('a');
+    await page.getByRole('textbox', { name: 'Search query' }).fill('a');
     await page.locator('main .cursor-pointer').first().click();
     await page.locator('h2').first().waitFor();
     await settle(page);
